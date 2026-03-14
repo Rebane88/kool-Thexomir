@@ -1,11 +1,15 @@
 using API.Helpers;
 using API.Setup;
+using Application;
+using Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Service registration
 builder.Services.AddAppDatabase(builder.Configuration, builder.Environment);
 builder.Services.AddAppIdentity();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<AppNameService>();
 builder.Services.AddAppControllers();
