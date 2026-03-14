@@ -1,4 +1,6 @@
+using Base.Contracts;
 using Domain.Identity;
+using Infrastructure.Seeding.Seeders;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +10,21 @@ public static class AppDataInit
 {
     public static void SeedAppData(AppDbContext context)
     {
+        var seeders = new ISeeder[]
+        {
+            new TerrainTypeSeeder(),
+            new UnitTypeSeeder(),
+            new BuildingTypeSeeder(),
+            new UnitTypeMatchupSeeder(),
+            new FactionTypeSeeder(),
+            new FactionResourceBonusSeeder(),
+            new FactionUnitBonusSeeder()
+        };
+
+        foreach (var seeder in seeders.OrderBy(s => s.Order))
+        {
+            seeder.Seed(context);
+        }
     }
 
 
