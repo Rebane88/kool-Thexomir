@@ -1,4 +1,11 @@
+using Base;
+using Domain.Buildings;
+using Domain.Factions;
+using Domain.Game;
 using Domain.Identity;
+using Domain.Map;
+using Domain.Military;
+using Domain.Resources;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -8,9 +15,38 @@ namespace Infrastructure;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<AppUser, AppRole, Guid>(options), IDataProtectionKeyContext
 {
-
+    // Identity
     public DbSet<AppRefreshToken> RefreshTokens { get; set; }
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
+
+    // Game
+    public DbSet<Game> Games { get; set; }
+    public DbSet<Kingdom> Kingdoms { get; set; }
+    public DbSet<TurnLog> TurnLogs { get; set; }
+    public DbSet<GameEvent> GameEvents { get; set; }
+
+    // Map
+    public DbSet<Tile> Tiles { get; set; }
+    public DbSet<TerrainType> TerrainTypes { get; set; }
+
+    // Buildings
+    public DbSet<Building> Buildings { get; set; }
+    public DbSet<BuildingType> BuildingTypes { get; set; }
+
+    // Military
+    public DbSet<Army> Armies { get; set; }
+    public DbSet<Unit> Units { get; set; }
+    public DbSet<UnitType> UnitTypes { get; set; }
+    public DbSet<UnitTypeMatchup> UnitTypeMatchups { get; set; }
+    public DbSet<Battle> Battles { get; set; }
+
+    // Resources
+    public DbSet<KingdomResource> KingdomResources { get; set; }
+
+    // Factions
+    public DbSet<FactionType> FactionTypes { get; set; }
+    public DbSet<FactionResourceBonus> FactionResourceBonuses { get; set; }
+    public DbSet<FactionUnitBonus> FactionUnitBonuses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -19,12 +55,125 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         // Configure all DateTime properties to use UTC
         ConfigureDateTimeAsUtc(builder);
 
-        // disable cascade delete
+        // Enum string conversions (INFRA-07)
+        builder.Entity<Game>()
+            .Property(g => g.Status)
+            .HasConversion<string>();
+
+        builder.Entity<Game>()
+            .Property(g => g.WinCondition)
+            .HasConversion<string>();
+
+        builder.Entity<KingdomResource>()
+            .Property(kr => kr.ResourceType)
+            .HasConversion<string>();
+
+        builder.Entity<TerrainType>()
+            .Property(t => t.ResourceBonusType)
+            .HasConversion<string>();
+
+        builder.Entity<FactionResourceBonus>()
+            .Property(b => b.ResourceType)
+            .HasConversion<string>();
+
+        // Uniqueness constraints (INFRA-08)
+        builder.Entity<UnitTypeMatchup>()
+            .HasIndex(m => new { m.AttackerTypeId, m.DefenderTypeId })
+            .IsUnique();
+
+        builder.Entity<FactionResourceBonus>()
+            .HasIndex(b => new { b.FactionTypeId, b.ResourceType })
+            .IsUnique();
+
+        builder.Entity<FactionUnitBonus>()
+            .HasIndex(b => new { b.FactionTypeId, b.UnitTypeId })
+            .IsUnique();
+
+        builder.Entity<KingdomResource>()
+            .HasIndex(kr => new { kr.KingdomId, kr.ResourceType })
+            .IsUnique();
+
+        builder.Entity<Tile>()
+            .HasIndex(t => new { t.GameId, t.CoordQ, t.CoordR })
+            .IsUnique();
+
+        builder.Entity<Game>()
+            .HasIndex(g => g.LobbyCode)
+            .IsUnique();
+
+        // FK configuration for tricky relationships
+
+        // UnitTypeMatchup: two FKs to UnitType — EF Core can't auto-resolve
+        builder.Entity<UnitTypeMatchup>()
+            .HasOne(m => m.AttackerType)
+            .WithMany(u => u.AttackerMatchups)
+            .HasForeignKey(m => m.AttackerTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<UnitTypeMatchup>()
+            .HasOne(m => m.DefenderType)
+            .WithMany(u => u.DefenderMatchups)
+            .HasForeignKey(m => m.DefenderTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // FactionUnitBonus: nullable FK to UnitType
+        builder.Entity<FactionUnitBonus>()
+            .HasOne(b => b.UnitType)
+            .WithMany()
+            .HasForeignKey(b => b.UnitTypeId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Battle: two FKs to Army
+        builder.Entity<Battle>()
+            .HasOne(b => b.AttackerArmy)
+            .WithMany()
+            .HasForeignKey(b => b.AttackerArmyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Battle>()
+            .HasOne(b => b.DefenderArmy)
+            .WithMany()
+            .HasForeignKey(b => b.DefenderArmyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // BuildingType: self-reference (upgrade chain)
+        builder.Entity<BuildingType>()
+            .HasOne(bt => bt.PrerequisiteBuildingType)
+            .WithMany()
+            .HasForeignKey(bt => bt.PrerequisiteBuildingTypeId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // KingdomResource: Amount precision
+        builder.Entity<KingdomResource>()
+            .Property(kr => kr.Amount)
+            .HasPrecision(18, 2);
+
+        // Disable cascade delete globally
         foreach (var relationship in builder.Model
                      .GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
         {
             relationship.DeleteBehavior = DeleteBehavior.Restrict;
         }
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        foreach (var entry in ChangeTracker.Entries<IBaseEntity>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                entry.Entity.CreatedAt = now;
+                entry.Entity.UpdatedAt = now;
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = now;
+            }
+        }
+        return await base.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>
@@ -66,5 +215,4 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             }
         }
     }
-
 }
