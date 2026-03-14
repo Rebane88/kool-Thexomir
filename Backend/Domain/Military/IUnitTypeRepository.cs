@@ -1,0 +1,8 @@
+using Base.Contracts;
+
+namespace Domain.Military;
+
+public interface IUnitTypeRepository : IBaseRepository<UnitType>
+{
+    // Domain-specific queries added in feature phases
+}
