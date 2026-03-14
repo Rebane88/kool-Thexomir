@@ -10,7 +10,7 @@ public class TerrainType : BaseEntity
 
     public decimal DefenseBonus { get; set; }
     public int MovementCost { get; set; }
-    public TerrainResourceBonus ResourceBonusType { get; set; }
+    public ETerrainResourceBonus ResourceBonusType { get; set; }
 
     // Navigation
     public ICollection<Tile>? Tiles { get; set; }

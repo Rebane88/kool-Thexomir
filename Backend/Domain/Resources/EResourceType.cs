@@ -1,6 +1,6 @@
 namespace Domain.Resources;
 
-public enum ResourceType
+public enum EResourceType
 {
     Gold,
     Food,

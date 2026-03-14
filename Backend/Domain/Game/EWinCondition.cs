@@ -1,6 +1,6 @@
 namespace Domain.Game;
 
-public enum WinCondition
+public enum EWinCondition
 {
     Domination,
     Elimination,

@@ -22,7 +22,7 @@ public class TerrainTypeSeeder : ISeeder
                 Name = new LangStr("Plains"),
                 DefenseBonus = 0.0m,
                 MovementCost = 1,
-                ResourceBonusType = TerrainResourceBonus.Food,
+                ResourceBonusType = ETerrainResourceBonus.Food,
                 CreatedAt = now,
                 UpdatedAt = now
             },
@@ -32,7 +32,7 @@ public class TerrainTypeSeeder : ISeeder
                 Name = new LangStr("Forest"),
                 DefenseBonus = 0.20m,
                 MovementCost = 2,
-                ResourceBonusType = TerrainResourceBonus.Wood,
+                ResourceBonusType = ETerrainResourceBonus.Wood,
                 CreatedAt = now,
                 UpdatedAt = now
             },
@@ -42,7 +42,7 @@ public class TerrainTypeSeeder : ISeeder
                 Name = new LangStr("Mountain"),
                 DefenseBonus = 0.40m,
                 MovementCost = 3,
-                ResourceBonusType = TerrainResourceBonus.Stone,
+                ResourceBonusType = ETerrainResourceBonus.Stone,
                 CreatedAt = now,
                 UpdatedAt = now
             },
@@ -52,7 +52,7 @@ public class TerrainTypeSeeder : ISeeder
                 Name = new LangStr("River"),
                 DefenseBonus = 0.10m,
                 MovementCost = 2,
-                ResourceBonusType = TerrainResourceBonus.Gold,
+                ResourceBonusType = ETerrainResourceBonus.Gold,
                 CreatedAt = now,
                 UpdatedAt = now
             },
@@ -62,7 +62,7 @@ public class TerrainTypeSeeder : ISeeder
                 Name = new LangStr("Magic Grove"),
                 DefenseBonus = 0.10m,
                 MovementCost = 1,
-                ResourceBonusType = TerrainResourceBonus.Mana,
+                ResourceBonusType = ETerrainResourceBonus.Mana,
                 CreatedAt = now,
                 UpdatedAt = now
             }

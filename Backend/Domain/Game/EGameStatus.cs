@@ -1,6 +1,6 @@
 namespace Domain.Game;
 
-public enum GameStatus
+public enum EGameStatus
 {
     Lobby,
     InProgress,

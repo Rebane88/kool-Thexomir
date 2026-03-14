@@ -25,7 +25,7 @@ public class FactionResourceBonusSeeder : ISeeder
             {
                 Id = new Guid("FFFFFFFF-0001-0000-0000-000000000001"),
                 FactionTypeId = FactionTypeSeeder.MageCouncilId,
-                ResourceType = ResourceType.Mana,
+                ResourceType = EResourceType.Mana,
                 Multiplier = 1.2m,
                 CreatedAt = now,
                 UpdatedAt = now
@@ -34,7 +34,7 @@ public class FactionResourceBonusSeeder : ISeeder
             {
                 Id = new Guid("FFFFFFFF-0001-0000-0000-000000000002"),
                 FactionTypeId = FactionTypeSeeder.MerchantRepublicId,
-                ResourceType = ResourceType.Gold,
+                ResourceType = EResourceType.Gold,
                 Multiplier = 1.3m,
                 CreatedAt = now,
                 UpdatedAt = now
@@ -43,7 +43,7 @@ public class FactionResourceBonusSeeder : ISeeder
             {
                 Id = new Guid("FFFFFFFF-0001-0000-0000-000000000003"),
                 FactionTypeId = FactionTypeSeeder.ForestElvesId,
-                ResourceType = ResourceType.Food,
+                ResourceType = EResourceType.Food,
                 Multiplier = 1.2m,
                 CreatedAt = now,
                 UpdatedAt = now
@@ -52,7 +52,7 @@ public class FactionResourceBonusSeeder : ISeeder
             {
                 Id = new Guid("FFFFFFFF-0001-0000-0000-000000000004"),
                 FactionTypeId = FactionTypeSeeder.ForestElvesId,
-                ResourceType = ResourceType.Wood,
+                ResourceType = EResourceType.Wood,
                 Multiplier = 1.2m,
                 CreatedAt = now,
                 UpdatedAt = now

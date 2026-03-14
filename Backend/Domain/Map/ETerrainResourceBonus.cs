@@ -1,6 +1,6 @@
 namespace Domain.Map;
 
-public enum TerrainResourceBonus
+public enum ETerrainResourceBonus
 {
     None,
     Food,

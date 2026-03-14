@@ -244,7 +244,7 @@ Player A clicks "End Turn"
 
 ### Admin Panel
 
-Admins have access to a dedicated admin panel to manage and tune the game without touching code. The admin panel is built from the mandatory CRUD controllers (required by the course) and secured behind `[Authorize(Roles = "Admin")]`.
+Admins have access to a dedicated admin panel to manage and tune the game without touching code. The admin panel is built from controllers in ASP.NET MVC and secured behind `[Authorize(Roles = "Admin")]`.
 
 **Admins can edit:**
 - `TerrainType` — defense bonuses, movement costs, resource multipliers, map colors, icon URLs
@@ -281,8 +281,6 @@ This means game balance (unit strength, building costs, terrain bonuses) and all
 
 ## Open Questions / Future Features
 
-- Diplomacy system (trade offers, alliances, non-aggression pacts)
 - Random events system (dragon attacks, plague, magic storms)
-- Fog of war (can only see tiles adjacent to owned territory)
 - Observer mode for finished players
 - Replay system (rewatch a completed game turn by turn)

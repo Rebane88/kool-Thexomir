@@ -5,9 +5,9 @@ namespace Domain.Game;
 
 public class Game : BaseEntity
 {
-    public GameStatus Status { get; set; }
+    public EGameStatus Status { get; set; }
     public int TurnNumber { get; set; }
-    public WinCondition WinCondition { get; set; }
+    public EWinCondition WinCondition { get; set; }
     public int MaxPlayers { get; set; }
     public string LobbyCode { get; set; } = string.Empty; // 6-char unique code
     public int MapWidth { get; set; }
