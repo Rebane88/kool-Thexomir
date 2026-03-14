@@ -1,10 +1,10 @@
 using System;
 using System.Threading.Tasks;
-using App.DAL.EF;
+using API.Controllers;
+using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using WebApp.Controllers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -22,7 +22,7 @@ public class UnitTestHomeController
 
         // set up mock database - inmemory
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-            
+
         // use random guid as db instance id
         optionsBuilder.UseInMemoryDatabase(Guid.NewGuid().ToString());
         _ctx = new AppDbContext(optionsBuilder.Options);
@@ -39,7 +39,7 @@ public class UnitTestHomeController
         //set up controller - ILogger<HomeController> logger, AppDbContext ctx
         _homeController = new HomeController(_ctx, logger);
     }
-    
+
     [Fact]
     public async Task IndexAction_ReturnsNullVm()
     {

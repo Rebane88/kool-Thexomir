@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -25,12 +25,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\App.BLL\App.BLL.csproj" />
-      <ProjectReference Include="..\App.DAL.EF\App.DAL.EF.csproj" />
-      <ProjectReference Include="..\App.DTO\App.DTO.csproj" />
-      <ProjectReference Include="..\App.Helpers\App.Helpers.csproj" />
-      <ProjectReference Include="..\App.Resources\App.Resources.csproj" />
-      <ProjectReference Include="..\WebApp\WebApp.csproj" />
+        <ProjectReference Include="..\API\API.csproj" />
+        <ProjectReference Include="..\Application\Application.csproj" />
+        <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+        <ProjectReference Include="..\Base\Base.csproj" />
+        <ProjectReference Include="..\App.Resources\App.Resources.csproj" />
     </ItemGroup>
 
 </Project>

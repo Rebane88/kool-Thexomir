@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using App.DAL.EF;
+using Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -33,7 +33,7 @@ public class CustomWebApplicationFactory<TStartup>
                 .UseInMemoryDatabase("InMemoryDbForTesting");
             services.AddScoped<DbContextOptions<AppDbContext>>(_ => contextOptions.Options);
 
-            
+
             // create db and seed data
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();
@@ -45,7 +45,7 @@ public class CustomWebApplicationFactory<TStartup>
             db.Database.EnsureCreated();
 
             try
-            { 
+            {
                 DataSeeder.SeedData(db);
             }
             catch (Exception ex)

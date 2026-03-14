@@ -1,5 +1,5 @@
-using App.DAL.EF;
-using App.DAL.EF.Seeding;
+using Infrastructure;
+using Infrastructure.Seeding;
 
 namespace WebApp.Tests.Helpers;
 
