@@ -125,7 +125,7 @@ public class IdentityService(
             if (userIdClaim is null || !Guid.TryParse(userIdClaim.Value, out userId))
                 return Result<AppRefreshToken>.Fail("Invalid access token.");
         }
-        catch (FormatException)
+        catch (Exception ex) when (ex is FormatException or ArgumentException or SecurityTokenMalformedException)
         {
             return Result<AppRefreshToken>.Fail("Malformed access token.");
         }
