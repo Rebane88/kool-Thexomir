@@ -1,0 +1,51 @@
+@model API.Areas.Root.ViewModels.GameListViewModel
+@{
+    ViewData["Title"] = "Force Close Game";
+}
+
+<h1 class="h3 mb-4">Force Close Game</h1>
+
+<div class="card border-danger mb-4" style="max-width: 600px;">
+    <div class="card-header bg-danger text-white">
+        Confirm Force Close
+    </div>
+    <div class="card-body">
+        <p class="card-text">
+            Are you sure you want to force-close game <strong><code>@Model.LobbyCode</code></strong>?
+            This action will transition the game to <strong>Completed</strong> status and cannot be undone.
+        </p>
+
+        <table class="table table-sm mb-4">
+            <tbody>
+                <tr>
+                    <th>Lobby Code</th>
+                    <td><code>@Model.LobbyCode</code></td>
+                </tr>
+                <tr>
+                    <th>Host</th>
+                    <td>@(Model.HostName ?? "Unknown")</td>
+                </tr>
+                <tr>
+                    <th>Players</th>
+                    <td>@Model.PlayerCount / @Model.MaxPlayers</td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td>@Model.Status</td>
+                </tr>
+                <tr>
+                    <th>Created</th>
+                    <td>@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="d-flex gap-2">
+            <form method="post" asp-action="ForceClose" asp-route-id="@Model.Id">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger">Yes, Force Close</button>
+            </form>
+            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,106 @@
+@model IEnumerable<API.Areas.Root.ViewModels.UserListViewModel>
+@{
+    ViewData["Title"] = "Users";
+}
+
+<h1 class="h3 mb-4">User Management</h1>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Email</th>
+                <th>Username</th>
+                <th>Roles</th>
+                <th>Status</th>
+                <th>Registration Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.Email</td>
+                    <td>@user.UserName</td>
+                    <td>
+                        @if (user.Roles.Any())
+                        {
+                            @string.Join(", ", user.Roles)
+                        }
+                        else
+                        {
+                            <span class="text-muted">None</span>
+                        }
+                    </td>
+                    <td>
+                        @if (user.IsLockedOut)
+                        {
+                            <span class="badge bg-danger">Locked</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Active</span>
+                        }
+                    </td>
+                    <td>@user.CreatedAt.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <div class="d-flex flex-wrap gap-1">
+                            @if (!user.Roles.Contains("Admin"))
+                            {
+                                <form method="post" asp-action="RoleAdd" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.Id" />
+                                    <input type="hidden" name="role" value="Admin" />
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">Add Admin</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" asp-action="RoleRemove" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@user.Id" />
+                                    <input type="hidden" name="role" value="Admin" />
+                                    <button type="submit" class="btn btn-outline-warning btn-sm">Remove Admin</button>
+                                </form>
+                            }
+
+                            @if (user.IsLockedOut)
+                            {
+                                <form method="post" asp-action="UnlockUser" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@user.Id" />
+                                    <button type="submit" class="btn btn-outline-success btn-sm">Unlock</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" asp-action="LockUser" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@user.Id" />
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Lock</button>
+                                </form>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
