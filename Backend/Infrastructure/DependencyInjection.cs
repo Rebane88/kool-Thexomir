@@ -1,3 +1,4 @@
+using System.Text;
 using Application.Contracts;
 using Domain.Buildings;
 using Domain.Factions;
@@ -14,14 +15,47 @@ using Infrastructure.Repositories.Identity;
 using Infrastructure.Repositories.Map;
 using Infrastructure.Repositories.Military;
 using Infrastructure.Repositories.Resources;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        // Identity — must be registered before AddAuthentication to avoid scheme conflicts
+        services
+            .AddIdentity<AppUser, AppRole>(options => options.SignIn.RequireConfirmedAccount = false)
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddDefaultTokenProviders();
+
+        // JWT Bearer authentication — overrides cookie scheme set by AddIdentity
+        services
+            .AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(configuration["JWT:Key"]!)),
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = configuration["JWT:Issuer"],
+                    ValidateIssuer = true,
+                    ValidAudience = configuration["JWT:Audience"],
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
+
         // Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 

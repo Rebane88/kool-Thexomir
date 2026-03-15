@@ -7,9 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Service registration
 builder.Services.AddAppDatabase(builder.Configuration, builder.Environment);
-builder.Services.AddAppIdentity();
 builder.Services.AddApplication();
-builder.Services.AddInfrastructure();
+builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<AppNameService>();
 builder.Services.AddAppControllers();

@@ -7,4 +7,6 @@ public interface IAuthService
 {
     Task<Result<RegisterResponse>> RegisterAsync(RegisterRequest request);
     Task<Result<LoginResponse>> LoginAsync(LoginRequest request);
+    Task<Result<RefreshResponse>> RefreshAsync(RefreshRequest request);
+    Task<Result<bool>> LogoutAsync(Guid userId, LogoutRequest request);
 }

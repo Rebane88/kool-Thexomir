@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Application.Contracts;
 using Application.Services.Auth.DTOs;
 using Base.Contracts;
@@ -8,6 +10,9 @@ public class AuthService(IIdentityService identityService, IUnitOfWork unitOfWor
 {
     // ReSharper disable once NotAccessedField.Local
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private static readonly Random _random = new();
+    private static readonly JwtSecurityTokenHandler _jwtHandler = new();
+
     public async Task<Result<RegisterResponse>> RegisterAsync(RegisterRequest request)
     {
         var createResult = await identityService.CreateUserAsync(request.Email, request.Password);
@@ -20,10 +25,13 @@ public class AuthService(IIdentityService identityService, IUnitOfWork unitOfWor
         if (!roleResult.IsSuccess)
             return Result<RegisterResponse>.Fail(roleResult.Error!);
 
+        var rolesResult = await identityService.GetRolesAsync(user);
+
         return Result<RegisterResponse>.Ok(new RegisterResponse
         {
             UserId = user.Id,
-            Email = user.Email!
+            Email = user.Email!,
+            Roles = rolesResult.Value!
         });
     }
 
@@ -31,21 +39,88 @@ public class AuthService(IIdentityService identityService, IUnitOfWork unitOfWor
     {
         var userResult = await identityService.GetByEmailAsync(request.Email);
         if (!userResult.IsSuccess)
+        {
+            await Task.Delay(_random.Next(500, 5001));
             return Result<LoginResponse>.Fail("Invalid credentials.");
+        }
 
         var user = userResult.Value!;
 
         var passwordResult = await identityService.CheckPasswordAsync(user, request.Password);
         if (!passwordResult.IsSuccess)
+        {
+            await Task.Delay(_random.Next(500, 5001));
             return Result<LoginResponse>.Fail("Invalid credentials.");
+        }
 
         var rolesResult = await identityService.GetRolesAsync(user);
+
+        var jwtResult = await identityService.GenerateJwtAsync(user, DateTime.UtcNow.AddMinutes(15));
+        if (!jwtResult.IsSuccess)
+            return Result<LoginResponse>.Fail(jwtResult.Error!);
+
+        var refreshResult = await identityService.CreateRefreshTokenAsync(user.Id);
+        if (!refreshResult.IsSuccess)
+            return Result<LoginResponse>.Fail(refreshResult.Error!);
 
         return Result<LoginResponse>.Ok(new LoginResponse
         {
             UserId = user.Id,
             Email = user.Email!,
-            Roles = rolesResult.Value!
+            Roles = rolesResult.Value!,
+            AccessToken = jwtResult.Value!,
+            RefreshToken = refreshResult.Value!.RefreshToken
         });
+    }
+
+    public async Task<Result<RefreshResponse>> RefreshAsync(RefreshRequest request)
+    {
+        var validateResult = await identityService.ValidateRefreshTokenAsync(request.AccessToken, request.RefreshToken);
+        if (!validateResult.IsSuccess)
+            return Result<RefreshResponse>.Fail(validateResult.Error!);
+
+        var refreshTokenEntity = validateResult.Value!;
+
+        // Extract user email from the (signature-verified) JWT to look up the user
+        var jwtToken = _jwtHandler.ReadJwtToken(request.AccessToken);
+        var emailClaim = jwtToken.Claims.FirstOrDefault(c =>
+            c.Type == ClaimTypes.Email || c.Type == "email");
+
+        if (emailClaim is null)
+            return Result<RefreshResponse>.Fail("Cannot extract user identity from token.");
+
+        var userResult = await identityService.GetByEmailAsync(emailClaim.Value);
+        if (!userResult.IsSuccess)
+            return Result<RefreshResponse>.Fail(userResult.Error!);
+
+        var user = userResult.Value!;
+
+        // Validate that token belongs to the user extracted from JWT
+        if (refreshTokenEntity.UserId != user.Id)
+            return Result<RefreshResponse>.Fail("Token mismatch.");
+
+        var rolesResult = await identityService.GetRolesAsync(user);
+
+        var newJwtResult = await identityService.GenerateJwtAsync(user, DateTime.UtcNow.AddMinutes(15));
+        if (!newJwtResult.IsSuccess)
+            return Result<RefreshResponse>.Fail(newJwtResult.Error!);
+
+        var rotateResult = await identityService.RotateRefreshTokenAsync(refreshTokenEntity);
+        if (!rotateResult.IsSuccess)
+            return Result<RefreshResponse>.Fail(rotateResult.Error!);
+
+        return Result<RefreshResponse>.Ok(new RefreshResponse
+        {
+            UserId = user.Id,
+            Email = user.Email!,
+            Roles = rolesResult.Value!,
+            AccessToken = newJwtResult.Value!,
+            RefreshToken = rotateResult.Value!.RefreshToken
+        });
+    }
+
+    public async Task<Result<bool>> LogoutAsync(Guid userId, LogoutRequest request)
+    {
+        return await identityService.RevokeRefreshTokenAsync(userId, request.RefreshToken);
     }
 }
