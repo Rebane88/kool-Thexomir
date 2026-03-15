@@ -1,0 +1,53 @@
+@using Domain.Map
+@model dynamic
+@{
+    ViewData["Title"] = "Edit Terrain Type";
+}
+
+<h2>Edit Terrain Type</h2>
+<hr />
+
+<form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <div class="row g-3" style="max-width: 500px;">
+
+        <div class="col-12">
+            <label class="form-label fw-semibold">Name (English)</label>
+            <input type="text" name="NameEn" class="form-control" value="@Model.NameEn" required />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Defense Bonus</label>
+            <input type="number" name="DefenseBonus" class="form-control" step="0.01"
+                   value="@Model.DefenseBonus" required />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Movement Cost</label>
+            <input type="number" name="MovementCost" class="form-control" value="@Model.MovementCost" required />
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">Resource Bonus Type</label>
+            <select name="ResourceBonusType" class="form-select">
+                @foreach (var value in Enum.GetValues<ETerrainResourceBonus>())
+                {
+                    if (value == Model.ResourceBonusType)
+                    {
+                        <option value="@value" selected>@value</option>
+                    }
+                    else
+                    {
+                        <option value="@value">@value</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a asp-action="Index" class="btn btn-outline-secondary ms-2">Cancel</a>
+        </div>
+
+    </div>
+</form>
