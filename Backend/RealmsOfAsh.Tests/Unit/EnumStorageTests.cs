@@ -1,3 +1,5 @@
+using Shouldly;
+
 namespace RealmsOfAsh.Tests.Unit;
 
 /// <summary>
@@ -15,13 +17,13 @@ public class EnumStorageTests
 
     private static string LoadInitialCreateMigration()
     {
-        Assert.True(Directory.Exists(MigrationsDir), $"Migrations folder not found at: {MigrationsDir}");
+        Directory.Exists(MigrationsDir).ShouldBeTrue($"Migrations folder not found at: {MigrationsDir}");
 
         // Find the InitialCreate migration (not the Designer or Snapshot)
         var file = Directory.GetFiles(MigrationsDir, "*InitialCreate.cs")
             .FirstOrDefault(f => !f.EndsWith(".Designer.cs"));
 
-        Assert.True(file is not null, "InitialCreate migration file not found in Migrations folder");
+        (file is not null).ShouldBeTrue("InitialCreate migration file not found in Migrations folder");
         return File.ReadAllText(file!);
     }
 
@@ -31,7 +33,7 @@ public class EnumStorageTests
         var migration = LoadInitialCreateMigration();
 
         // Migration column definition pattern: Status = table.Column<string>(type: "text", ...)
-        Assert.Contains("Status = table.Column<string>(type: \"text\"", migration);
+        migration.ShouldContain("Status = table.Column<string>(type: \"text\"");
     }
 
     [Fact]
@@ -39,7 +41,7 @@ public class EnumStorageTests
     {
         var migration = LoadInitialCreateMigration();
 
-        Assert.Contains("WinCondition = table.Column<string>(type: \"text\"", migration);
+        migration.ShouldContain("WinCondition = table.Column<string>(type: \"text\"");
     }
 
     [Fact]
@@ -50,9 +52,9 @@ public class EnumStorageTests
         // Check both the column definition and table context
         // The migration has two ResourceType columns (KingdomResources and FactionResourceBonuses)
         // We just verify at least one exists as text — the FK/index section confirms KingdomResources
-        Assert.Contains("IX_KingdomResources_KingdomId_ResourceType", migration);
+        migration.ShouldContain("IX_KingdomResources_KingdomId_ResourceType");
         // And the column itself
-        Assert.Matches(@"ResourceType\s*=\s*table\.Column<string>\(type:\s*""text""", migration);
+        migration.ShouldMatch(@"ResourceType\s*=\s*table\.Column<string>\(type:\s*""text""");
     }
 
     [Fact]
@@ -60,7 +62,7 @@ public class EnumStorageTests
     {
         var migration = LoadInitialCreateMigration();
 
-        Assert.Contains("ResourceBonusType = table.Column<string>(type: \"text\"", migration);
+        migration.ShouldContain("ResourceBonusType = table.Column<string>(type: \"text\"");
     }
 
     [Fact]
@@ -69,7 +71,7 @@ public class EnumStorageTests
         var migration = LoadInitialCreateMigration();
 
         // Verified by the presence of the unique index on FactionTypeId + ResourceType
-        Assert.Contains("IX_FactionResourceBonuses_FactionTypeId_ResourceType", migration);
-        Assert.Matches(@"ResourceType\s*=\s*table\.Column<string>\(type:\s*""text""", migration);
+        migration.ShouldContain("IX_FactionResourceBonuses_FactionTypeId_ResourceType");
+        migration.ShouldMatch(@"ResourceType\s*=\s*table\.Column<string>\(type:\s*""text""");
     }
 }

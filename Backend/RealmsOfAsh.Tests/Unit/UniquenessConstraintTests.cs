@@ -5,19 +5,22 @@ using Domain.Military;
 using Domain.Resources;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using RealmsOfAsh.Tests.Fixtures;
+using Shouldly;
 
 namespace RealmsOfAsh.Tests.Unit;
 
 /// <summary>
 /// INFRA-08: Uniqueness constraints are configured via HasIndex().IsUnique() in the EF model.
-/// Verified via EF Core model metadata (InMemory provider).
+/// Verified via EF Core model metadata.
 /// </summary>
-public class UniquenessConstraintTests
+[Collection("Database tests")]
+public class UniquenessConstraintTests(DatabaseFixture fixture)
 {
-    private static AppDbContext BuildContext()
+    private AppDbContext BuildContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .UseNpgsql(fixture.ConnectionString)
             .Options;
         return new AppDbContext(options);
     }
@@ -38,53 +41,47 @@ public class UniquenessConstraintTests
     public void UnitTypeMatchup_has_unique_index_on_AttackerTypeId_and_DefenderTypeId()
     {
         using var ctx = BuildContext();
-        Assert.True(
-            HasUniqueIndex(ctx, typeof(UnitTypeMatchup), "AttackerTypeId", "DefenderTypeId"),
-            "Expected unique index on UnitTypeMatchup(AttackerTypeId, DefenderTypeId)");
+        HasUniqueIndex(ctx, typeof(UnitTypeMatchup), "AttackerTypeId", "DefenderTypeId")
+            .ShouldBeTrue("Expected unique index on UnitTypeMatchup(AttackerTypeId, DefenderTypeId)");
     }
 
     [Fact]
     public void FactionResourceBonus_has_unique_index_on_FactionTypeId_and_ResourceType()
     {
         using var ctx = BuildContext();
-        Assert.True(
-            HasUniqueIndex(ctx, typeof(FactionResourceBonus), "FactionTypeId", "ResourceType"),
-            "Expected unique index on FactionResourceBonus(FactionTypeId, ResourceType)");
+        HasUniqueIndex(ctx, typeof(FactionResourceBonus), "FactionTypeId", "ResourceType")
+            .ShouldBeTrue("Expected unique index on FactionResourceBonus(FactionTypeId, ResourceType)");
     }
 
     [Fact]
     public void FactionUnitBonus_has_unique_index_on_FactionTypeId_and_UnitTypeId()
     {
         using var ctx = BuildContext();
-        Assert.True(
-            HasUniqueIndex(ctx, typeof(FactionUnitBonus), "FactionTypeId", "UnitTypeId"),
-            "Expected unique index on FactionUnitBonus(FactionTypeId, UnitTypeId)");
+        HasUniqueIndex(ctx, typeof(FactionUnitBonus), "FactionTypeId", "UnitTypeId")
+            .ShouldBeTrue("Expected unique index on FactionUnitBonus(FactionTypeId, UnitTypeId)");
     }
 
     [Fact]
     public void KingdomResource_has_unique_index_on_KingdomId_and_ResourceType()
     {
         using var ctx = BuildContext();
-        Assert.True(
-            HasUniqueIndex(ctx, typeof(KingdomResource), "KingdomId", "ResourceType"),
-            "Expected unique index on KingdomResource(KingdomId, ResourceType)");
+        HasUniqueIndex(ctx, typeof(KingdomResource), "KingdomId", "ResourceType")
+            .ShouldBeTrue("Expected unique index on KingdomResource(KingdomId, ResourceType)");
     }
 
     [Fact]
     public void Tile_has_unique_index_on_GameId_CoordQ_and_CoordR()
     {
         using var ctx = BuildContext();
-        Assert.True(
-            HasUniqueIndex(ctx, typeof(Tile), "GameId", "CoordQ", "CoordR"),
-            "Expected unique index on Tile(GameId, CoordQ, CoordR)");
+        HasUniqueIndex(ctx, typeof(Tile), "GameId", "CoordQ", "CoordR")
+            .ShouldBeTrue("Expected unique index on Tile(GameId, CoordQ, CoordR)");
     }
 
     [Fact]
     public void Game_has_unique_index_on_LobbyCode()
     {
         using var ctx = BuildContext();
-        Assert.True(
-            HasUniqueIndex(ctx, typeof(Game), "LobbyCode"),
-            "Expected unique index on Game(LobbyCode)");
+        HasUniqueIndex(ctx, typeof(Game), "LobbyCode")
+            .ShouldBeTrue("Expected unique index on Game(LobbyCode)");
     }
 }

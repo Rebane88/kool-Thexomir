@@ -5,19 +5,22 @@ using Domain.Military;
 using Domain.Resources;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using RealmsOfAsh.Tests.Fixtures;
+using Shouldly;
 
 namespace RealmsOfAsh.Tests.Unit;
 
 /// <summary>
 /// INFRA-02: Key entities have proper FK properties and navigation properties.
-/// Verified via EF Core InMemory model metadata (no DB required).
+/// Verified via EF Core model metadata (no DB rows required).
 /// </summary>
-public class EntityRelationshipTests
+[Collection("Database tests")]
+public class EntityRelationshipTests(DatabaseFixture fixture)
 {
-    private static AppDbContext BuildContext()
+    private AppDbContext BuildContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .UseNpgsql(fixture.ConnectionString)
             .Options;
         return new AppDbContext(options);
     }
@@ -28,12 +31,12 @@ public class EntityRelationshipTests
         using var ctx = BuildContext();
         var model = ctx.Model;
         var tileType = model.FindEntityType(typeof(Tile));
-        Assert.NotNull(tileType);
+        tileType.ShouldNotBeNull();
 
         var gameFk = tileType!.GetForeignKeys()
             .FirstOrDefault(fk => fk.Properties.Any(p => p.Name == "GameId"));
 
-        Assert.NotNull(gameFk);
+        gameFk.ShouldNotBeNull();
     }
 
     [Fact]
@@ -42,12 +45,12 @@ public class EntityRelationshipTests
         using var ctx = BuildContext();
         var model = ctx.Model;
         var tileType = model.FindEntityType(typeof(Tile));
-        Assert.NotNull(tileType);
+        tileType.ShouldNotBeNull();
 
         var fk = tileType!.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == "TerrainTypeId"));
 
-        Assert.NotNull(fk);
+        fk.ShouldNotBeNull();
     }
 
     [Fact]
@@ -56,12 +59,12 @@ public class EntityRelationshipTests
         using var ctx = BuildContext();
         var model = ctx.Model;
         var kingdomType = model.FindEntityType(typeof(Domain.Game.Kingdom));
-        Assert.NotNull(kingdomType);
+        kingdomType.ShouldNotBeNull();
 
         var fk = kingdomType!.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == "GameId"));
 
-        Assert.NotNull(fk);
+        fk.ShouldNotBeNull();
     }
 
     [Fact]
@@ -70,12 +73,12 @@ public class EntityRelationshipTests
         using var ctx = BuildContext();
         var model = ctx.Model;
         var buildingType = model.FindEntityType(typeof(Building));
-        Assert.NotNull(buildingType);
+        buildingType.ShouldNotBeNull();
 
         var fk = buildingType!.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == "TileId"));
 
-        Assert.NotNull(fk);
+        fk.ShouldNotBeNull();
     }
 
     [Fact]
@@ -84,15 +87,15 @@ public class EntityRelationshipTests
         using var ctx = BuildContext();
         var model = ctx.Model;
         var matchupType = model.FindEntityType(typeof(UnitTypeMatchup));
-        Assert.NotNull(matchupType);
+        matchupType.ShouldNotBeNull();
 
         var allFkProps = matchupType!.GetForeignKeys()
             .SelectMany(fk => fk.Properties)
             .Select(p => p.Name)
             .ToHashSet();
 
-        Assert.Contains("AttackerTypeId", allFkProps);
-        Assert.Contains("DefenderTypeId", allFkProps);
+        allFkProps.ShouldContain("AttackerTypeId");
+        allFkProps.ShouldContain("DefenderTypeId");
     }
 
     [Fact]
@@ -101,12 +104,12 @@ public class EntityRelationshipTests
         using var ctx = BuildContext();
         var model = ctx.Model;
         var entityType = model.FindEntityType(typeof(FactionResourceBonus));
-        Assert.NotNull(entityType);
+        entityType.ShouldNotBeNull();
 
         var fk = entityType!.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == "FactionTypeId"));
 
-        Assert.NotNull(fk);
+        fk.ShouldNotBeNull();
     }
 
     [Fact]
@@ -115,11 +118,11 @@ public class EntityRelationshipTests
         using var ctx = BuildContext();
         var model = ctx.Model;
         var entityType = model.FindEntityType(typeof(KingdomResource));
-        Assert.NotNull(entityType);
+        entityType.ShouldNotBeNull();
 
         var fk = entityType!.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == "KingdomId"));
 
-        Assert.NotNull(fk);
+        fk.ShouldNotBeNull();
     }
 }

@@ -7,6 +7,8 @@ using Domain.Military;
 using Domain.Resources;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using RealmsOfAsh.Tests.Fixtures;
+using Shouldly;
 using MilitaryUnit = Domain.Military.Unit;
 
 namespace RealmsOfAsh.Tests.Unit;
@@ -15,12 +17,13 @@ namespace RealmsOfAsh.Tests.Unit;
 /// INFRA-03: AppDbContext has DbSet properties registered for all 18 game entities.
 /// Verified by checking the EF Core model entity type registry.
 /// </summary>
-public class AppDbContextTests
+[Collection("Database tests")]
+public class AppDbContextTests(DatabaseFixture fixture)
 {
-    private static AppDbContext BuildContext()
+    private AppDbContext BuildContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .UseNpgsql(fixture.ConnectionString)
             .Options;
         return new AppDbContext(options);
     }
@@ -28,7 +31,7 @@ public class AppDbContextTests
     private static void AssertDbSetRegistered<TEntity>(AppDbContext ctx) where TEntity : class
     {
         var entityType = ctx.Model.FindEntityType(typeof(TEntity));
-        Assert.NotNull(entityType);
+        entityType.ShouldNotBeNull();
     }
 
     [Fact]

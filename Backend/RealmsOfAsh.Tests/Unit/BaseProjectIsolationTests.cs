@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using Shouldly;
 
 namespace RealmsOfAsh.Tests.Unit;
 
@@ -18,7 +19,7 @@ public class BaseProjectIsolationTests
     public void Base_csproj_has_no_ProjectReference_to_Domain_Infrastructure_Application_or_API()
     {
         var csprojPath = Path.Combine(BaseDir, "Base.csproj");
-        Assert.True(File.Exists(csprojPath), $"Base.csproj not found at {csprojPath}");
+        File.Exists(csprojPath).ShouldBeTrue($"Base.csproj not found at {csprojPath}");
 
         var doc = XDocument.Load(csprojPath);
         var projectReferences = doc.Descendants("ProjectReference")
@@ -31,8 +32,7 @@ public class BaseProjectIsolationTests
                 .Where(r => r.Contains(forbidden, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            Assert.True(
-                violations.Count == 0,
+            violations.Count.ShouldBe(0,
                 $"Base.csproj has forbidden ProjectReference to '{forbidden}': {string.Join(", ", violations)}");
         }
     }
@@ -45,7 +45,7 @@ public class BaseProjectIsolationTests
             .Where(f => !f.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar))
             .ToList();
 
-        Assert.True(csFiles.Count > 0, $"No .cs files found under {BaseDir}");
+        csFiles.Count.ShouldBeGreaterThan(0, $"No .cs files found under {BaseDir}");
 
         var violations = new List<string>();
 
@@ -69,8 +69,7 @@ public class BaseProjectIsolationTests
             }
         }
 
-        Assert.True(
-            violations.Count == 0,
+        violations.Count.ShouldBe(0,
             $"Base project contains forbidden namespace references:\n{string.Join("\n", violations)}");
     }
 }

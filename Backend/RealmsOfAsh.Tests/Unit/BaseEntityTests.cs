@@ -1,4 +1,5 @@
 using Base;
+using Shouldly;
 
 namespace RealmsOfAsh.Tests.Unit;
 
@@ -16,7 +17,7 @@ public class BaseEntityTests
     {
         var entity = new TestEntity();
 
-        Assert.NotEqual(Guid.Empty, entity.Id);
+        entity.Id.ShouldNotBe(Guid.Empty);
     }
 
     [Fact]
@@ -25,7 +26,7 @@ public class BaseEntityTests
         var a = new TestEntity();
         var b = new TestEntity();
 
-        Assert.NotEqual(a.Id, b.Id);
+        a.Id.ShouldNotBe(b.Id);
     }
 
     [Fact]
@@ -33,7 +34,7 @@ public class BaseEntityTests
     {
         var entity = new TestEntity();
 
-        Assert.Equal(default, entity.CreatedAt);
+        entity.CreatedAt.ShouldBe(default);
     }
 
     [Fact]
@@ -41,7 +42,7 @@ public class BaseEntityTests
     {
         var entity = new TestEntity();
 
-        Assert.Equal(default, entity.UpdatedAt);
+        entity.UpdatedAt.ShouldBe(default);
     }
 
     [Fact]
@@ -49,6 +50,6 @@ public class BaseEntityTests
     {
         var entity = new TestEntity();
 
-        Assert.IsAssignableFrom<IBaseEntity>(entity);
+        entity.ShouldBeAssignableTo<IBaseEntity>();
     }
 }

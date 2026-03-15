@@ -1,58 +1,49 @@
-using System;
-using System.Linq;
 using Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using RealmsOfAsh.Tests.Fixtures;
 using RealmsOfAsh.Tests.Helpers;
 
 namespace RealmsOfAsh.Tests;
 
-public class CustomWebApplicationFactory<TStartup>
-    : WebApplicationFactory<TStartup> where TStartup: class
+public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private readonly string _connectionString;
+
+    public CustomWebApplicationFactory(DatabaseFixture fixture)
+    {
+        _connectionString = fixture.ConnectionString;
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.ConfigureServices(services =>
+        builder.ConfigureTestServices(services =>
         {
-            // find DbContextOptions
-            var descriptorDbContextOptions = services.SingleOrDefault(
-                d => d.ServiceType ==
-                     typeof(DbContextOptions<AppDbContext>));
+            // Remove existing DbContextOptions registration
+            var descriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
+            if (descriptor != null)
+                services.Remove(descriptor);
 
-            // if found - remove
-            if (descriptorDbContextOptions != null)
-            {
-                services.Remove(descriptorDbContextOptions);
-            }
-            // TODO: Use postgres test db in docker, inmemory flacky
-            // add new DbContextOptions
-            var contextOptions = new DbContextOptionsBuilder<AppDbContext>()
-                .UseInMemoryDatabase("InMemoryDbForTesting");
-            services.AddScoped<DbContextOptions<AppDbContext>>(_ => contextOptions.Options);
+            // Also remove the DbContext registration itself to be safe
+            var dbDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(AppDbContext));
+            if (dbDescriptor != null)
+                services.Remove(dbDescriptor);
 
+            // Register with Testcontainers connection string
+            services.AddDbContext<AppDbContext>(opts =>
+                opts.UseNpgsql(_connectionString));
 
-            // create db and seed data
+            // Run migrations and seed reference data
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();
-            var scopedServices = scope.ServiceProvider;
-            var db = scopedServices.GetRequiredService<AppDbContext>();
-            var logger = scopedServices
-                .GetRequiredService<ILogger<CustomWebApplicationFactory<TStartup>>>();
-
-            db.Database.EnsureCreated();
-
-            try
-            {
-                DataSeeder.SeedData(db);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "An error occurred seeding the " +
-                                    "database with test data. Error: {Message}", ex.Message);
-            }
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Database.Migrate();
+            DataSeeder.SeedData(db);
         });
     }
 }
