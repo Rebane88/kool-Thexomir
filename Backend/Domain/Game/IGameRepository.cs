@@ -4,5 +4,8 @@ namespace Domain.Game;
 
 public interface IGameRepository : IBaseRepository<Game>
 {
-    // Domain-specific queries added in feature phases
+    Task<Game?> GetByLobbyCodeAsync(string code);
+    Task<Game?> GetLobbyWithPlayersAsync(Guid gameId);
+    Task<Game?> GetByIdForUpdateAsync(Guid id);
+    Task<bool> ExistsByLobbyCodeAsync(string code);
 }

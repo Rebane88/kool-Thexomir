@@ -101,6 +101,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .HasIndex(g => g.LobbyCode)
             .IsUnique();
 
+        // xmin concurrency token for lobby join race condition protection (Npgsql-native)
+        // uint property named xmin maps to PostgreSQL's system column; IsRowVersion() marks it as concurrency token
+        builder.Entity<Game>()
+            .Property(g => g.xmin)
+            .HasColumnName("xmin")
+            .IsRowVersion();
+
+        // HostUserId FK to AspNetUsers
+        builder.Entity<Game>()
+            .HasOne(g => g.HostUser)
+            .WithMany()
+            .HasForeignKey(g => g.HostUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // FK configuration for tricky relationships
 
         // UnitTypeMatchup: two FKs to UnitType — EF Core can't auto-resolve

@@ -1,6 +1,39 @@
+using Domain.Factions;
 using Domain.Game;
+using Domain.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories.Game;
 
 public class GameRepository(AppDbContext context)
-    : BaseRepository<Domain.Game.Game>(context), IGameRepository;
+    : BaseRepository<Domain.Game.Game>(context), IGameRepository
+{
+    public async Task<Domain.Game.Game?> GetByLobbyCodeAsync(string code)
+    {
+        return await Context.Games
+            .FirstOrDefaultAsync(g => g.LobbyCode == code);
+    }
+
+    public async Task<Domain.Game.Game?> GetLobbyWithPlayersAsync(Guid gameId)
+    {
+        return await Context.Games
+            .Include(g => g.Kingdoms!)
+                .ThenInclude(k => k.AppUser)
+            .Include(g => g.Kingdoms!)
+                .ThenInclude(k => k.FactionType)
+            .FirstOrDefaultAsync(g => g.Id == gameId);
+    }
+
+    public async Task<Domain.Game.Game?> GetByIdForUpdateAsync(Guid id)
+    {
+        return await Context.Games
+            .AsTracking()
+            .FirstOrDefaultAsync(g => g.Id == id);
+    }
+
+    public async Task<bool> ExistsByLobbyCodeAsync(string code)
+    {
+        return await Context.Games
+            .AnyAsync(g => g.LobbyCode == code);
+    }
+}
