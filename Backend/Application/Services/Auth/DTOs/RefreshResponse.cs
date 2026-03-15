@@ -1,6 +1,6 @@
 namespace Application.Services.Auth.DTOs;
 
-public class LoginResponse
+public class RefreshResponse
 {
     public Guid UserId { get; set; }
     public string Email { get; set; } = default!;

@@ -10,4 +10,10 @@ public interface IIdentityService
     Task<Result<bool>> CheckPasswordAsync(AppUser user, string password);
     Task<Result<bool>> AddToRoleAsync(AppUser user, string role);
     Task<Result<IList<string>>> GetRolesAsync(AppUser user);
+
+    Task<Result<string>> GenerateJwtAsync(AppUser user, DateTime expires);
+    Task<Result<AppRefreshToken>> CreateRefreshTokenAsync(Guid userId);
+    Task<Result<AppRefreshToken>> ValidateRefreshTokenAsync(string expiredJwt, string refreshToken);
+    Task<Result<AppRefreshToken>> RotateRefreshTokenAsync(AppRefreshToken token);
+    Task<Result<bool>> RevokeRefreshTokenAsync(Guid userId, string refreshToken);
 }
