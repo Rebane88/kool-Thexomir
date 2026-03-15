@@ -34,9 +34,10 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             if (dbDescriptor != null)
                 services.Remove(dbDescriptor);
 
-            // Register with Testcontainers connection string
+            // Register with Testcontainers connection string, matching production tracking behavior
             services.AddDbContext<AppDbContext>(opts =>
-                opts.UseNpgsql(_connectionString));
+                opts.UseNpgsql(_connectionString)
+                    .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTrackingWithIdentityResolution));
 
             // Run migrations and seed reference data
             var sp = services.BuildServiceProvider();
