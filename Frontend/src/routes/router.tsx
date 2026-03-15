@@ -3,14 +3,7 @@ import { ProtectedRoute } from '@/shared/components/ProtectedRoute';
 import { NavBar } from '@/shared/components/NavBar';
 import { NotFoundPage } from '@/shared/components/NotFoundPage';
 import { LoginPage, RegisterPage } from '@/features/auth';
-
-function HomePage() {
-  return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center">
-      <h1 className="text-2xl">Home (Protected)</h1>
-    </div>
-  );
-}
+import { LobbyHomePage, LobbyDetailPage, GamePage } from '@/features/lobby';
 
 function LayoutWithNavBar() {
   return (
@@ -32,7 +25,9 @@ export function AppRouter() {
         {/* All other pages — with NavBar */}
         <Route element={<LayoutWithNavBar />}>
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<LobbyHomePage />} />
+            <Route path="/lobby/:id" element={<LobbyDetailPage />} />
+            <Route path="/game/:id" element={<GamePage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Route>
