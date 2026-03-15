@@ -1,14 +1,11 @@
 using System;
 using System.Linq;
-using System.Text;
-using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Domain.Identity;
 using Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using API.Areas.Root.ViewModels;
@@ -134,35 +131,6 @@ public class UsersController : Controller
 
         TempData["Success"] = $"User '{user.Email}' has been unlocked.";
         return RedirectToAction("Index");
-    }
-
-    public async Task<IActionResult> PasswordLink(Guid id)
-    {
-        var user = await _userManager.FindByIdAsync(id.ToString());
-        if (user == null)
-        {
-            return RedirectToAction("Index", new { error = "User Not Found" });
-        }
-
-        var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-
-        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        var callbackUrl = Url.Page(
-            "/Account/ResetPassword",
-            pageHandler: null,
-            values: new { area = "Identity", code },
-            protocol: Request.Scheme);
-
-
-        var url = HtmlEncoder.Default.Encode(callbackUrl!);
-
-        var vm = new PasswordLinkViewModel()
-        {
-            AppUser = user,
-            PasswordLink = url,
-        };
-
-        return View(vm);
     }
 
 }
