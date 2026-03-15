@@ -1,3 +1,4 @@
+using System.Net;
 using RealmsOfAsh.Tests.Fixtures;
 using Shouldly;
 
@@ -8,10 +9,11 @@ public class IntegrationTestHomeController : IntegrationTestBase
     public IntegrationTestHomeController(DatabaseFixture fixture) : base(fixture) { }
 
     [Fact]
-    public async Task Get_Index_IsSuccessful()
+    public async Task Get_Index_RedirectsToAdmin()
     {
         var response = await Client.GetAsync("/");
 
-        response.IsSuccessStatusCode.ShouldBeTrue();
+        response.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        response.Headers.Location!.ToString().ShouldBe("/root");
     }
 }

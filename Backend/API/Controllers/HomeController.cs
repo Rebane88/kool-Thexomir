@@ -1,42 +1,15 @@
 using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using API.ViewModels;
 
 namespace API.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly ILogger<HomeController> _logger;
-    private readonly AppDbContext _context;
-    private static int _counter = 0;
-
-    public HomeController(AppDbContext context, ILogger<HomeController> logger)
+    public IActionResult Index()
     {
-        _logger = logger;
-        _context = context;
-    }
-
-    public async Task<IActionResult> Index()
-    {
-        return View();
-    }
-
-    public async Task<string> HtmxClicked()
-    {
-        _counter++;
-        return "Htmx Click Me - " + _counter;
-    }
-
-
-    public IActionResult Privacy()
-    {
-        return View();
+        return Redirect("/root");
     }
 
     public IActionResult SetLanguage(string culture, string returnUrl)
@@ -54,17 +27,11 @@ public class HomeController : Controller
                 }
             );
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            _logger.LogError("SetLanguage exception: {}", e.Message);
+            // Invalid culture value — ignore, keep current culture
         }
 
         return LocalRedirect(returnUrl);
-    }
-
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
-    {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }

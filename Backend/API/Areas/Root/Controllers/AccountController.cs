@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Areas.Root.Controllers;
 
 [Area("Root")]
-[AllowAnonymous]
+[Authorize(Policy = "AdminAreaPolicy")]
 public class AccountController : Controller
 {
     private readonly SignInManager<AppUser> _signIn;
@@ -20,6 +20,7 @@ public class AccountController : Controller
         _userManager = userManager;
     }
 
+    [AllowAnonymous]
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
@@ -27,6 +28,7 @@ public class AccountController : Controller
         return View(model);
     }
 
+    [AllowAnonymous]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
