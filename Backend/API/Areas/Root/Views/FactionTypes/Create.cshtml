@@ -1,0 +1,58 @@
+@{
+    ViewData["Title"] = "Create Faction Type";
+}
+
+<h2>Create Faction Type</h2>
+<hr />
+
+<form method="post" asp-action="Create">
+    <div class="row g-3" style="max-width: 600px;">
+
+        <div class="col-12">
+            <label class="form-label fw-semibold">Name (English)</label>
+            <input type="text" name="NameEn" class="form-control" required />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Building Cost Modifier</label>
+            <input type="number" name="BuildingCostModifier" class="form-control" step="0.01" value="1.00" required />
+            <div class="form-text">e.g. 1.1 = +10% cost, 0.8 = -20%</div>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Starting Gold</label>
+            <input type="number" name="StartingGold" class="form-control" value="0" required />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Starting Food</label>
+            <input type="number" name="StartingFood" class="form-control" value="0" required />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Starting Wood</label>
+            <input type="number" name="StartingWood" class="form-control" value="0" required />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Starting Stone</label>
+            <input type="number" name="StartingStone" class="form-control" value="0" required />
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Starting Mana</label>
+            <input type="number" name="StartingMana" class="form-control" value="0" required />
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">Description</label>
+            <textarea name="Description" class="form-control" rows="3"></textarea>
+        </div>
+
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">Create</button>
+            <a asp-action="Index" class="btn btn-outline-secondary ms-2">Cancel</a>
+        </div>
+
+    </div>
+</form>

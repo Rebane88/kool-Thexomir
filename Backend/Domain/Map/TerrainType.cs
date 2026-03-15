@@ -3,7 +3,7 @@ using Base;
 
 namespace Domain.Map;
 
-public class TerrainType : BaseEntity
+public class TerrainType : BaseEntity, IHasName
 {
     [Column(TypeName = "jsonb")]
     public LangStr Name { get; set; } = new();

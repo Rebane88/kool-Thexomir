@@ -3,7 +3,7 @@ using Base;
 
 namespace Domain.Factions;
 
-public class FactionType : BaseEntity
+public class FactionType : BaseEntity, IHasName
 {
     [Column(TypeName = "jsonb")]
     public LangStr Name { get; set; } = new();

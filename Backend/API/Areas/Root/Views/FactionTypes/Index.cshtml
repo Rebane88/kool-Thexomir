@@ -1,0 +1,58 @@
+@model IEnumerable<Domain.Factions.FactionType>
+@{
+    ViewData["Title"] = "Faction Types";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Faction Types</h2>
+    <a asp-action="Create" class="btn btn-primary">Add Faction Type</a>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="table-responsive">
+    <table class="table table-striped table-sm">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Building Cost Modifier</th>
+                <th>Gold</th>
+                <th>Food</th>
+                <th>Wood</th>
+                <th>Stone</th>
+                <th>Mana</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Name.Translate("en")</td>
+                    <td>@item.BuildingCostModifier</td>
+                    <td>@item.StartingGold</td>
+                    <td>@item.StartingFood</td>
+                    <td>@item.StartingWood</td>
+                    <td>@item.StartingStone</td>
+                    <td>@item.StartingMana</td>
+                    <td>@item.Description</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <form method="post" asp-action="Delete" asp-route-id="@item.Id" class="d-inline"
+                              onsubmit="return confirm('Delete this faction type?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
