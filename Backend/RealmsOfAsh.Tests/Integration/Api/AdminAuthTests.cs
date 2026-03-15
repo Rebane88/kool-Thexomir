@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using RealmsOfAsh.Tests.Fixtures;
 using Shouldly;
@@ -38,13 +39,14 @@ public class AdminAuthTests : IntegrationTestBase
     }
 
     // -------------------------------------------------------------------------
-    // Test 2: Unauthenticated GET /api/v1/lobby still returns 401 (not 302)
+    // Test 2: Unauthenticated POST /api/v1/lobby still returns 401 (not 302)
+    // The JWT default challenge scheme must not be overridden by admin cookie setup.
     // -------------------------------------------------------------------------
 
     [Fact]
-    public async Task GetApiLobby_WithoutToken_Returns401NotRedirect()
+    public async Task PostApiLobby_WithoutToken_Returns401NotRedirect()
     {
-        var response = await Client.GetAsync("/api/v1/lobby");
+        var response = await Client.PostAsJsonAsync("/api/v1/lobby", new { });
 
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
