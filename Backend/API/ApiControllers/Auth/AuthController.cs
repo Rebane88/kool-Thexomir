@@ -28,7 +28,7 @@ public class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("login")]
-    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -37,20 +37,39 @@ public class AuthController(IAuthService authService) : ControllerBase
         {
             return Unauthorized(ProblemDetailsFor(401, result.Error!));
         }
-        return Ok(result.Value);
+        SetRefreshTokenCookie(result.Value!.RefreshToken);
+        return Ok(new
+        {
+            result.Value!.UserId,
+            result.Value!.Email,
+            result.Value!.Roles,
+            result.Value!.AccessToken
+        });
     }
 
     [HttpPost("refresh")]
-    [ProducesResponseType(typeof(RefreshResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
     {
-        var result = await authService.RefreshAsync(request);
+        var refreshToken = Request.Cookies["refresh_token"];
+        if (string.IsNullOrEmpty(refreshToken))
+        {
+            return Unauthorized(ProblemDetailsFor(401, "No refresh token provided."));
+        }
+        var result = await authService.RefreshAsync(request.AccessToken, refreshToken);
         if (!result.IsSuccess)
         {
             return Unauthorized(ProblemDetailsFor(401, result.Error!));
         }
-        return Ok(result.Value);
+        SetRefreshTokenCookie(result.Value!.RefreshToken);
+        return Ok(new
+        {
+            result.Value!.UserId,
+            result.Value!.Email,
+            result.Value!.Roles,
+            result.Value!.AccessToken
+        });
     }
 
     [HttpPost("logout")]
@@ -58,15 +77,44 @@ public class AuthController(IAuthService authService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+    public async Task<IActionResult> Logout()
     {
         var userId = User.UserId();
-        var result = await authService.LogoutAsync(userId, request);
+        var refreshToken = Request.Cookies["refresh_token"];
+        if (string.IsNullOrEmpty(refreshToken))
+        {
+            return BadRequest(ProblemDetailsFor(400, "No refresh token provided."));
+        }
+        var result = await authService.LogoutAsync(userId, refreshToken);
         if (!result.IsSuccess)
         {
             return BadRequest(ProblemDetailsFor(400, result.Error!));
         }
+        ClearRefreshTokenCookie();
         return NoContent();
+    }
+
+    private void SetRefreshTokenCookie(string refreshToken)
+    {
+        Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = false,    // false for local dev (HTTP); set true in production
+            SameSite = SameSiteMode.Lax,
+            Path = "/api/v1/auth",
+            MaxAge = TimeSpan.FromDays(7)
+        });
+    }
+
+    private void ClearRefreshTokenCookie()
+    {
+        Response.Cookies.Delete("refresh_token", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = false,
+            SameSite = SameSiteMode.Lax,
+            Path = "/api/v1/auth"
+        });
     }
 
     private static ProblemDetails ProblemDetailsFor(int status, string detail) => new()

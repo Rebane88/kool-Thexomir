@@ -73,16 +73,16 @@ public class AuthService(IIdentityService identityService, IUnitOfWork unitOfWor
         });
     }
 
-    public async Task<Result<RefreshResponse>> RefreshAsync(RefreshRequest request)
+    public async Task<Result<RefreshResponse>> RefreshAsync(string accessToken, string refreshToken)
     {
-        var validateResult = await identityService.ValidateRefreshTokenAsync(request.AccessToken, request.RefreshToken);
+        var validateResult = await identityService.ValidateRefreshTokenAsync(accessToken, refreshToken);
         if (!validateResult.IsSuccess)
             return Result<RefreshResponse>.Fail(validateResult.Error!);
 
         var refreshTokenEntity = validateResult.Value!;
 
         // Extract user email from the (signature-verified) JWT to look up the user
-        var jwtToken = _jwtHandler.ReadJwtToken(request.AccessToken);
+        var jwtToken = _jwtHandler.ReadJwtToken(accessToken);
         var emailClaim = jwtToken.Claims.FirstOrDefault(c =>
             c.Type == ClaimTypes.Email || c.Type == "email");
 
@@ -119,8 +119,8 @@ public class AuthService(IIdentityService identityService, IUnitOfWork unitOfWor
         });
     }
 
-    public async Task<Result<bool>> LogoutAsync(Guid userId, LogoutRequest request)
+    public async Task<Result<bool>> LogoutAsync(Guid userId, string refreshToken)
     {
-        return await identityService.RevokeRefreshTokenAsync(userId, request.RefreshToken);
+        return await identityService.RevokeRefreshTokenAsync(userId, refreshToken);
     }
 }

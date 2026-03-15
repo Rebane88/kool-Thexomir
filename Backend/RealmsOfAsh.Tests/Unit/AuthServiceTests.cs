@@ -193,11 +193,7 @@ public class AuthServiceTests
         _identityMock.Setup(x => x.RotateRefreshTokenAsync(oldRefreshToken))
             .ReturnsAsync(Result<AppRefreshToken>.Ok(newRefreshToken));
 
-        var result = await _sut.RefreshAsync(new RefreshRequest
-        {
-            AccessToken = testJwt,
-            RefreshToken = oldRefreshToken.RefreshToken
-        });
+        var result = await _sut.RefreshAsync(testJwt, oldRefreshToken.RefreshToken);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.ShouldNotBeNull();
@@ -211,11 +207,7 @@ public class AuthServiceTests
         _identityMock.Setup(x => x.ValidateRefreshTokenAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(Result<AppRefreshToken>.Fail("Invalid refresh token"));
 
-        var result = await _sut.RefreshAsync(new RefreshRequest
-        {
-            AccessToken = "some.jwt.token",
-            RefreshToken = "invalid-refresh"
-        });
+        var result = await _sut.RefreshAsync("some.jwt.token", "invalid-refresh");
 
         result.IsSuccess.ShouldBeFalse();
         result.Error.ShouldNotBeNull();
@@ -228,11 +220,7 @@ public class AuthServiceTests
         _identityMock.Setup(x => x.ValidateRefreshTokenAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(Result<AppRefreshToken>.Fail("Refresh token expired"));
 
-        var result = await _sut.RefreshAsync(new RefreshRequest
-        {
-            AccessToken = "some.jwt.token",
-            RefreshToken = "expired-refresh"
-        });
+        var result = await _sut.RefreshAsync("some.jwt.token", "expired-refresh");
 
         result.IsSuccess.ShouldBeFalse();
         result.Error.ShouldNotBeNull();

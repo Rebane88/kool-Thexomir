@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -9,7 +10,7 @@ using Shouldly;
 namespace RealmsOfAsh.Tests.Integration.Api;
 
 /// <summary>
-/// Auth endpoint integration tests — real HTTP requests through WebApplicationFactory
+/// Auth endpoint integration tests -- real HTTP requests through WebApplicationFactory
 /// backed by a live PostgreSQL container (Testcontainers).
 ///
 /// Isolation strategy: IntegrationTestBase rolls back the EF transaction after each test.
@@ -22,7 +23,7 @@ public class AuthTests : IntegrationTestBase
 
     /// <summary>
     /// Full happy-path flow: register -> login -> refresh -> logout.
-    /// Verifies the complete auth pipeline end-to-end.
+    /// Verifies the complete auth pipeline end-to-end with cookie-based refresh tokens.
     /// </summary>
     [Fact]
     public async Task FullAuthFlow_RegisterLoginRefreshLogout()
@@ -54,38 +55,43 @@ public class AuthTests : IntegrationTestBase
 
         loginResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
 
+        // Refresh token is now in Set-Cookie header, not in JSON body
+        var loginCookies = ExtractSetCookieValues(loginResponse, "refresh_token");
+        loginCookies.ShouldNotBeEmpty("Login should set refresh_token cookie");
+
         var loggedIn = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>(
             Base.JsonHelpers.JsonSerializerOptionsCamelCase);
         loggedIn.ShouldNotBeNull();
         loggedIn.AccessToken.ShouldNotBeNullOrEmpty();
-        loggedIn.RefreshToken.ShouldNotBeNullOrEmpty();
 
-        // --- Refresh ---
-        var refreshResponse = await Client.PostAsJsonAsync("/api/v1/auth/refresh", new RefreshRequest
+        // --- Refresh (send refresh token via cookie) ---
+        var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/refresh");
+        refreshRequest.Content = JsonContent.Create(new RefreshRequest
         {
-            AccessToken = loggedIn.AccessToken,
-            RefreshToken = loggedIn.RefreshToken
+            AccessToken = loggedIn.AccessToken
         });
+        SetCookieHeader(refreshRequest, loginCookies);
+
+        var refreshResponse = await Client.SendAsync(refreshRequest);
 
         refreshResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        // New refresh token cookie should be set after rotation
+        var refreshCookies = ExtractSetCookieValues(refreshResponse, "refresh_token");
+        refreshCookies.ShouldNotBeEmpty("Refresh should set a new refresh_token cookie");
 
         var refreshed = await refreshResponse.Content.ReadFromJsonAsync<RefreshResponse>(
             Base.JsonHelpers.JsonSerializerOptionsCamelCase);
         refreshed.ShouldNotBeNull();
         refreshed.AccessToken.ShouldNotBeNullOrEmpty();
-        refreshed.RefreshToken.ShouldNotBeNullOrEmpty();
 
-        // --- Logout (requires Bearer token) ---
-        Client.DefaultRequestHeaders.Authorization =
+        // --- Logout (requires Bearer token + refresh cookie) ---
+        var logoutRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/logout");
+        logoutRequest.Headers.Authorization =
             new AuthenticationHeaderValue("Bearer", refreshed.AccessToken);
+        SetCookieHeader(logoutRequest, refreshCookies);
 
-        var logoutResponse = await Client.PostAsJsonAsync("/api/v1/auth/logout", new LogoutRequest
-        {
-            RefreshToken = refreshed.RefreshToken
-        });
-
-        // Clear auth header so it doesn't bleed into other tests
-        Client.DefaultRequestHeaders.Authorization = null;
+        var logoutResponse = await Client.SendAsync(logoutRequest);
 
         logoutResponse.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
@@ -99,7 +105,7 @@ public class AuthTests : IntegrationTestBase
         const string email = "dup@authtest.com";
         const string password = "Dup.Test1";
 
-        // First registration — must succeed
+        // First registration -- must succeed
         var first = await Client.PostAsJsonAsync("/api/v1/auth/register", new RegisterRequest
         {
             Email = email,
@@ -155,17 +161,46 @@ public class AuthTests : IntegrationTestBase
     }
 
     /// <summary>
-    /// Sending garbage tokens to the refresh endpoint returns 401 Unauthorized.
+    /// Sending garbage tokens to the refresh endpoint (without a refresh cookie) returns 401.
     /// </summary>
     [Fact]
-    public async Task Refresh_InvalidToken_Returns401()
+    public async Task Refresh_NoCookie_Returns401()
     {
         var refreshResponse = await Client.PostAsJsonAsync("/api/v1/auth/refresh", new RefreshRequest
         {
-            AccessToken = "invalid.jwt.token",
-            RefreshToken = "invalid-refresh-token"
+            AccessToken = "invalid.jwt.token"
         });
 
         refreshResponse.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Extracts Set-Cookie header values for the given cookie name from an HTTP response.
+    /// Returns the raw "name=value" strings (without attributes like Path, HttpOnly, etc.).
+    /// </summary>
+    private static List<string> ExtractSetCookieValues(HttpResponseMessage response, string cookieName)
+    {
+        if (!response.Headers.Contains("Set-Cookie"))
+            return [];
+
+        return response.Headers.GetValues("Set-Cookie")
+            .Where(c => c.StartsWith(cookieName + "=", StringComparison.OrdinalIgnoreCase))
+            .Select(c => c.Split(';')[0].Trim())
+            .ToList();
+    }
+
+    /// <summary>
+    /// Sets the Cookie header on the request using the raw "name=value" cookie strings.
+    /// </summary>
+    private static void SetCookieHeader(HttpRequestMessage request, List<string> cookies)
+    {
+        foreach (var cookie in cookies)
+        {
+            request.Headers.Add("Cookie", cookie);
+        }
     }
 }

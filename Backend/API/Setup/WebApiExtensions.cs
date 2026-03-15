@@ -54,9 +54,10 @@ public static class WebApiExtensions
             options.AddPolicy("CorsAllowAll", policy =>
             {
                 policy
-                    .AllowAnyOrigin()
+                    .WithOrigins("http://localhost:5173")
                     .AllowAnyHeader()
                     .AllowAnyMethod()
+                    .AllowCredentials()
                     .WithExposedHeaders("X-Version", "X-Version-Created-At");
             });
         });
