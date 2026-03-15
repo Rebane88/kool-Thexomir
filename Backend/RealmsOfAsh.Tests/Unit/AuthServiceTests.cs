@@ -1,12 +1,8 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using Application.Contracts;
 using Application.Services.Auth;
 using Application.Services.Auth.DTOs;
 using Base.Contracts;
 using Domain.Identity;
-using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Shouldly;
 
@@ -46,28 +42,6 @@ public class AuthServiceTests
         UserId = userId,
         RefreshToken = "refresh-token-" + Guid.NewGuid()
     };
-
-    /// <summary>
-    /// Creates a minimal JWT containing a ClaimTypes.Email claim.
-    /// AuthService calls ReadJwtToken (no signature validation), so any symmetric
-    /// 256-bit key works here.
-    /// </summary>
-    private static string MakeTestJwt(string email)
-    {
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes("super-secret-test-key-256-bits!!")); // 32 chars = 256 bits
-
-        var descriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity([new Claim(ClaimTypes.Email, email)]),
-            Expires = DateTime.UtcNow.AddMinutes(15),
-            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
-        };
-
-        var handler = new JwtSecurityTokenHandler();
-        var token = handler.CreateToken(descriptor);
-        return handler.WriteToken(token);
-    }
 
     // -------------------------------------------------------------------------
     // Register tests
@@ -177,15 +151,11 @@ public class AuthServiceTests
         const string email = "refresh@example.com";
         var user = MakeUser(email);
         var oldRefreshToken = MakeRefreshToken(user.Id);
+        oldRefreshToken.User = user;
         var newRefreshToken = MakeRefreshToken(user.Id);
 
-        // Create a real minimal JWT with an email claim — AuthService reads it via ReadJwtToken
-        var testJwt = MakeTestJwt(email);
-
-        _identityMock.Setup(x => x.ValidateRefreshTokenAsync(testJwt, oldRefreshToken.RefreshToken))
+        _identityMock.Setup(x => x.ValidateRefreshTokenAsync(oldRefreshToken.RefreshToken))
             .ReturnsAsync(Result<AppRefreshToken>.Ok(oldRefreshToken));
-        _identityMock.Setup(x => x.GetByEmailAsync(email))
-            .ReturnsAsync(Result<AppUser>.Ok(user));
         _identityMock.Setup(x => x.GetRolesAsync(user))
             .ReturnsAsync(Result<IList<string>>.Ok(new List<string> { "Player" }));
         _identityMock.Setup(x => x.GenerateJwtAsync(user, It.IsAny<DateTime>()))
@@ -193,7 +163,7 @@ public class AuthServiceTests
         _identityMock.Setup(x => x.RotateRefreshTokenAsync(oldRefreshToken))
             .ReturnsAsync(Result<AppRefreshToken>.Ok(newRefreshToken));
 
-        var result = await _sut.RefreshAsync(testJwt, oldRefreshToken.RefreshToken);
+        var result = await _sut.RefreshAsync(oldRefreshToken.RefreshToken);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.ShouldNotBeNull();
@@ -204,10 +174,10 @@ public class AuthServiceTests
     [Fact]
     public async Task RefreshAsync_InvalidToken_ReturnsFail()
     {
-        _identityMock.Setup(x => x.ValidateRefreshTokenAsync(It.IsAny<string>(), It.IsAny<string>()))
+        _identityMock.Setup(x => x.ValidateRefreshTokenAsync(It.IsAny<string>()))
             .ReturnsAsync(Result<AppRefreshToken>.Fail("Invalid refresh token"));
 
-        var result = await _sut.RefreshAsync("some.jwt.token", "invalid-refresh");
+        var result = await _sut.RefreshAsync("invalid-refresh");
 
         result.IsSuccess.ShouldBeFalse();
         result.Error.ShouldNotBeNull();
@@ -217,10 +187,10 @@ public class AuthServiceTests
     [Fact]
     public async Task RefreshAsync_ExpiredToken_ReturnsFail()
     {
-        _identityMock.Setup(x => x.ValidateRefreshTokenAsync(It.IsAny<string>(), It.IsAny<string>()))
+        _identityMock.Setup(x => x.ValidateRefreshTokenAsync(It.IsAny<string>()))
             .ReturnsAsync(Result<AppRefreshToken>.Fail("Refresh token expired"));
 
-        var result = await _sut.RefreshAsync("some.jwt.token", "expired-refresh");
+        var result = await _sut.RefreshAsync("expired-refresh");
 
         result.IsSuccess.ShouldBeFalse();
         result.Error.ShouldNotBeNull();

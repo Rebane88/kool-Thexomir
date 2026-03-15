@@ -47,6 +47,11 @@ public class IdentityService(
             : Result<bool>.Fail("Invalid password.");
     }
 
+    public async Task<bool> IsLockedOutAsync(AppUser user)
+    {
+        return await userManager.IsLockedOutAsync(user);
+    }
+
     public async Task<Result<bool>> AddToRoleAsync(AppUser user, string role)
     {
         var result = await userManager.AddToRoleAsync(user, role);
@@ -113,34 +118,17 @@ public class IdentityService(
         return Result<AppRefreshToken>.Ok(token);
     }
 
-    public async Task<Result<AppRefreshToken>> ValidateRefreshTokenAsync(string expiredJwt, string refreshToken)
+    public async Task<Result<AppRefreshToken>> ValidateRefreshTokenAsync(string refreshToken)
     {
-        Guid userId;
-        try
-        {
-            var jwtToken = JwtHandler.ReadJwtToken(expiredJwt);
-            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)
-                              ?? jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub);
-
-            if (userIdClaim is null || !Guid.TryParse(userIdClaim.Value, out userId))
-                return Result<AppRefreshToken>.Fail("Invalid access token.");
-        }
-        catch (Exception ex) when (ex is FormatException or ArgumentException or SecurityTokenMalformedException)
-        {
-            return Result<AppRefreshToken>.Fail("Malformed access token.");
-        }
-
-        if (!ValidateJwtSignatureOnly(expiredJwt))
-            return Result<AppRefreshToken>.Fail("Invalid access token signature.");
-
         var now = DateTime.UtcNow;
         var graceExpiry = now.AddMinutes(-1);
 
-        // Match either the current refresh token (not expired) or the previous token (within grace period)
+        // Look up the refresh token directly — it's a unique GUID, no JWT needed.
+        // Include the User so the caller can identify who owns this session.
         var token = await context.RefreshTokens
-            .Where(t => t.UserId == userId &&
-                        ((t.RefreshToken == refreshToken && t.Expiration > now) ||
-                         (t.PreviousRefreshToken == refreshToken && t.PreviousExpiration > graceExpiry)))
+            .Include(t => t.User)
+            .Where(t => (t.RefreshToken == refreshToken && t.Expiration > now) ||
+                        (t.PreviousRefreshToken == refreshToken && t.PreviousExpiration > graceExpiry))
             .FirstOrDefaultAsync();
 
         if (token is null)
@@ -178,35 +166,4 @@ public class IdentityService(
         return Result<bool>.Ok(true);
     }
 
-    // ---------------------------------------------------------------
-    // Private helpers
-    // ---------------------------------------------------------------
-
-    private bool ValidateJwtSignatureOnly(string jwt)
-    {
-        var key = configuration["JWT:Key"]!;
-        var issuer = configuration["JWT:Issuer"]!;
-        var audience = configuration["JWT:Audience"]!;
-
-        var validationParams = new TokenValidationParameters
-        {
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = issuer,
-            ValidateIssuer = true,
-            ValidAudience = audience,
-            ValidateAudience = true,
-            ValidateLifetime = false
-        };
-
-        try
-        {
-            JwtHandler.ValidateToken(jwt, validationParams, out _);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
 }

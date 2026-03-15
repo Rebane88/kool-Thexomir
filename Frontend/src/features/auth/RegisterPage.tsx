@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router';
 import { useAuthStore } from '@/features/auth/auth-store';
-import { apiFetch } from '@/lib/api-client';
+import { API_BASE_URL } from '@/lib/constants';
 import type { LoginResponse, ProblemDetails } from '@/shared/types/api';
 
 function validateRegisterForm(
@@ -83,8 +83,10 @@ export function RegisterPage() {
 
     try {
       // Step 1: Register
-      const registerRes = await apiFetch('/auth/register', {
+      const registerRes = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
@@ -95,8 +97,10 @@ export function RegisterPage() {
       }
 
       // Step 2: Auto-login (register does NOT return tokens)
-      const loginRes = await apiFetch('/auth/login', {
+      const loginRes = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 

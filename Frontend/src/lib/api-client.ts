@@ -5,12 +5,9 @@ let refreshPromise: Promise<boolean> | null = null;
 
 async function refreshAccessToken(): Promise<boolean> {
   try {
-    const currentToken = useAuthStore.getState().accessToken ?? '';
     const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken: currentToken }),
     });
     if (!res.ok) return false;
     const data = await res.json();

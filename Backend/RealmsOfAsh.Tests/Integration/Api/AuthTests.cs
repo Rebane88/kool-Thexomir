@@ -64,12 +64,8 @@ public class AuthTests : IntegrationTestBase
         loggedIn.ShouldNotBeNull();
         loggedIn.AccessToken.ShouldNotBeNullOrEmpty();
 
-        // --- Refresh (send refresh token via cookie) ---
+        // --- Refresh (send refresh token via cookie, no body needed) ---
         var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/refresh");
-        refreshRequest.Content = JsonContent.Create(new RefreshRequest
-        {
-            AccessToken = loggedIn.AccessToken
-        });
         SetCookieHeader(refreshRequest, loginCookies);
 
         var refreshResponse = await Client.SendAsync(refreshRequest);
@@ -166,10 +162,7 @@ public class AuthTests : IntegrationTestBase
     [Fact]
     public async Task Refresh_NoCookie_Returns401()
     {
-        var refreshResponse = await Client.PostAsJsonAsync("/api/v1/auth/refresh", new RefreshRequest
-        {
-            AccessToken = "invalid.jwt.token"
-        });
+        var refreshResponse = await Client.PostAsync("/api/v1/auth/refresh", null);
 
         refreshResponse.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }

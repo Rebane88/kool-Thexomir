@@ -27,8 +27,6 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
         const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accessToken: '' }),
         });
         if (res.ok) {
           const data = await res.json();

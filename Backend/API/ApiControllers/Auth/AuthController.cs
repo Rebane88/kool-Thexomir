@@ -50,14 +50,14 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpPost("refresh")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
+    public async Task<IActionResult> Refresh()
     {
         var refreshToken = Request.Cookies["refresh_token"];
         if (string.IsNullOrEmpty(refreshToken))
         {
             return Unauthorized(ProblemDetailsFor(401, "No refresh token provided."));
         }
-        var result = await authService.RefreshAsync(request.AccessToken, refreshToken);
+        var result = await authService.RefreshAsync(refreshToken);
         if (!result.IsSuccess)
         {
             return Unauthorized(ProblemDetailsFor(401, result.Error!));

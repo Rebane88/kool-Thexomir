@@ -1,5 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using Application.Contracts;
 using Application.Services.Auth.DTOs;
 using Base.Contracts;
@@ -11,7 +9,6 @@ public class AuthService(IIdentityService identityService, IUnitOfWork unitOfWor
     // ReSharper disable once NotAccessedField.Local
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private static readonly Random _random = new();
-    private static readonly JwtSecurityTokenHandler _jwtHandler = new();
 
     public async Task<Result<RegisterResponse>> RegisterAsync(RegisterRequest request)
     {
@@ -46,6 +43,12 @@ public class AuthService(IIdentityService identityService, IUnitOfWork unitOfWor
 
         var user = userResult.Value!;
 
+        if (await identityService.IsLockedOutAsync(user))
+        {
+            await Task.Delay(_random.Next(500, 5001));
+            return Result<LoginResponse>.Fail("Account is locked.");
+        }
+
         var passwordResult = await identityService.CheckPasswordAsync(user, request.Password);
         if (!passwordResult.IsSuccess)
         {
@@ -73,31 +76,17 @@ public class AuthService(IIdentityService identityService, IUnitOfWork unitOfWor
         });
     }
 
-    public async Task<Result<RefreshResponse>> RefreshAsync(string accessToken, string refreshToken)
+    public async Task<Result<RefreshResponse>> RefreshAsync(string refreshToken)
     {
-        var validateResult = await identityService.ValidateRefreshTokenAsync(accessToken, refreshToken);
+        var validateResult = await identityService.ValidateRefreshTokenAsync(refreshToken);
         if (!validateResult.IsSuccess)
             return Result<RefreshResponse>.Fail(validateResult.Error!);
 
         var refreshTokenEntity = validateResult.Value!;
+        var user = refreshTokenEntity.User!;
 
-        // Extract user email from the (signature-verified) JWT to look up the user
-        var jwtToken = _jwtHandler.ReadJwtToken(accessToken);
-        var emailClaim = jwtToken.Claims.FirstOrDefault(c =>
-            c.Type == ClaimTypes.Email || c.Type == "email");
-
-        if (emailClaim is null)
-            return Result<RefreshResponse>.Fail("Cannot extract user identity from token.");
-
-        var userResult = await identityService.GetByEmailAsync(emailClaim.Value);
-        if (!userResult.IsSuccess)
-            return Result<RefreshResponse>.Fail(userResult.Error!);
-
-        var user = userResult.Value!;
-
-        // Validate that token belongs to the user extracted from JWT
-        if (refreshTokenEntity.UserId != user.Id)
-            return Result<RefreshResponse>.Fail("Token mismatch.");
+        if (await identityService.IsLockedOutAsync(user))
+            return Result<RefreshResponse>.Fail("Account is locked.");
 
         var rolesResult = await identityService.GetRolesAsync(user);
 
