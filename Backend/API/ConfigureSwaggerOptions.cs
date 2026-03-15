@@ -46,12 +46,12 @@ public class ConfigureSwaggerOptions : IConfigureOptions<SwaggerGenOptions>
 
         options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
         {
-            Description =
-                "foo bar",
+            Description = "JWT Authorization header. Enter your token (without 'Bearer ' prefix).",
             Name = "Authorization",
             In = ParameterLocation.Header,
-            Type = SecuritySchemeType.ApiKey,
-            Scheme = "Bearer"
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT"
         });
 
         options.AddSecurityRequirement(_ =>

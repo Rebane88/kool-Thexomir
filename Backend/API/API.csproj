@@ -5,7 +5,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>API</RootNamespace>
-        <UserSecretsId>aspnet-WebApp-2aae5906-b85c-401f-a203-9e492ba579b1</UserSecretsId>
+        <UserSecretsId>aspnet-RealmsOfAsh-2aae5906-b85c-401f-a203-9e492ba579b1</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>

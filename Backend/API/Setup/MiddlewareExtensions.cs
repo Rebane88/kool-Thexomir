@@ -1,10 +1,8 @@
+using API.Middleware;
 using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 
 namespace API.Setup;
 
@@ -14,24 +12,14 @@ public static class MiddlewareExtensions
     {
         app.UseForwardedHeaders();
 
-        app.UseRequestLocalization(
-            options: app.Services.GetService<IOptions<RequestLocalizationOptions>>()?.Value!);
-
-        // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseMigrationsEndPoint();
-        }
-        else
-        {
-            app.UseExceptionHandler("/Home/Error");
-            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-            app.UseHsts();
-        }
+        app.UseExceptionMiddleware(includeDeveloperDetails: app.Environment.IsDevelopment());
 
         app.UseHttpsRedirection();
         app.UseRouting();
 
+        app.UseCors("CorsAllowAll");
+
+        app.UseAuthentication();
         app.UseAuthorization();
 
         return app;
@@ -50,8 +38,6 @@ public static class MiddlewareExtensions
                     description.GroupName.ToUpperInvariant()
                 );
             }
-            // serve from root
-            // options.RoutePrefix = string.Empty;
         });
 
         return app;
