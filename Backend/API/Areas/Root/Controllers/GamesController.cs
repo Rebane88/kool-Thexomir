@@ -78,7 +78,11 @@ public class GamesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ForceCloseConfirmed(Guid id)
     {
-        var game = await _context.Games.FindAsync(id);
+        // AsTracking() required — the DbContext default is NoTrackingWithIdentityResolution
+        // which means FindAsync returns a detached entity and SaveChangesAsync generates no UPDATE.
+        var game = await _context.Games
+            .AsTracking()
+            .FirstOrDefaultAsync(g => g.Id == id);
 
         if (game == null)
             return NotFound();
