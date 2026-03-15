@@ -1,0 +1,48 @@
+@model LoginViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Admin Login";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Realms of Ash — Admin Login</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+</head>
+<body class="bg-dark">
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-md-4">
+                <div class="card shadow">
+                    <div class="card-body p-4">
+                        <h4 class="card-title text-center mb-4">Realms of Ash Admin</h4>
+
+                        <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
+                        <form method="post" asp-area="Root" asp-controller="Account" asp-action="Login"
+                              asp-route-returnUrl="@Model.ReturnUrl">
+                            <div class="mb-3">
+                                <label asp-for="Email" class="form-label">Email</label>
+                                <input asp-for="Email" class="form-control" type="email"
+                                       autocomplete="username" placeholder="admin@example.com" />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="Password" class="form-label">Password</label>
+                                <input asp-for="Password" class="form-control" type="password"
+                                       autocomplete="current-password" />
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Sign In</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

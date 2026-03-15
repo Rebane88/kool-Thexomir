@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace API.Areas.Root.Controllers;
 
 [Area("Root")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = "AdminAreaPolicy")]
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;

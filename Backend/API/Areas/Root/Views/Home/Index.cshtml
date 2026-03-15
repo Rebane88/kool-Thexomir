@@ -1,0 +1,52 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h1 class="h3 mb-4">Admin Dashboard</h1>
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    <div class="col">
+        <div class="card h-100 border-primary">
+            <div class="card-body">
+                <h5 class="card-title">Users</h5>
+                <p class="card-text text-muted">Manage user accounts, assign roles, and lock accounts.</p>
+                <a asp-area="Root" asp-controller="Users" asp-action="Index" class="btn btn-outline-primary btn-sm">
+                    Manage Users
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100 border-warning">
+            <div class="card-body">
+                <h5 class="card-title">Active Games</h5>
+                <p class="card-text text-muted">View lobby and in-progress games. Force-close stuck lobbies.</p>
+                <a asp-area="Root" asp-controller="Games" asp-action="Index" class="btn btn-outline-warning btn-sm">
+                    View Games
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card h-100 border-secondary">
+            <div class="card-body">
+                <h5 class="card-title">Reference Data</h5>
+                <p class="card-text text-muted">Manage faction types, terrain types, building types, and unit types.</p>
+                <div class="d-flex flex-wrap gap-1 mt-2">
+                    <a asp-area="Root" asp-controller="FactionTypes" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                        Factions
+                    </a>
+                    <a asp-area="Root" asp-controller="TerrainTypes" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                        Terrain
+                    </a>
+                    <a asp-area="Root" asp-controller="BuildingTypes" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                        Buildings
+                    </a>
+                    <a asp-area="Root" asp-controller="UnitTypes" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                        Units
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

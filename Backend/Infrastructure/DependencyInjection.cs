@@ -16,6 +16,7 @@ using Infrastructure.Repositories.Map;
 using Infrastructure.Repositories.Military;
 using Infrastructure.Repositories.Resources;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,7 +55,29 @@ public static class DependencyInjection
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
                 };
+            })
+            .AddCookie("AdminCookie", options =>
+            {
+                options.LoginPath = "/root/account/login";
+                options.LogoutPath = "/root/account/logout";
+                options.AccessDeniedPath = "/root/account/login";
+                options.SlidingExpiration = true;
+                options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                options.Cookie.Name = ".Thexomir.Admin";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
             });
+
+        // Authorization policies
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("AdminAreaPolicy", policy =>
+            {
+                policy.AddAuthenticationSchemes("AdminCookie");
+                policy.RequireAuthenticatedUser();
+                policy.RequireRole("Admin");
+            });
+        });
 
         // Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
