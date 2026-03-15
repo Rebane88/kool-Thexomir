@@ -6,7 +6,7 @@ using Domain.Resources;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
-namespace WebApp.Tests.Unit;
+namespace RealmsOfAsh.Tests.Unit;
 
 /// <summary>
 /// INFRA-08: Uniqueness constraints are configured via HasIndex().IsUnique() in the EF model.

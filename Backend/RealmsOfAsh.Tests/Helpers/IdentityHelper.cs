@@ -1,17 +1,17 @@
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Application.DTOs.v1.Identity;
+using Application.Services.Auth.DTOs;
 using Base;
 using Xunit;
 
-namespace WebApp.Tests.Helpers;
+namespace RealmsOfAsh.Tests.Helpers;
 
 public static class IdentityHelper
 {
-    public static async Task<JWTResponse> SetupUserAsync(HttpClient httpClient, string firstName, string lastName, string password, string email)
+    public static async Task<RegisterResponse> SetupUserAsync(HttpClient httpClient, string firstName, string lastName, string password, string email)
     {
-        var data = new Register()
+        var data = new RegisterRequest()
         {
             Password = password,
             Email = email,
@@ -19,7 +19,7 @@ public static class IdentityHelper
 
         // Act
         var response = await httpClient.PostAsync(
-            "/api/v1/account/register",
+            "/api/v1/auth/register",
             new StringContent(
                 System.Text.Json.JsonSerializer.Serialize(data, JsonHelpers.JsonSerializerOptionsCamelCase),
                 Encoding.UTF8, "application/json")
@@ -30,10 +30,10 @@ public static class IdentityHelper
         // Assert
         response.EnsureSuccessStatusCode();
 
-        var jwtResponse = System.Text.Json.JsonSerializer.Deserialize<JWTResponse>(responseString, JsonHelpers.JsonSerializerOptionsCamelCase);
+        var registerResponse = System.Text.Json.JsonSerializer.Deserialize<RegisterResponse>(responseString, JsonHelpers.JsonSerializerOptionsCamelCase);
 
-        Assert.NotNull(jwtResponse);
+        Assert.NotNull(registerResponse);
 
-        return jwtResponse;
+        return registerResponse;
     }
 }

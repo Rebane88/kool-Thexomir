@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace WebApp.Tests.Unit;
+namespace RealmsOfAsh.Tests.Unit;
 
 public class UnitTestHomeController
 {

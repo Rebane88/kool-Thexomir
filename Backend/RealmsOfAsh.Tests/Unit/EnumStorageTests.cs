@@ -1,4 +1,4 @@
-namespace WebApp.Tests.Unit;
+namespace RealmsOfAsh.Tests.Unit;
 
 /// <summary>
 /// INFRA-07: Enum properties are stored as strings (text), not integers.

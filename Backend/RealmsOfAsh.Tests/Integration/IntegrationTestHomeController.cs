@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
-namespace WebApp.Tests.Integration;
+namespace RealmsOfAsh.Tests.Integration;
 
 [Collection("Database tests")]
 public class IntegrationTestHomeController : IClassFixture<CustomWebApplicationFactory<Program>>

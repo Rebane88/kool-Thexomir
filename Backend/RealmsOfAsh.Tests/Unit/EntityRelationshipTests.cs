@@ -6,7 +6,7 @@ using Domain.Resources;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
-namespace WebApp.Tests.Unit;
+namespace RealmsOfAsh.Tests.Unit;
 
 /// <summary>
 /// INFRA-02: Key entities have proper FK properties and navigation properties.

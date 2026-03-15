@@ -1,6 +1,6 @@
 using System.Xml.Linq;
 
-namespace WebApp.Tests.Unit;
+namespace RealmsOfAsh.Tests.Unit;
 
 /// <summary>
 /// PROJ-02: Base project must have zero knowledge of Domain, Infrastructure, Application, or API.

@@ -9,7 +9,7 @@ using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using MilitaryUnit = Domain.Military.Unit;
 
-namespace WebApp.Tests.Unit;
+namespace RealmsOfAsh.Tests.Unit;
 
 /// <summary>
 /// INFRA-03: AppDbContext has DbSet properties registered for all 18 game entities.

@@ -1,7 +1,7 @@
 using Infrastructure;
 using Infrastructure.Seeding;
 
-namespace WebApp.Tests.Helpers;
+namespace RealmsOfAsh.Tests.Helpers;
 
 public static class DataSeeder
 {

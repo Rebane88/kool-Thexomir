@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using WebApp.Tests.Helpers;
+using RealmsOfAsh.Tests.Helpers;
 
-namespace WebApp.Tests;
+namespace RealmsOfAsh.Tests;
 
 public class CustomWebApplicationFactory<TStartup>
     : WebApplicationFactory<TStartup> where TStartup: class

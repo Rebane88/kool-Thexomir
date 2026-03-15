@@ -2,12 +2,12 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Application.DTOs.v1.Identity;
+using Application.Services.Auth.DTOs;
 using Base;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
-namespace WebApp.Tests.Integration.Api;
+namespace RealmsOfAsh.Tests.Integration.Api;
 
 [Collection("Database tests")]
 public class IntegrationTestIdentity : IClassFixture<CustomWebApplicationFactory<Program>>
@@ -30,7 +30,7 @@ public class IntegrationTestIdentity : IClassFixture<CustomWebApplicationFactory
     public async Task Registration_Flow(string dataPassword, string dataEmail)
     {
         // Arrange
-        var data = new Register()
+        var data = new RegisterRequest()
         {
             Password = dataPassword,
             Email = dataEmail,
@@ -38,7 +38,7 @@ public class IntegrationTestIdentity : IClassFixture<CustomWebApplicationFactory
 
         // Act
         var response = await _client.PostAsync(
-            "/api/v1/account/register",
+            "/api/v1/auth/register",
             new StringContent(JsonSerializer.Serialize(data, JsonHelpers.JsonSerializerOptionsCamelCase), Encoding.UTF8,
                 "application/json")
         );
@@ -47,9 +47,9 @@ public class IntegrationTestIdentity : IClassFixture<CustomWebApplicationFactory
         response.EnsureSuccessStatusCode();
 
         var responseString = await response.Content.ReadAsStringAsync();
-        var jwtResponse =
-            JsonSerializer.Deserialize<JWTResponse>(responseString, JsonHelpers.JsonSerializerOptionsCamelCase);
-        Assert.NotNull(jwtResponse);
+        var registerResponse =
+            JsonSerializer.Deserialize<RegisterResponse>(responseString, JsonHelpers.JsonSerializerOptionsCamelCase);
+        Assert.NotNull(registerResponse);
     }
 
     [Theory]
@@ -57,23 +57,22 @@ public class IntegrationTestIdentity : IClassFixture<CustomWebApplicationFactory
     public async Task Login_Flow(string dataPassword, string dataEmail)
     {
         // Arrange
-        var data = new Register()
+        var registerData = new RegisterRequest()
         {
             Password = dataPassword,
             Email = dataEmail,
         };
 
-
         var response = await _client.PostAsync(
-            "/api/v1/account/register",
+            "/api/v1/auth/register",
             new StringContent(
-                System.Text.Json.JsonSerializer.Serialize(data, JsonHelpers.JsonSerializerOptionsCamelCase),
+                System.Text.Json.JsonSerializer.Serialize(registerData, JsonHelpers.JsonSerializerOptionsCamelCase),
                 Encoding.UTF8, "application/json")
         );
         response.EnsureSuccessStatusCode();
 
 
-        var loginData = new Login()
+        var loginData = new LoginRequest()
         {
             Email = dataEmail,
             Password = dataPassword,
@@ -83,18 +82,18 @@ public class IntegrationTestIdentity : IClassFixture<CustomWebApplicationFactory
         // Act
 
         var loginResponse = await _client.PostAsync(
-            "/api/v1/account/login",
+            "/api/v1/auth/login",
             new StringContent(JsonSerializer.Serialize(loginData, JsonHelpers.JsonSerializerOptionsCamelCase),
                 Encoding.UTF8, "application/json")
         );
 
 
         // Assert
-        response.EnsureSuccessStatusCode();
+        loginResponse.EnsureSuccessStatusCode();
 
         var responseString = await loginResponse.Content.ReadAsStringAsync();
         var jwtResponse =
-            JsonSerializer.Deserialize<JWTResponse>(responseString, JsonHelpers.JsonSerializerOptionsCamelCase);
+            JsonSerializer.Deserialize<LoginResponse>(responseString, JsonHelpers.JsonSerializerOptionsCamelCase);
         Assert.NotNull(jwtResponse);
     }
 }

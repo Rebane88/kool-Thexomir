@@ -1,6 +1,6 @@
 using Base;
 
-namespace WebApp.Tests.Unit;
+namespace RealmsOfAsh.Tests.Unit;
 
 /// <summary>
 /// INFRA-01: BaseEntity has Id (Guid), CreatedAt, UpdatedAt with proper defaults.

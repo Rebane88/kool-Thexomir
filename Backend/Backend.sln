@@ -16,7 +16,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Application\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App.Resources", "App.Resources\App.Resources.csproj", "{8072C667-E37A-4112-ADB6-0C61B6130F28}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.Tests", "WebApp.Tests\WebApp.Tests.csproj", "{C12277A1-86AF-4222-8032-655D33DDC5A4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealmsOfAsh.Tests", "RealmsOfAsh.Tests\RealmsOfAsh.Tests.csproj", "{C12277A1-86AF-4222-8032-655D33DDC5A4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Base.Resources", "Base.Resources\Base.Resources.csproj", "{EF24A885-7974-480C-903D-7A38504FE355}"
 EndProject
