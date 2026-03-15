@@ -57,9 +57,6 @@ public static class MiddlewareExtensions
                 pattern: "{controller=Home}/{action=Index}/{id?}")
             .WithStaticAssets();
 
-        app.MapRazorPages()
-            .WithStaticAssets();
-
         return app;
     }
 }
