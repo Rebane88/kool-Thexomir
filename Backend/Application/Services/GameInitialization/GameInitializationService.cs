@@ -14,7 +14,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
 
     public async Task<GameStateDto> InitializeGameAsync(Guid gameId)
     {
-        var game = await unitOfWork.Games.GetByIdForUpdateAsync(gameId)
+        var game = await unitOfWork.Games.GetByIdWithLockAsync(gameId)
                    ?? throw new InvalidOperationException($"Game {gameId} not found.");
 
         var kingdoms = await unitOfWork.Kingdoms.GetKingdomsForGameAsync(gameId);

@@ -59,7 +59,7 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
         if (gameByCode is null)
             return Result<LobbyResponse>.Fail("Lobby not found.");
 
-        var game = await unitOfWork.Games.GetByIdForUpdateAsync(gameByCode.Id);
+        var game = await unitOfWork.Games.GetByIdWithLockAsync(gameByCode.Id);
         if (game is null)
             return Result<LobbyResponse>.Fail("Lobby not found.");
 
@@ -91,7 +91,7 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
             return Result<LobbyResponse>.Fail("Lobby was updated concurrently. Please try again.");
         }
 
-        var updatedGame = await unitOfWork.Games.GetLobbyWithPlayersAsync(game.Id);
+        var updatedGame = await unitOfWork.Games.GetGameWithKingdomsAsync(game.Id);
         return Result<LobbyResponse>.Ok(await BuildLobbyResponseAsync(updatedGame!));
     }
 
@@ -101,7 +101,7 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
 
     public async Task<Result<bool>> LeaveLobbyAsync(Guid userId, Guid lobbyId)
     {
-        var game = await unitOfWork.Games.GetByIdForUpdateAsync(lobbyId);
+        var game = await unitOfWork.Games.GetByIdWithLockAsync(lobbyId);
         if (game is null)
             return Result<bool>.Fail("Lobby not found.");
 
@@ -142,7 +142,7 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
 
     public async Task<Result<bool>> SelectFactionAsync(Guid userId, Guid lobbyId, Guid factionTypeId)
     {
-        var game = await unitOfWork.Games.GetByIdForUpdateAsync(lobbyId);
+        var game = await unitOfWork.Games.GetByIdWithLockAsync(lobbyId);
         if (game is null)
             return Result<bool>.Fail("Lobby not found.");
 
@@ -181,7 +181,7 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
 
     public async Task<Result<bool>> StartGameAsync(Guid userId, Guid lobbyId)
     {
-        var game = await unitOfWork.Games.GetByIdForUpdateAsync(lobbyId);
+        var game = await unitOfWork.Games.GetByIdWithLockAsync(lobbyId);
         if (game is null)
             return Result<bool>.Fail("Lobby not found.");
 
@@ -212,7 +212,7 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
 
     public async Task<Result<LobbyResponse>> GetLobbyAsync(Guid lobbyId)
     {
-        var game = await unitOfWork.Games.GetLobbyWithPlayersAsync(lobbyId);
+        var game = await unitOfWork.Games.GetGameWithKingdomsAsync(lobbyId);
         if (game is null)
             return Result<LobbyResponse>.Fail("Lobby not found.");
 

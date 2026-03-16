@@ -55,7 +55,7 @@ public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBu
         };
 
         // Load tracked resources for atomic deduction
-        var resources = await unitOfWork.KingdomResources.GetResourcesForKingdomTrackedAsync(kingdom.Id);
+        var resources = await unitOfWork.KingdomResources.GetMutableResourcesForKingdomAsync(kingdom.Id);
 
         // Check ALL costs first (all-or-nothing)
         foreach (var (type, cost) in costs.Where(c => c.Value > 0))

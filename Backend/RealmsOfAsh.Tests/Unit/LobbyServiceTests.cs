@@ -128,18 +128,18 @@ public class LobbyServiceTests
         var kingdoms = new List<Kingdom> { MakeKingdom(UserId1, GameId) };
 
         _gamesMock.Setup(g => g.GetByLobbyCodeAsync("ABCDEF")).ReturnsAsync(game);
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
         _kingdomsMock.Setup(k => k.AddAsync(It.IsAny<Kingdom>())).ReturnsAsync((Kingdom k) => k);
 
-        // For JoinLobby, after commit it calls GetLobbyWithPlayersAsync to build response
+        // For JoinLobby, after commit it calls GetGameWithKingdomsAsync to build response
         var gameWithPlayers = MakeLobbyGame();
         gameWithPlayers.Kingdoms = new List<Kingdom>
         {
             MakeKingdom(UserId1, GameId),
             MakeKingdom(UserId2, GameId)
         };
-        _gamesMock.Setup(g => g.GetLobbyWithPlayersAsync(GameId)).ReturnsAsync(gameWithPlayers);
+        _gamesMock.Setup(g => g.GetGameWithKingdomsAsync(GameId)).ReturnsAsync(gameWithPlayers);
         _factionTypesMock.Setup(f => f.GetAllAsync()).ReturnsAsync(new List<FactionType>());
 
         var result = await _sut.JoinLobbyAsync(UserId2, new JoinLobbyRequest { InviteCode = "ABCDEF" });
@@ -170,7 +170,7 @@ public class LobbyServiceTests
         };
 
         _gamesMock.Setup(g => g.GetByLobbyCodeAsync("ABCDEF")).ReturnsAsync(game);
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
 
         var result = await _sut.JoinLobbyAsync(UserId3, new JoinLobbyRequest { InviteCode = "ABCDEF" });
@@ -186,7 +186,7 @@ public class LobbyServiceTests
         var kingdoms = new List<Kingdom> { MakeKingdom(UserId1, GameId) };
 
         _gamesMock.Setup(g => g.GetByLobbyCodeAsync("ABCDEF")).ReturnsAsync(game);
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
 
         var result = await _sut.JoinLobbyAsync(UserId2, new JoinLobbyRequest { InviteCode = "ABCDEF" });
@@ -202,7 +202,7 @@ public class LobbyServiceTests
         var kingdoms = new List<Kingdom> { MakeKingdom(UserId2, GameId) };
 
         _gamesMock.Setup(g => g.GetByLobbyCodeAsync("ABCDEF")).ReturnsAsync(game);
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
 
         var result = await _sut.JoinLobbyAsync(UserId2, new JoinLobbyRequest { InviteCode = "ABCDEF" });
@@ -223,7 +223,7 @@ public class LobbyServiceTests
         var k2 = MakeKingdom(UserId2, GameId);
         var kingdoms = new List<Kingdom> { k1, k2 };
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
         _kingdomsMock.Setup(k => k.DeleteAsync(It.IsAny<Guid>())).Returns(Task.CompletedTask);
         _gamesMock.Setup(g => g.UpdateAsync(It.IsAny<Game>())).ReturnsAsync((Game g) => g);
@@ -248,7 +248,7 @@ public class LobbyServiceTests
         var player3 = MakeKingdom(UserId3, GameId, createdAt: baseTime.AddMinutes(10));
         var kingdoms = new List<Kingdom> { hostKingdom, player2, player3 };
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
         _kingdomsMock.Setup(k => k.DeleteAsync(It.IsAny<Guid>())).Returns(Task.CompletedTask);
         _gamesMock.Setup(g => g.UpdateAsync(It.IsAny<Game>())).ReturnsAsync((Game g) => g);
@@ -274,7 +274,7 @@ public class LobbyServiceTests
         var player3 = MakeKingdom(UserId3, GameId, createdAt: sameTime, id: smallerId);
         var kingdoms = new List<Kingdom> { hostKingdom, player2, player3 };
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
         _kingdomsMock.Setup(k => k.DeleteAsync(It.IsAny<Guid>())).Returns(Task.CompletedTask);
         _gamesMock.Setup(g => g.UpdateAsync(It.IsAny<Game>())).ReturnsAsync((Game g) => g);
@@ -293,7 +293,7 @@ public class LobbyServiceTests
         var hostKingdom = MakeKingdom(UserId1, GameId);
         var kingdoms = new List<Kingdom> { hostKingdom };
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
         _kingdomsMock.Setup(k => k.DeleteAsync(It.IsAny<Guid>())).Returns(Task.CompletedTask);
         _gamesMock.Setup(g => g.UpdateAsync(It.IsAny<Game>())).ReturnsAsync((Game g) => g);
@@ -310,7 +310,7 @@ public class LobbyServiceTests
         var game = MakeLobbyGame();
         var kingdoms = new List<Kingdom> { MakeKingdom(UserId1, GameId) };
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
 
         // UserId2 is not in this lobby
@@ -325,7 +325,7 @@ public class LobbyServiceTests
     {
         var game = MakeLobbyGame(status: EGameStatus.InProgress);
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
 
         var result = await _sut.LeaveLobbyAsync(UserId1, GameId);
 
@@ -345,7 +345,7 @@ public class LobbyServiceTests
         var kingdoms = new List<Kingdom> { playerKingdom };
         var trackedKingdom = MakeKingdom(UserId1, GameId);
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _factionTypesMock.Setup(f => f.ExistsAsync(FactionId1)).ReturnsAsync(true);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
         _kingdomsMock.Setup(k => k.GetKingdomByUserAndGameAsync(UserId1, GameId)).ReturnsAsync(trackedKingdom);
@@ -368,7 +368,7 @@ public class LobbyServiceTests
             MakeKingdom(UserId2, GameId, factionTypeId: FactionId1)
         };
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _factionTypesMock.Setup(f => f.ExistsAsync(FactionId1)).ReturnsAsync(true);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
 
@@ -389,7 +389,7 @@ public class LobbyServiceTests
         };
         var trackedKingdom = MakeKingdom(UserId1, GameId, factionTypeId: FactionId1);
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _factionTypesMock.Setup(f => f.ExistsAsync(FactionId2)).ReturnsAsync(true);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
         _kingdomsMock.Setup(k => k.GetKingdomByUserAndGameAsync(UserId1, GameId)).ReturnsAsync(trackedKingdom);
@@ -408,7 +408,7 @@ public class LobbyServiceTests
         // Only UserId2 is in the lobby
         var kingdoms = new List<Kingdom> { MakeKingdom(UserId2, GameId) };
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _factionTypesMock.Setup(f => f.ExistsAsync(FactionId1)).ReturnsAsync(true);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
 
@@ -425,7 +425,7 @@ public class LobbyServiceTests
         var game = MakeLobbyGame();
         var nonExistentFactionId = Guid.NewGuid();
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _factionTypesMock.Setup(f => f.ExistsAsync(nonExistentFactionId)).ReturnsAsync(false);
 
         var result = await _sut.SelectFactionAsync(UserId1, GameId, nonExistentFactionId);
@@ -448,7 +448,7 @@ public class LobbyServiceTests
             MakeKingdom(UserId2, GameId, factionTypeId: FactionId2)
         };
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
         _gamesMock.Setup(g => g.UpdateAsync(It.IsAny<Game>())).ReturnsAsync((Game g) => g);
 
@@ -463,7 +463,7 @@ public class LobbyServiceTests
     {
         var game = MakeLobbyGame(); // HostUserId = UserId1
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(new List<Kingdom>
         {
             MakeKingdom(UserId1, GameId, factionTypeId: FactionId1),
@@ -486,7 +486,7 @@ public class LobbyServiceTests
             MakeKingdom(UserId1, GameId, factionTypeId: FactionId1)
         };
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
 
         var result = await _sut.StartGameAsync(UserId1, GameId);
@@ -506,7 +506,7 @@ public class LobbyServiceTests
             MakeKingdom(UserId2, GameId, factionTypeId: null)
         };
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
 
         var result = await _sut.StartGameAsync(UserId1, GameId);
@@ -531,7 +531,7 @@ public class LobbyServiceTests
         var k2 = MakeKingdom(UserId2, GameId);
         game.Kingdoms = new List<Kingdom> { k1, k2 };
 
-        _gamesMock.Setup(g => g.GetLobbyWithPlayersAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetGameWithKingdomsAsync(GameId)).ReturnsAsync(game);
         _factionTypesMock.Setup(f => f.GetAllAsync()).ReturnsAsync(new List<FactionType> { faction1, faction2 });
 
         var result = await _sut.GetLobbyAsync(GameId);
@@ -548,7 +548,7 @@ public class LobbyServiceTests
     [Fact]
     public async Task GetLobby_NotFound_ReturnsFail()
     {
-        _gamesMock.Setup(g => g.GetLobbyWithPlayersAsync(It.IsAny<Guid>())).ReturnsAsync((Game?)null);
+        _gamesMock.Setup(g => g.GetGameWithKingdomsAsync(It.IsAny<Guid>())).ReturnsAsync((Game?)null);
 
         var result = await _sut.GetLobbyAsync(Guid.NewGuid());
 

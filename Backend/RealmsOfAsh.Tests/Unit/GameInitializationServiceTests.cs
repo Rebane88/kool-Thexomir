@@ -112,7 +112,7 @@ public class GameInitializationServiceTests
             StartingGold = 0, StartingFood = 0, StartingWood = 0, StartingStone = 0, StartingMana = 30,
         };
 
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _gamesMock.Setup(g => g.GetByIdAsync(GameId)).ReturnsAsync(game);
         _gamesMock.Setup(g => g.UpdateAsync(It.IsAny<Game>())).ReturnsAsync((Game g) => g);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);

@@ -111,7 +111,7 @@ public class BuildingServiceTests
         _buildingsMock.Setup(b => b.GetBuildingsForKingdomAsync(KingdomId)).ReturnsAsync([]);
         _buildingTypesMock.Setup(bt => bt.GetByIdAsync(BuildingTypeId)).ReturnsAsync(CreateBuildingType(goldCost: goldCost));
         _factionTypesMock.Setup(f => f.GetByIdAsync(FactionId)).ReturnsAsync(CreateFaction(costModifier));
-        _kingdomResourcesMock.Setup(r => r.GetResourcesForKingdomTrackedAsync(KingdomId)).ReturnsAsync(CreateResources(gold: goldAvailable));
+        _kingdomResourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(KingdomId)).ReturnsAsync(CreateResources(gold: goldAvailable));
         _kingdomResourcesMock.Setup(r => r.UpdateAsync(It.IsAny<KingdomResource>()))
             .ReturnsAsync((KingdomResource r) => r);
     }
@@ -253,7 +253,7 @@ public class BuildingServiceTests
         _factionTypesMock.Setup(f => f.GetByIdAsync(FactionId)).ReturnsAsync(CreateFaction());
 
         var resources = CreateResources(gold: 200, wood: 10); // gold OK, wood insufficient
-        _kingdomResourcesMock.Setup(r => r.GetResourcesForKingdomTrackedAsync(KingdomId)).ReturnsAsync(resources);
+        _kingdomResourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(KingdomId)).ReturnsAsync(resources);
 
         var result = await _sut.PlaceBuildingAsync(GameId, UserId, DefaultRequest());
 
