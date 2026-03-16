@@ -30,6 +30,7 @@ public interface IUnitOfWork : IDisposable
     IUnitTypeRepository UnitTypes { get; }
     IUnitTypeMatchupRepository UnitTypeMatchups { get; }
     IBattleRepository Battles { get; }
+    IBuildingUnitTypeRepository BuildingUnitTypes { get; }
 
     // Resources
     IKingdomResourceRepository KingdomResources { get; }

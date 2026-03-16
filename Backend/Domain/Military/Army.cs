@@ -8,6 +8,7 @@ public class Army : BaseEntity
 {
     public Guid TileId { get; set; }
     public Guid KingdomId { get; set; }
+    public bool HasAttackedThisTurn { get; set; }
 
     // Navigation
     public Tile? Tile { get; set; }

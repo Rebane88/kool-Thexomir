@@ -4,5 +4,5 @@ namespace Domain.Factions;
 
 public interface IFactionUnitBonusRepository : IBaseRepository<FactionUnitBonus>
 {
-    // Domain-specific queries added in feature phases
+    Task<IEnumerable<FactionUnitBonus>> GetBonusesForFactionAsync(Guid factionTypeId);
 }

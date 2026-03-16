@@ -7,6 +7,7 @@ public class Building : BaseEntity
 {
     public Guid TileId { get; set; }
     public Guid BuildingTypeId { get; set; }
+    public bool HasTrainedThisTurn { get; set; }
 
     // Navigation
     public Tile? Tile { get; set; }

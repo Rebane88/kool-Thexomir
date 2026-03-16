@@ -4,5 +4,7 @@ namespace Domain.Military;
 
 public interface IArmyRepository : IBaseRepository<Army>
 {
-    // Domain-specific queries added in feature phases
+    Task<Army?> GetArmyOnTileForKingdomAsync(Guid tileId, Guid kingdomId);
+    Task<Army?> GetArmyWithUnitsAsync(Guid armyId);
+    Task<IEnumerable<Army>> GetArmiesForKingdomAsync(Guid kingdomId);
 }
