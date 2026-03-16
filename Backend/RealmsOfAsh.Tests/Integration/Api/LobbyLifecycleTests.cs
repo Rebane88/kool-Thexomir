@@ -79,7 +79,7 @@ public class LobbyLifecycleTests : IntegrationTestBase
         var createResponse = await Client.PostAsJsonAsync("/api/v1/lobby", new CreateLobbyRequest
         {
             MaxPlayers = 4,
-            WinCondition = EWinCondition.Domination
+            WinCondition = EWinCondition.Elimination
         });
         createResponse.StatusCode.ShouldBe(HttpStatusCode.Created);
 
@@ -167,7 +167,7 @@ public class LobbyLifecycleTests : IntegrationTestBase
         var createResponse = await Client.PostAsJsonAsync("/api/v1/lobby", new CreateLobbyRequest
         {
             MaxPlayers = 2,
-            WinCondition = EWinCondition.Domination
+            WinCondition = EWinCondition.Elimination
         });
         createResponse.StatusCode.ShouldBe(HttpStatusCode.Created);
         var created = await createResponse.Content.ReadFromJsonAsync<CreateLobbyResponse>(
@@ -213,7 +213,7 @@ public class LobbyLifecycleTests : IntegrationTestBase
         var createResponse = await Client.PostAsJsonAsync("/api/v1/lobby", new CreateLobbyRequest
         {
             MaxPlayers = 4,
-            WinCondition = EWinCondition.Domination
+            WinCondition = EWinCondition.Elimination
         });
         createResponse.StatusCode.ShouldBe(HttpStatusCode.Created);
         var created = await createResponse.Content.ReadFromJsonAsync<CreateLobbyResponse>(
@@ -262,7 +262,7 @@ public class LobbyLifecycleTests : IntegrationTestBase
         var createResponse = await Client.PostAsJsonAsync("/api/v1/lobby", new CreateLobbyRequest
         {
             MaxPlayers = 4,
-            WinCondition = EWinCondition.Domination
+            WinCondition = EWinCondition.Elimination
         });
         createResponse.StatusCode.ShouldBe(HttpStatusCode.Created);
         var created = await createResponse.Content.ReadFromJsonAsync<CreateLobbyResponse>(
@@ -323,7 +323,7 @@ public class LobbyLifecycleTests : IntegrationTestBase
         var createResponse = await Client.PostAsJsonAsync("/api/v1/lobby", new CreateLobbyRequest
         {
             MaxPlayers = 4,
-            WinCondition = EWinCondition.Domination
+            WinCondition = EWinCondition.Elimination
         });
         createResponse.StatusCode.ShouldBe(HttpStatusCode.Created);
         var created = await createResponse.Content.ReadFromJsonAsync<CreateLobbyResponse>(

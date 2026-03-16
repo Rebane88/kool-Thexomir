@@ -34,6 +34,9 @@ public class TurnController(
         await hubContext.Clients.Group($"game:{gameId}")
             .TurnAdvanced(result.Value!);
 
+        if (result.Value!.GameOver is not null)
+            await hubContext.Clients.Group($"game:{gameId}").GameOver(result.Value!.GameOver);
+
         return Ok(result.Value);
     }
 

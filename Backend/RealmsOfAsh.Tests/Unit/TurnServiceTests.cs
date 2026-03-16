@@ -8,6 +8,7 @@ using Domain.Game;
 using Domain.Map;
 using Domain.Military;
 using Domain.Resources;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Shouldly;
 
@@ -22,7 +23,7 @@ public class TurnServiceTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IGameGuard> _gameGuardMock = new();
-    private readonly Mock<IServiceProvider> _serviceProviderMock = new();
+    private readonly IServiceProvider _serviceProvider;
     private readonly Mock<IGameRepository> _gamesMock = new();
     private readonly Mock<IKingdomRepository> _kingdomsMock = new();
     private readonly Mock<ITileRepository> _tilesMock = new();
@@ -46,6 +47,11 @@ public class TurnServiceTests
 
     public TurnServiceTests()
     {
+        var services = new ServiceCollection();
+        services.AddKeyedScoped<IWinConditionChecker, ScoreChecker>(EWinCondition.Score);
+        services.AddKeyedScoped<IWinConditionChecker, EliminationChecker>(EWinCondition.Elimination);
+        _serviceProvider = services.BuildServiceProvider();
+
         _unitOfWorkMock.Setup(u => u.Games).Returns(_gamesMock.Object);
         _unitOfWorkMock.Setup(u => u.Kingdoms).Returns(_kingdomsMock.Object);
         _unitOfWorkMock.Setup(u => u.Tiles).Returns(_tilesMock.Object);
@@ -69,7 +75,7 @@ public class TurnServiceTests
         _kingdomResourcesMock.Setup(r => r.UpdateAsync(It.IsAny<KingdomResource>()))
             .ReturnsAsync((KingdomResource r) => r);
 
-        _sut = new TurnService(_unitOfWorkMock.Object, _gameGuardMock.Object, _serviceProviderMock.Object);
+        _sut = new TurnService(_unitOfWorkMock.Object, _gameGuardMock.Object, _serviceProvider);
     }
 
     private Game CreateGame(Guid currentTurnKingdomId, int turnNumber = 1) => new()
@@ -420,5 +426,84 @@ public class TurnServiceTests
         _addedTurnLogs[0].TurnNumber.ShouldBe(3);
         _addedTurnLogs[0].KingdomId.ShouldBe(Kingdom1Id);
         _addedTurnLogs[0].GameId.ShouldBe(GameId);
+    }
+
+    // -------------------------------------------------------------------------
+    // Phase 13: Score win condition tests
+    // -------------------------------------------------------------------------
+
+    private Mock<IArmyRepository> SetupArmiesMock()
+    {
+        var armiesMock = new Mock<IArmyRepository>();
+        _unitOfWorkMock.Setup(u => u.Armies).Returns(armiesMock.Object);
+        armiesMock.Setup(a => a.GetArmiesForKingdomAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(Enumerable.Empty<Army>());
+        armiesMock.Setup(a => a.GetArmiesWithUnitsForKingdomAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(new List<Army>());
+        return armiesMock;
+    }
+
+    [Fact]
+    public async Task EndTurnAsync_WhenTurnExceedsMaxTurnCount_EndsGame()
+    {
+        // Arrange: 2-kingdom game, Score mode, MaxTurnCount=2
+        // Kingdom3 ends its turn, TurnNumber wraps to 3 (> 2), game ends
+        var kingdoms = CreateThreeKingdoms();
+        var game = new Game
+        {
+            Id = GameId,
+            Status = EGameStatus.InProgress,
+            TurnNumber = 2,          // wrapping from last kingdom will make it 3
+            CurrentTurnKingdomId = Kingdom3Id,
+            WinCondition = EWinCondition.Score,
+            MaxTurnCount = 2
+        };
+        SetupGuardSuccess(game, kingdoms[2]);
+        _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
+
+        var armiesMock = SetupArmiesMock();
+
+        // All tiles (empty) for score calculation
+        _tilesMock.Setup(t => t.GetTilesWithBuildingsForGameAsync(GameId))
+            .ReturnsAsync(new List<Tile>());
+
+        // Real IServiceProvider resolves ScoreChecker via keyed registration
+
+        // Act
+        var result = await _sut.EndTurnAsync(GameId, UserId);
+
+        // Assert: TurnNumber wraps from Kingdom3 back to Kingdom1, incrementing to 3
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.ShouldNotBeNull();
+        result.Value.GameOver.ShouldNotBeNull();
+        result.Value.IncomeApplied.ShouldBeEmpty(); // no income when game ends
+    }
+
+    [Fact]
+    public async Task EndTurnAsync_WhenTurnDoesNotExceedMax_ContinuesNormally()
+    {
+        // Arrange: Score mode, MaxTurnCount=5, TurnNumber stays at 1 after advance
+        var kingdoms = CreateThreeKingdoms();
+        var game = new Game
+        {
+            Id = GameId,
+            Status = EGameStatus.InProgress,
+            TurnNumber = 1,
+            CurrentTurnKingdomId = Kingdom1Id,
+            WinCondition = EWinCondition.Score,
+            MaxTurnCount = 5
+        };
+        SetupGuardSuccess(game, kingdoms[0]);
+        _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
+        SetupEmptyIncome(Kingdom2Id);
+
+        // Act
+        var result = await _sut.EndTurnAsync(GameId, UserId);
+
+        // Assert: TurnNumber stays at 1 (no wrap)
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.ShouldNotBeNull();
+        result.Value.GameOver.ShouldBeNull();
+        result.Value.NewKingdomId.ShouldBe(Kingdom2Id);
     }
 }

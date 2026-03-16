@@ -9,6 +9,7 @@ using Domain.Game;
 using Domain.Map;
 using Domain.Military;
 using Domain.Resources;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Shouldly;
 using MilitaryUnit = Domain.Military.Unit;
@@ -23,7 +24,8 @@ public class MilitaryServiceTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IGameGuard> _gameGuardMock = new();
-    private readonly Mock<IServiceProvider> _serviceProviderMock = new();
+    private readonly IServiceProvider _serviceProvider;
+    private readonly Mock<IGameRepository> _gamesMock = new();
     private readonly Mock<IBuildingRepository> _buildingsMock = new();
     private readonly Mock<IBuildingTypeRepository> _buildingTypesMock = new();
     private readonly Mock<IBuildingUnitTypeRepository> _buildingUnitTypesMock = new();
@@ -61,6 +63,13 @@ public class MilitaryServiceTests
 
     public MilitaryServiceTests()
     {
+        var services = new ServiceCollection();
+        services.AddKeyedScoped<IWinConditionChecker, EliminationChecker>(EWinCondition.Elimination);
+        services.AddKeyedScoped<IWinConditionChecker, ScoreChecker>(EWinCondition.Score);
+        _serviceProvider = services.BuildServiceProvider();
+
+        _gamesMock.Setup(g => g.UpdateAsync(It.IsAny<Game>())).ReturnsAsync((Game g) => g);
+        _unitOfWorkMock.Setup(u => u.Games).Returns(_gamesMock.Object);
         _unitOfWorkMock.Setup(u => u.Buildings).Returns(_buildingsMock.Object);
         _unitOfWorkMock.Setup(u => u.BuildingTypes).Returns(_buildingTypesMock.Object);
         _unitOfWorkMock.Setup(u => u.BuildingUnitTypes).Returns(_buildingUnitTypesMock.Object);
@@ -97,7 +106,7 @@ public class MilitaryServiceTests
         _battlesMock.Setup(b => b.AddAsync(It.IsAny<Battle>()))
             .ReturnsAsync((Battle b) => { _addedBattles.Add(b); return b; });
 
-        _sut = new MilitaryService(_unitOfWorkMock.Object, _gameGuardMock.Object, _serviceProviderMock.Object);
+        _sut = new MilitaryService(_unitOfWorkMock.Object, _gameGuardMock.Object, _serviceProvider);
     }
 
     private void SetupGuardSuccess()
@@ -465,5 +474,152 @@ public class MilitaryServiceTests
 
         // Commit called
         _unitOfWorkMock.Verify(u => u.CommitAsync(default), Times.Once);
+    }
+
+    // -------------------------------------------------------------------------
+    // Phase 13: Elimination + win condition tests
+    // -------------------------------------------------------------------------
+
+    private static readonly Guid CapitalTileId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccaf0");
+
+    private void SetupEliminationAttackPath(bool isCapital, bool onlyOneKingdomRemains)
+    {
+        SetupGuardSuccess();
+
+        // Override game to be Elimination win condition
+        var game = new Game
+        {
+            Id = GameId, Status = EGameStatus.InProgress, TurnNumber = 1,
+            CurrentTurnKingdomId = KingdomId,
+            WinCondition = EWinCondition.Elimination
+        };
+        var kingdom = new Kingdom { Id = KingdomId, GameId = GameId, AppUserId = UserId, FactionTypeId = FactionId };
+        _gameGuardMock.Setup(g => g.ValidateAsync(GameId, UserId))
+            .ReturnsAsync(Result<GameGuardContext>.Ok(new GameGuardContext(game, kingdom)));
+
+        var swordsmanType = new UnitType { Id = SwordsmanTypeId, Name = new LangStr("Swordsman", "en"), BaseStrength = 10 };
+        var archerType = new UnitType { Id = ArcherTypeId, Name = new LangStr("Archer", "en"), BaseStrength = 8 };
+
+        var attackerArmy = new Army
+        {
+            Id = AttackerArmyId, TileId = TileId, KingdomId = KingdomId,
+            Units = new List<MilitaryUnit>
+            {
+                new() { Id = Guid.NewGuid(), ArmyId = AttackerArmyId, UnitTypeId = SwordsmanTypeId, Quantity = 50, UnitType = swordsmanType },
+            }
+        };
+        _armiesMock.Setup(a => a.GetArmyWithUnitsAsync(AttackerArmyId)).ReturnsAsync(attackerArmy);
+
+        var attackerTile = new Tile { Id = TileId, KingdomId = KingdomId, CoordQ = 0, CoordR = 0, TerrainTypeId = Guid.NewGuid() };
+        var defenderTile = new Tile { Id = CapitalTileId, KingdomId = Kingdom2Id, CoordQ = 1, CoordR = 0, TerrainTypeId = Guid.NewGuid(), IsCapital = isCapital };
+        _tilesMock.Setup(t => t.GetByIdAsync(TileId)).ReturnsAsync(attackerTile);
+        _tilesMock.Setup(t => t.GetByIdAsync(CapitalTileId)).ReturnsAsync(defenderTile);
+
+        var defenderArmy = new Army
+        {
+            Id = Guid.NewGuid(), TileId = CapitalTileId, KingdomId = Kingdom2Id,
+            Units = new List<MilitaryUnit>
+            {
+                new() { Id = Guid.NewGuid(), UnitTypeId = ArcherTypeId, Quantity = 1, UnitType = archerType },
+            }
+        };
+        _armiesMock.Setup(a => a.GetEnemyArmyOnTileAsync(CapitalTileId, KingdomId)).ReturnsAsync(defenderArmy);
+
+        var matchups = new List<UnitTypeMatchup>
+        {
+            new() { AttackerTypeId = SwordsmanTypeId, DefenderTypeId = ArcherTypeId, Multiplier = 1.25m },
+            new() { AttackerTypeId = ArcherTypeId, DefenderTypeId = SwordsmanTypeId, Multiplier = 0.75m },
+        };
+        _unitTypeMatchupsMock.Setup(m => m.GetAllMatchupsAsync()).ReturnsAsync(matchups);
+
+        var attackerKingdomEntity = new Kingdom { Id = KingdomId, FactionTypeId = FactionId };
+        var defenderKingdomEntity = new Kingdom { Id = Kingdom2Id, FactionTypeId = FactionId };
+        _kingdomsMock.Setup(k => k.GetByIdAsync(KingdomId)).ReturnsAsync(attackerKingdomEntity);
+        _kingdomsMock.Setup(k => k.GetByIdAsync(Kingdom2Id)).ReturnsAsync(defenderKingdomEntity);
+        _kingdomsMock.Setup(k => k.UpdateAsync(It.IsAny<Kingdom>())).ReturnsAsync((Kingdom k) => k);
+
+        _factionUnitBonusesMock.Setup(f => f.GetBonusesForFactionAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(new List<FactionUnitBonus>());
+
+        var terrain = new TerrainType { Id = defenderTile.TerrainTypeId, Name = new LangStr("Plains", "en"), DefenseBonus = 0.0m };
+        _terrainTypesMock.Setup(t => t.GetByIdAsync(defenderTile.TerrainTypeId)).ReturnsAsync(terrain);
+
+        _unitsMock.Setup(u => u.DeleteAsync(It.IsAny<Guid>())).Returns(Task.CompletedTask);
+        _armiesMock.Setup(a => a.DeleteAsync(It.IsAny<Guid>())).Returns(Task.CompletedTask);
+
+        if (isCapital)
+        {
+            // Setup elimination cleanup
+            _tilesMock.Setup(t => t.GetTilesForKingdomAsync(Kingdom2Id))
+                .ReturnsAsync(new List<Tile> { defenderTile });
+
+            var defenderRemainingArmy = new Army { Id = Guid.NewGuid(), KingdomId = Kingdom2Id, Units = new List<MilitaryUnit>() };
+            _armiesMock.Setup(a => a.GetArmiesWithUnitsForKingdomAsync(Kingdom2Id))
+                .ReturnsAsync(new List<Army> { defenderRemainingArmy });
+
+            // All kingdoms post-elimination: attacker active, defender eliminated
+            var updatedDefenderKingdom = new Kingdom { Id = Kingdom2Id, IsEliminated = true };
+            var allKingdoms = onlyOneKingdomRemains
+                ? new List<Kingdom> { new() { Id = KingdomId, IsEliminated = false }, updatedDefenderKingdom }
+                : new List<Kingdom> { new() { Id = KingdomId, IsEliminated = false }, updatedDefenderKingdom, new() { Id = Guid.NewGuid(), IsEliminated = false } };
+
+            _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(allKingdoms);
+            _tilesMock.Setup(t => t.GetTilesWithBuildingsForGameAsync(GameId)).ReturnsAsync(new List<Domain.Map.Tile>());
+
+            // Real IServiceProvider resolves EliminationChecker via keyed registration
+        }
+    }
+
+    [Fact]
+    public async Task AttackAsync_WhenCapitalCaptured_EliminatesKingdom()
+    {
+        // Arrange: 1 active kingdom remains after elimination => game ends
+        SetupEliminationAttackPath(isCapital: true, onlyOneKingdomRemains: true);
+
+        // Act
+        var request = new AttackRequest { AttackerArmyId = AttackerArmyId, DefenderTileId = CapitalTileId };
+        var result = await _sut.AttackAsync(GameId, UserId, request);
+
+        // Assert
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.ShouldNotBeNull();
+        result.Value.TileCaptured.ShouldBeTrue();
+
+        // Defender kingdom marked eliminated
+        _kingdomsMock.Verify(k => k.UpdateAsync(It.Is<Kingdom>(k => k.Id == Kingdom2Id && k.IsEliminated)), Times.Once);
+
+        // Defender tiles nullified
+        _tilesMock.Verify(t => t.GetTilesForKingdomAsync(Kingdom2Id), Times.Once);
+
+        // Defender armies loaded for deletion
+        _armiesMock.Verify(a => a.GetArmiesWithUnitsForKingdomAsync(Kingdom2Id), Times.Once);
+
+        // GameOver populated (only 1 kingdom remains = game ends)
+        result.Value.GameOver.ShouldNotBeNull();
+        result.Value.GameOver!.WinnerKingdomId.ShouldBe(KingdomId);
+    }
+
+    [Fact]
+    public async Task AttackAsync_WhenNonCapitalCaptured_NoElimination()
+    {
+        // Arrange: non-capital tile captured
+        SetupEliminationAttackPath(isCapital: false, onlyOneKingdomRemains: false);
+
+        // Act
+        var request = new AttackRequest { AttackerArmyId = AttackerArmyId, DefenderTileId = CapitalTileId };
+        var result = await _sut.AttackAsync(GameId, UserId, request);
+
+        // Assert
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.ShouldNotBeNull();
+
+        // No elimination: defender kingdoms should not be updated as eliminated
+        _kingdomsMock.Verify(k => k.UpdateAsync(It.Is<Kingdom>(k => k.IsEliminated)), Times.Never);
+
+        // No tile cleanup called
+        _tilesMock.Verify(t => t.GetTilesForKingdomAsync(It.IsAny<Guid>()), Times.Never);
+
+        // GameOver is null (no win condition check)
+        result.Value.GameOver.ShouldBeNull();
     }
 }

@@ -57,6 +57,8 @@ public class MilitaryController(
         if (!result.IsSuccess)
             return BadRequest(ProblemDetailsFor(400, result.Error!));
         await hubContext.Clients.Group($"game:{gameId}").CombatResolved(result.Value!);
+        if (result.Value!.GameOver is not null)
+            await hubContext.Clients.Group($"game:{gameId}").GameOver(result.Value!.GameOver);
         return Ok(result.Value);
     }
 
