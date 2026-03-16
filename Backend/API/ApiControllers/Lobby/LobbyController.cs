@@ -1,10 +1,15 @@
 using API.Extensions;
+using API.Hubs;
+using Application.Contracts;
+using Application.Services.GameHub;
+using Application.Services.GameInitialization;
 using Application.Services.Lobby;
 using Application.Services.Lobby.DTOs;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace API.ApiControllers.Lobby;
 
@@ -12,7 +17,11 @@ namespace API.ApiControllers.Lobby;
 [Route("api/v{version:apiVersion}/lobby")]
 [ApiController]
 [Authorize]
-public class LobbyController(ILobbyService lobbyService) : ControllerBase
+public class LobbyController(
+    ILobbyService lobbyService,
+    IHubContext<GameHub, IGameClient> hubContext,
+    IGameInitializationService gameInitializationService,
+    IGameLockManager gameLockManager) : ControllerBase
 {
     [HttpPost]
     [ProducesResponseType(typeof(CreateLobbyResponse), StatusCodes.Status201Created)]
@@ -35,6 +44,9 @@ public class LobbyController(ILobbyService lobbyService) : ControllerBase
         if (!result.IsSuccess)
             return BadRequest(ProblemDetailsFor(400, result.Error!));
 
+        await hubContext.Clients.Group($"game:{result.Value!.Id}")
+            .LobbyPlayerJoined(result.Value);
+
         return Ok(result.Value);
     }
 
@@ -46,6 +58,14 @@ public class LobbyController(ILobbyService lobbyService) : ControllerBase
         var result = await lobbyService.LeaveLobbyAsync(User.UserId(), id);
         if (!result.IsSuccess)
             return BadRequest(ProblemDetailsFor(400, result.Error!));
+
+        // Broadcast updated lobby to remaining players
+        var lobbyResult = await lobbyService.GetLobbyAsync(id);
+        if (lobbyResult.IsSuccess)
+        {
+            await hubContext.Clients.Group($"game:{id}")
+                .LobbyPlayerLeft(lobbyResult.Value!);
+        }
 
         return NoContent();
     }
@@ -59,6 +79,13 @@ public class LobbyController(ILobbyService lobbyService) : ControllerBase
         if (!result.IsSuccess)
             return BadRequest(ProblemDetailsFor(400, result.Error!));
 
+        var lobbyResult = await lobbyService.GetLobbyAsync(id);
+        if (lobbyResult.IsSuccess)
+        {
+            await hubContext.Clients.Group($"game:{id}")
+                .LobbyFactionSelected(lobbyResult.Value!);
+        }
+
         return Ok();
     }
 
@@ -67,9 +94,22 @@ public class LobbyController(ILobbyService lobbyService) : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Start(Guid id)
     {
+        using var gameLock = await gameLockManager.AcquireAsync(id);
+
         var result = await lobbyService.StartGameAsync(User.UserId(), id);
         if (!result.IsSuccess)
             return BadRequest(ProblemDetailsFor(400, result.Error!));
+
+        // Notify players that game is starting (before initialization, so UI can show loading)
+        await hubContext.Clients.Group($"game:{id}")
+            .LobbyGameStarting();
+
+        // Initialize game world (map, kingdoms, resources)
+        var gameState = await gameInitializationService.InitializeGameAsync(id);
+
+        // Broadcast full game state to all players
+        await hubContext.Clients.Group($"game:{id}")
+            .GameStateSnapshot(gameState);
 
         return Ok();
     }
