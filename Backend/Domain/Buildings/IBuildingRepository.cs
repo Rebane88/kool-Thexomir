@@ -4,5 +4,5 @@ namespace Domain.Buildings;
 
 public interface IBuildingRepository : IBaseRepository<Building>
 {
-    // Domain-specific queries added in feature phases
+    Task<List<Building>> GetBuildingsForKingdomAsync(Guid kingdomId);
 }

@@ -5,4 +5,5 @@ namespace Domain.Map;
 public interface ITileRepository : IBaseRepository<Tile>
 {
     Task<List<Tile>> GetTilesForGameAsync(Guid gameId);
+    Task<List<Tile>> GetTilesWithBuildingsAndTerrainForKingdomAsync(Guid kingdomId);
 }

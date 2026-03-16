@@ -103,6 +103,10 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
         // Update game metadata (Status already set to InProgress by LobbyService.StartGameAsync)
         game.TurnNumber = 1;
         game.MapWidth = radius;
+
+        // Set first turn to first kingdom by join order (CreatedAt)
+        var firstKingdom = kingdoms.OrderBy(k => k.CreatedAt).ThenBy(k => k.Id).First();
+        game.CurrentTurnKingdomId = firstKingdom.Id;
         await unitOfWork.Games.UpdateAsync(game);
 
         await unitOfWork.CommitAsync();
@@ -203,6 +207,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
             TurnNumber = game.TurnNumber,
             WinCondition = game.WinCondition.ToString(),
             MapRadius = game.MapWidth,
+            CurrentTurnKingdomId = game.CurrentTurnKingdomId,
             Tiles = tiles.Select(t => new TileDto
             {
                 Id = t.Id,

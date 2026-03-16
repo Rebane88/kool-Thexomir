@@ -12,4 +12,12 @@ public class KingdomResourceRepository(AppDbContext context)
             .Where(kr => kr.KingdomId == kingdomId)
             .ToListAsync();
     }
+
+    public async Task<List<KingdomResource>> GetResourcesForKingdomTrackedAsync(Guid kingdomId)
+    {
+        return await Context.Set<KingdomResource>()
+            .Where(kr => kr.KingdomId == kingdomId)
+            .AsTracking()
+            .ToListAsync();
+    }
 }
