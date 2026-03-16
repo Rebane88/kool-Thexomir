@@ -28,6 +28,27 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : ITurnSe
         // Load kingdoms for domain method
         game.Kingdoms = (await unitOfWork.Kingdoms.GetKingdomsForGameAsync(gameId)).ToList();
 
+        // Reset per-turn flags for the kingdom whose turn just ended
+        var endingKingdomArmies = await unitOfWork.Armies.GetArmiesForKingdomAsync(currentKingdom.Id);
+        foreach (var army in endingKingdomArmies)
+        {
+            if (army.HasAttackedThisTurn)
+            {
+                army.HasAttackedThisTurn = false;
+                await unitOfWork.Armies.UpdateAsync(army);
+            }
+        }
+
+        var endingKingdomBuildings = await unitOfWork.Buildings.GetBuildingsForKingdomAsync(currentKingdom.Id);
+        foreach (var building in endingKingdomBuildings)
+        {
+            if (building.HasTrainedThisTurn)
+            {
+                building.HasTrainedThisTurn = false;
+                await unitOfWork.Buildings.UpdateAsync(building);
+            }
+        }
+
         // Domain does the turn advancement
         var nextKingdom = game.AdvanceTurn();
 

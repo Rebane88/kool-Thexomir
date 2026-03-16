@@ -6,6 +6,7 @@ using Domain.Buildings;
 using Domain.Factions;
 using Domain.Game;
 using Domain.Map;
+using Domain.Military;
 using Domain.Resources;
 using Moq;
 using Shouldly;
@@ -27,6 +28,8 @@ public class TurnServiceTests
     private readonly Mock<IKingdomResourceRepository> _kingdomResourcesMock = new();
     private readonly Mock<IFactionResourceBonusRepository> _factionResourceBonusesMock = new();
     private readonly Mock<ITurnLogRepository> _turnLogsMock = new();
+    private readonly Mock<IArmyRepository> _armiesMock = new();
+    private readonly Mock<IBuildingRepository> _buildingsMock = new();
     private readonly TurnService _sut;
 
     // Captured entities for assertions
@@ -48,7 +51,15 @@ public class TurnServiceTests
         _unitOfWorkMock.Setup(u => u.KingdomResources).Returns(_kingdomResourcesMock.Object);
         _unitOfWorkMock.Setup(u => u.FactionResourceBonuses).Returns(_factionResourceBonusesMock.Object);
         _unitOfWorkMock.Setup(u => u.TurnLogs).Returns(_turnLogsMock.Object);
+        _unitOfWorkMock.Setup(u => u.Armies).Returns(_armiesMock.Object);
+        _unitOfWorkMock.Setup(u => u.Buildings).Returns(_buildingsMock.Object);
         _unitOfWorkMock.Setup(u => u.CommitAsync(default)).ReturnsAsync(1);
+
+        // Per-turn flag reset: return empty collections by default
+        _armiesMock.Setup(a => a.GetArmiesForKingdomAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(Enumerable.Empty<Army>());
+        _buildingsMock.Setup(b => b.GetBuildingsForKingdomAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(new List<Building>());
 
         _turnLogsMock.Setup(t => t.AddAsync(It.IsAny<TurnLog>()))
             .ReturnsAsync((TurnLog tl) => { _addedTurnLogs.Add(tl); return tl; });
