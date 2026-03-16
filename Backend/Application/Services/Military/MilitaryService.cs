@@ -1,6 +1,7 @@
 using Application.Contracts;
 using Application.Services.Military.DTOs;
 using Base.Contracts;
+using Domain.Factions;
 using Domain.Game;
 using Domain.Military;
 
@@ -175,9 +176,130 @@ public class MilitaryService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IMi
         });
     }
 
-    public Task<Result<CombatResolvedDto>> AttackAsync(Guid gameId, Guid userId, AttackRequest request)
+    public async Task<Result<CombatResolvedDto>> AttackAsync(Guid gameId, Guid userId, AttackRequest request)
     {
-        // Implemented in Plan 03
-        throw new NotImplementedException();
+        var guardResult = await gameGuard.ValidateAsync(gameId, userId);
+        if (!guardResult.IsSuccess)
+            return Result<CombatResolvedDto>.Fail(guardResult.Error!);
+
+        var (game, kingdom) = guardResult.Value!;
+
+        // Load attacker army with units
+        var attackerArmy = await unitOfWork.Armies.GetArmyWithUnitsAsync(request.AttackerArmyId);
+        if (attackerArmy is null)
+            return Result<CombatResolvedDto>.Fail("Attacker army not found.");
+
+        // Load tiles
+        var attackerTile = await unitOfWork.Tiles.GetByIdAsync(attackerArmy.TileId);
+        var defenderTile = await unitOfWork.Tiles.GetByIdAsync(request.DefenderTileId);
+        if (attackerTile is null || defenderTile is null)
+            return Result<CombatResolvedDto>.Fail("Tile not found.");
+
+        // Load defender army on target tile (any army not owned by attacker)
+        var defenderArmy = await unitOfWork.Armies.GetEnemyArmyOnTileAsync(request.DefenderTileId, kingdom.Id);
+        if (defenderArmy is null)
+            return Result<CombatResolvedDto>.Fail("No enemy army on target tile.");
+
+        // Load matchups
+        var matchups = (await unitOfWork.UnitTypeMatchups.GetAllMatchupsAsync()).ToList();
+
+        // Load faction bonuses for both sides
+        var attackerKingdom = await unitOfWork.Kingdoms.GetByIdAsync(kingdom.Id);
+        var defenderKingdom = await unitOfWork.Kingdoms.GetByIdAsync(defenderArmy.KingdomId);
+
+        var attackerFactionBonuses = attackerKingdom?.FactionTypeId.HasValue == true
+            ? (await unitOfWork.FactionUnitBonuses.GetBonusesForFactionAsync(attackerKingdom.FactionTypeId!.Value)).ToList()
+            : new List<FactionUnitBonus>();
+        var defenderFactionBonuses = defenderKingdom?.FactionTypeId.HasValue == true
+            ? (await unitOfWork.FactionUnitBonuses.GetBonusesForFactionAsync(defenderKingdom.FactionTypeId!.Value)).ToList()
+            : new List<FactionUnitBonus>();
+
+        // Load terrain
+        var defenderTerrain = await unitOfWork.TerrainTypes.GetByIdAsync(defenderTile.TerrainTypeId);
+        if (defenderTerrain is null)
+            return Result<CombatResolvedDto>.Fail("Terrain type not found.");
+
+        // Set up game aggregate
+        game.Kingdoms = [kingdom];
+
+        var result = game.ResolveCombat(attackerArmy, attackerTile, defenderTile, defenderArmy,
+            matchups, attackerFactionBonuses, defenderFactionBonuses, defenderTerrain);
+        if (!result.IsSuccess)
+            return Result<CombatResolvedDto>.Fail(result.Error!);
+
+        var combat = result.Value!;
+
+        // Persist battle record
+        await unitOfWork.Battles.AddAsync(combat.Battle);
+
+        // Persist attacker army changes
+        if (combat.AttackerArmyDestroyed)
+        {
+            foreach (var unit in attackerArmy.Units!)
+                await unitOfWork.Units.DeleteAsync(unit.Id);
+            await unitOfWork.Armies.DeleteAsync(attackerArmy.Id);
+        }
+        else
+        {
+            foreach (var unit in attackerArmy.Units!.Where(u => u.Quantity > 0))
+                await unitOfWork.Units.UpdateAsync(unit);
+            await unitOfWork.Armies.UpdateAsync(attackerArmy);
+        }
+
+        // Persist defender army changes
+        if (combat.DefenderArmyDestroyed)
+        {
+            foreach (var unit in defenderArmy.Units!)
+                await unitOfWork.Units.DeleteAsync(unit.Id);
+            await unitOfWork.Armies.DeleteAsync(defenderArmy.Id);
+        }
+        else
+        {
+            foreach (var unit in defenderArmy.Units!.Where(u => u.Quantity > 0))
+                await unitOfWork.Units.UpdateAsync(unit);
+        }
+
+        // Persist tile changes if captured
+        if (combat.TileCaptured)
+            await unitOfWork.Tiles.UpdateAsync(defenderTile);
+
+        // TurnLog
+        await unitOfWork.TurnLogs.AddAsync(new TurnLog
+        {
+            GameId = gameId,
+            KingdomId = kingdom.Id,
+            TurnNumber = game.TurnNumber,
+            Action = "Attack"
+        });
+
+        await unitOfWork.CommitAsync();
+
+        return Result<CombatResolvedDto>.Ok(new CombatResolvedDto
+        {
+            BattleId = combat.Battle.Id,
+            TileId = defenderTile.Id,
+            AttackerKingdomId = kingdom.Id,
+            DefenderKingdomId = defenderArmy.KingdomId,
+            WinnerKingdomId = combat.WinnerKingdomId,
+            TileCaptured = combat.TileCaptured,
+            AttackerStrength = combat.AttackerStrength,
+            DefenderStrength = combat.DefenderStrength,
+            AttackerCasualties = combat.AttackerCasualties.Select(c => new CasualtyDto
+            {
+                UnitTypeId = c.UnitTypeId,
+                UnitTypeName = c.UnitTypeName,
+                Before = c.Before,
+                Lost = c.Lost,
+                After = c.After
+            }).ToList(),
+            DefenderCasualties = combat.DefenderCasualties.Select(c => new CasualtyDto
+            {
+                UnitTypeId = c.UnitTypeId,
+                UnitTypeName = c.UnitTypeName,
+                Before = c.Before,
+                Lost = c.Lost,
+                After = c.After
+            }).ToList()
+        });
     }
 }

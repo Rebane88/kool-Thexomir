@@ -33,12 +33,18 @@ public class MilitaryServiceTests
     private readonly Mock<IKingdomResourceRepository> _kingdomResourcesMock = new();
     private readonly Mock<IFactionTypeRepository> _factionTypesMock = new();
     private readonly Mock<ITurnLogRepository> _turnLogsMock = new();
+    private readonly Mock<IKingdomRepository> _kingdomsMock = new();
+    private readonly Mock<IUnitTypeMatchupRepository> _unitTypeMatchupsMock = new();
+    private readonly Mock<IBattleRepository> _battlesMock = new();
+    private readonly Mock<IFactionUnitBonusRepository> _factionUnitBonusesMock = new();
+    private readonly Mock<ITerrainTypeRepository> _terrainTypesMock = new();
     private readonly MilitaryService _sut;
 
     // Captured entities
     private readonly List<Army> _addedArmies = [];
     private readonly List<MilitaryUnit> _addedUnits = [];
     private readonly List<TurnLog> _addedTurnLogs = [];
+    private readonly List<Battle> _addedBattles = [];
 
     // Well-known IDs
     private static readonly Guid GameId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
@@ -64,6 +70,11 @@ public class MilitaryServiceTests
         _unitOfWorkMock.Setup(u => u.KingdomResources).Returns(_kingdomResourcesMock.Object);
         _unitOfWorkMock.Setup(u => u.FactionTypes).Returns(_factionTypesMock.Object);
         _unitOfWorkMock.Setup(u => u.TurnLogs).Returns(_turnLogsMock.Object);
+        _unitOfWorkMock.Setup(u => u.Kingdoms).Returns(_kingdomsMock.Object);
+        _unitOfWorkMock.Setup(u => u.UnitTypeMatchups).Returns(_unitTypeMatchupsMock.Object);
+        _unitOfWorkMock.Setup(u => u.Battles).Returns(_battlesMock.Object);
+        _unitOfWorkMock.Setup(u => u.FactionUnitBonuses).Returns(_factionUnitBonusesMock.Object);
+        _unitOfWorkMock.Setup(u => u.TerrainTypes).Returns(_terrainTypesMock.Object);
         _unitOfWorkMock.Setup(u => u.CommitAsync(default)).ReturnsAsync(1);
 
         _armiesMock.Setup(a => a.AddAsync(It.IsAny<Army>()))
@@ -82,6 +93,8 @@ public class MilitaryServiceTests
             .ReturnsAsync((KingdomResource r) => r);
         _tilesMock.Setup(t => t.UpdateAsync(It.IsAny<Tile>()))
             .ReturnsAsync((Tile t) => t);
+        _battlesMock.Setup(b => b.AddAsync(It.IsAny<Battle>()))
+            .ReturnsAsync((Battle b) => { _addedBattles.Add(b); return b; });
 
         _sut = new MilitaryService(_unitOfWorkMock.Object, _gameGuardMock.Object);
     }
@@ -301,5 +314,155 @@ public class MilitaryServiceTests
         // TurnLog created
         _addedTurnLogs.Count.ShouldBe(1);
         _addedTurnLogs[0].Action.ShouldBe("Move");
+    }
+
+    // -------------------------------------------------------------------------
+    // AttackAsync tests
+    // -------------------------------------------------------------------------
+
+    private static readonly Guid AttackerArmyId = Guid.Parse("aaaaaaaa-ffff-ffff-ffff-ffffffffffff");
+    private static readonly Guid DefenderTileId = Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccee");
+    private static readonly Guid Kingdom2Id = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    private static readonly Guid SwordsmanTypeId = Guid.Parse("cccccccc-0001-0000-0000-000000000001");
+    private static readonly Guid ArcherTypeId = Guid.Parse("cccccccc-0001-0000-0000-000000000002");
+
+    private static AttackRequest DefaultAttackRequest() => new()
+    {
+        AttackerArmyId = AttackerArmyId,
+        DefenderTileId = DefenderTileId,
+    };
+
+    private void SetupAttackHappyPath()
+    {
+        SetupGuardSuccess();
+
+        var swordsmanType = new UnitType { Id = SwordsmanTypeId, Name = new LangStr("Swordsman", "en"), BaseStrength = 10 };
+        var archerType = new UnitType { Id = ArcherTypeId, Name = new LangStr("Archer", "en"), BaseStrength = 8 };
+
+        var attackerArmy = new Army
+        {
+            Id = AttackerArmyId, TileId = TileId, KingdomId = KingdomId,
+            Units = new List<MilitaryUnit>
+            {
+                new() { Id = Guid.NewGuid(), ArmyId = AttackerArmyId, UnitTypeId = SwordsmanTypeId, Quantity = 10, UnitType = swordsmanType },
+            }
+        };
+        _armiesMock.Setup(a => a.GetArmyWithUnitsAsync(AttackerArmyId)).ReturnsAsync(attackerArmy);
+
+        var attackerTile = new Tile { Id = TileId, KingdomId = KingdomId, CoordQ = 0, CoordR = 0, TerrainTypeId = Guid.NewGuid() };
+        var defenderTile = new Tile { Id = DefenderTileId, KingdomId = Kingdom2Id, CoordQ = 1, CoordR = 0, TerrainTypeId = Guid.NewGuid() };
+        _tilesMock.Setup(t => t.GetByIdAsync(TileId)).ReturnsAsync(attackerTile);
+        _tilesMock.Setup(t => t.GetByIdAsync(DefenderTileId)).ReturnsAsync(defenderTile);
+
+        var defenderArmy = new Army
+        {
+            Id = Guid.NewGuid(), TileId = DefenderTileId, KingdomId = Kingdom2Id,
+            Units = new List<MilitaryUnit>
+            {
+                new() { Id = Guid.NewGuid(), UnitTypeId = ArcherTypeId, Quantity = 10, UnitType = archerType },
+            }
+        };
+        _armiesMock.Setup(a => a.GetEnemyArmyOnTileAsync(DefenderTileId, KingdomId)).ReturnsAsync(defenderArmy);
+
+        // Matchups: Swordsman vs Archer = 1.25, Archer vs Swordsman = 0.75
+        var matchups = new List<UnitTypeMatchup>
+        {
+            new() { AttackerTypeId = SwordsmanTypeId, DefenderTypeId = ArcherTypeId, Multiplier = 1.25m },
+            new() { AttackerTypeId = ArcherTypeId, DefenderTypeId = SwordsmanTypeId, Multiplier = 0.75m },
+        };
+        _unitTypeMatchupsMock.Setup(m => m.GetAllMatchupsAsync()).ReturnsAsync(matchups);
+
+        // Kingdoms for faction lookup
+        var attackerKingdom = new Kingdom { Id = KingdomId, FactionTypeId = FactionId };
+        var defenderKingdom = new Kingdom { Id = Kingdom2Id, FactionTypeId = FactionId };
+        _kingdomsMock.Setup(k => k.GetByIdAsync(KingdomId)).ReturnsAsync(attackerKingdom);
+        _kingdomsMock.Setup(k => k.GetByIdAsync(Kingdom2Id)).ReturnsAsync(defenderKingdom);
+
+        // No faction bonuses
+        _factionUnitBonusesMock.Setup(f => f.GetBonusesForFactionAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(new List<FactionUnitBonus>());
+
+        // Terrain: Plains (0.0 defense)
+        var terrain = new TerrainType { Id = defenderTile.TerrainTypeId, Name = new LangStr("Plains", "en"), DefenseBonus = 0.0m };
+        _terrainTypesMock.Setup(t => t.GetByIdAsync(defenderTile.TerrainTypeId)).ReturnsAsync(terrain);
+
+        // Delete/Update mocks
+        _unitsMock.Setup(u => u.DeleteAsync(It.IsAny<Guid>())).Returns(Task.CompletedTask);
+        _armiesMock.Setup(a => a.DeleteAsync(It.IsAny<Guid>())).Returns(Task.CompletedTask);
+    }
+
+    [Fact]
+    public async Task Attack_GuardFails_ReturnsError()
+    {
+        SetupGuardFailure("It is not your turn.");
+
+        var result = await _sut.AttackAsync(GameId, UserId, DefaultAttackRequest());
+
+        result.IsSuccess.ShouldBeFalse();
+        result.Error.ShouldBe("It is not your turn.");
+    }
+
+    [Fact]
+    public async Task Attack_ArmyNotFound_ReturnsError()
+    {
+        SetupGuardSuccess();
+        _armiesMock.Setup(a => a.GetArmyWithUnitsAsync(AttackerArmyId)).ReturnsAsync((Army?)null);
+
+        var result = await _sut.AttackAsync(GameId, UserId, DefaultAttackRequest());
+
+        result.IsSuccess.ShouldBeFalse();
+        result.Error.ShouldBe("Attacker army not found.");
+    }
+
+    [Fact]
+    public async Task Attack_NoEnemyOnTile_ReturnsError()
+    {
+        SetupGuardSuccess();
+
+        var attackerArmy = new Army
+        {
+            Id = AttackerArmyId, TileId = TileId, KingdomId = KingdomId,
+            Units = new List<MilitaryUnit> { new() { UnitTypeId = SwordsmanTypeId, Quantity = 5 } }
+        };
+        _armiesMock.Setup(a => a.GetArmyWithUnitsAsync(AttackerArmyId)).ReturnsAsync(attackerArmy);
+
+        var attackerTile = new Tile { Id = TileId, KingdomId = KingdomId, CoordQ = 0, CoordR = 0 };
+        var defenderTile = new Tile { Id = DefenderTileId, KingdomId = null, CoordQ = 1, CoordR = 0 };
+        _tilesMock.Setup(t => t.GetByIdAsync(TileId)).ReturnsAsync(attackerTile);
+        _tilesMock.Setup(t => t.GetByIdAsync(DefenderTileId)).ReturnsAsync(defenderTile);
+
+        _armiesMock.Setup(a => a.GetEnemyArmyOnTileAsync(DefenderTileId, KingdomId)).ReturnsAsync((Army?)null);
+
+        var result = await _sut.AttackAsync(GameId, UserId, DefaultAttackRequest());
+
+        result.IsSuccess.ShouldBeFalse();
+        result.Error.ShouldBe("No enemy army on target tile.");
+    }
+
+    [Fact]
+    public async Task Attack_HappyPath_ReturnsCombatResolvedDto()
+    {
+        SetupAttackHappyPath();
+
+        var result = await _sut.AttackAsync(GameId, UserId, DefaultAttackRequest());
+
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.ShouldNotBeNull();
+        result.Value.AttackerKingdomId.ShouldBe(KingdomId);
+        result.Value.DefenderKingdomId.ShouldBe(Kingdom2Id);
+        result.Value.WinnerKingdomId.ShouldBe(KingdomId); // attacker wins (swordsmen beat archers)
+        result.Value.TileCaptured.ShouldBeTrue();
+        result.Value.AttackerStrength.ShouldBe(125m);
+        result.Value.DefenderStrength.ShouldBe(60m);
+
+        // Battle record persisted
+        _addedBattles.Count.ShouldBe(1);
+
+        // TurnLog created
+        _addedTurnLogs.Count.ShouldBe(1);
+        _addedTurnLogs[0].Action.ShouldBe("Attack");
+
+        // Commit called
+        _unitOfWorkMock.Verify(u => u.CommitAsync(default), Times.Once);
     }
 }
