@@ -1,11 +1,23 @@
 using Base;
 using Base.Contracts;
 using Domain.Buildings;
+using Domain.Factions;
 using Domain.Map;
 using Domain.Military;
 using Domain.Resources;
 
 namespace Domain.Game;
+
+public record CombatResult(
+    Battle Battle,
+    Guid? WinnerKingdomId,
+    bool TileCaptured,
+    decimal AttackerStrength,
+    decimal DefenderStrength,
+    List<(Guid UnitTypeId, string UnitTypeName, int Before, int Lost, int After)> AttackerCasualties,
+    List<(Guid UnitTypeId, string UnitTypeName, int Before, int Lost, int After)> DefenderCasualties,
+    bool AttackerArmyDestroyed,
+    bool DefenderArmyDestroyed);
 
 public class Game : BaseEntity
 {
@@ -349,5 +361,43 @@ public class Game : BaseEntity
         }
 
         return Result<(bool, bool, Army?)>.Ok((tileClaimed, armyMerged, mergedIntoArmy));
+    }
+
+    /// <summary>
+    /// Calculates the total strength of an army against an opposing army.
+    /// Uses weighted average matchup multipliers and faction unit bonuses.
+    /// </summary>
+    public static decimal CalculateArmyStrength(
+        ICollection<Unit> units,
+        ICollection<Unit> opposingUnits,
+        ICollection<UnitTypeMatchup> matchups,
+        ICollection<FactionUnitBonus> factionBonuses)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Applies proportional casualties to an army. Each unit type loses floor(qty * ratio) units.
+    /// </summary>
+    public static List<(Guid UnitTypeId, string UnitTypeName, int Before, int Lost, int After)> ApplyCasualties(
+        ICollection<Unit> units, decimal casualtyRatio)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Resolves combat between an attacker army and defender army on adjacent tiles.
+    /// </summary>
+    public Result<CombatResult> ResolveCombat(
+        Army attackerArmy,
+        Tile attackerTile,
+        Tile defenderTile,
+        Army defenderArmy,
+        ICollection<UnitTypeMatchup> matchups,
+        ICollection<FactionUnitBonus> attackerFactionBonuses,
+        ICollection<FactionUnitBonus> defenderFactionBonuses,
+        TerrainType defenderTerrain)
+    {
+        throw new NotImplementedException();
     }
 }

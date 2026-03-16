@@ -1,5 +1,6 @@
 using Base.Contracts;
 using Domain.Buildings;
+using Domain.Factions;
 using Domain.Game;
 using Domain.Map;
 using Domain.Military;
@@ -388,5 +389,517 @@ public class GameDomainMilitaryTests
         armyMerged.ShouldBeTrue();
         mergedInto!.Units!.Count.ShouldBe(2); // Archer + Swordsman
         destUnit.Quantity.ShouldBe(5); // untouched
+    }
+
+    // =========================================================================
+    // Combat helpers
+    // =========================================================================
+
+    private static readonly Guid SwordsmanTypeId = Guid.Parse("cccccccc-0001-0000-0000-000000000001");
+    private static readonly Guid ArcherTypeId = Guid.Parse("cccccccc-0001-0000-0000-000000000002");
+    private static readonly Guid KnightTypeId = Guid.Parse("cccccccc-0001-0000-0000-000000000003");
+    private static readonly Guid MageTypeId = Guid.Parse("cccccccc-0001-0000-0000-000000000004");
+
+    private static UnitType CreateSwordsman() => new()
+    {
+        Id = SwordsmanTypeId,
+        Name = new Base.LangStr("Swordsman", "en"),
+        BaseStrength = 10,
+    };
+
+    private static UnitType CreateArcher() => new()
+    {
+        Id = ArcherTypeId,
+        Name = new Base.LangStr("Archer", "en"),
+        BaseStrength = 8,
+    };
+
+    private static UnitType CreateKnight() => new()
+    {
+        Id = KnightTypeId,
+        Name = new Base.LangStr("Knight", "en"),
+        BaseStrength = 15,
+    };
+
+    private static UnitType CreateMage() => new()
+    {
+        Id = MageTypeId,
+        Name = new Base.LangStr("Mage", "en"),
+        BaseStrength = 12,
+    };
+
+    private static List<UnitTypeMatchup> CreateMatchups()
+    {
+        // Subset of real matchup matrix relevant to tests
+        return
+        [
+            new() { AttackerTypeId = SwordsmanTypeId, DefenderTypeId = SwordsmanTypeId, Multiplier = 1.00m },
+            new() { AttackerTypeId = SwordsmanTypeId, DefenderTypeId = ArcherTypeId, Multiplier = 1.25m },
+            new() { AttackerTypeId = SwordsmanTypeId, DefenderTypeId = KnightTypeId, Multiplier = 0.75m },
+            new() { AttackerTypeId = SwordsmanTypeId, DefenderTypeId = MageTypeId, Multiplier = 0.75m },
+            new() { AttackerTypeId = ArcherTypeId, DefenderTypeId = SwordsmanTypeId, Multiplier = 0.75m },
+            new() { AttackerTypeId = ArcherTypeId, DefenderTypeId = ArcherTypeId, Multiplier = 1.00m },
+            new() { AttackerTypeId = ArcherTypeId, DefenderTypeId = KnightTypeId, Multiplier = 1.25m },
+            new() { AttackerTypeId = ArcherTypeId, DefenderTypeId = MageTypeId, Multiplier = 0.75m },
+            new() { AttackerTypeId = KnightTypeId, DefenderTypeId = SwordsmanTypeId, Multiplier = 1.25m },
+            new() { AttackerTypeId = KnightTypeId, DefenderTypeId = ArcherTypeId, Multiplier = 0.75m },
+            new() { AttackerTypeId = KnightTypeId, DefenderTypeId = KnightTypeId, Multiplier = 1.00m },
+            new() { AttackerTypeId = KnightTypeId, DefenderTypeId = MageTypeId, Multiplier = 1.25m },
+            new() { AttackerTypeId = MageTypeId, DefenderTypeId = SwordsmanTypeId, Multiplier = 1.25m },
+            new() { AttackerTypeId = MageTypeId, DefenderTypeId = ArcherTypeId, Multiplier = 0.75m },
+            new() { AttackerTypeId = MageTypeId, DefenderTypeId = KnightTypeId, Multiplier = 0.75m },
+            new() { AttackerTypeId = MageTypeId, DefenderTypeId = MageTypeId, Multiplier = 1.00m },
+        ];
+    }
+
+    private static TerrainType CreateTerrain(decimal defenseBonus = 0.0m)
+    {
+        return new TerrainType
+        {
+            Id = Guid.NewGuid(),
+            Name = new Base.LangStr("Plains", "en"),
+            DefenseBonus = defenseBonus,
+        };
+    }
+
+    private static Army CreateArmyWithUnits(Guid kingdomId, Guid tileId, List<MilitaryUnit> units)
+    {
+        var army = new Army
+        {
+            Id = Guid.NewGuid(),
+            TileId = tileId,
+            KingdomId = kingdomId,
+            HasAttackedThisTurn = false,
+            Units = units,
+        };
+        foreach (var u in units) u.ArmyId = army.Id;
+        return army;
+    }
+
+    // =========================================================================
+    // CalculateArmyStrength tests
+    // =========================================================================
+
+    [Fact]
+    public void CalculateStrength_SingleUnitType_ReturnsBaseTimesMatchupTimesFaction()
+    {
+        // 10 Swordsmen vs 5 Archers, matchup=1.25, no faction bonus
+        var swordsmanType = CreateSwordsman();
+        var archerType = CreateArcher();
+        var units = new List<MilitaryUnit>
+        {
+            new() { UnitTypeId = SwordsmanTypeId, Quantity = 10, UnitType = swordsmanType },
+        };
+        var opposing = new List<MilitaryUnit>
+        {
+            new() { UnitTypeId = ArcherTypeId, Quantity = 5, UnitType = archerType },
+        };
+        var matchups = CreateMatchups();
+
+        var strength = Game.CalculateArmyStrength(units, opposing, matchups, new List<FactionUnitBonus>());
+
+        // 10 * 10 * 1.25 * 1.0 = 125
+        strength.ShouldBe(125m);
+    }
+
+    [Fact]
+    public void CalculateStrength_MixedArmy_WeightsMatchupByOpposingProportion()
+    {
+        // 5 Swordsmen + 5 Archers vs 10 Knights
+        var swordsmanType = CreateSwordsman(); // str=10
+        var archerType = CreateArcher(); // str=8
+        var knightType = CreateKnight(); // str=15
+        var units = new List<MilitaryUnit>
+        {
+            new() { UnitTypeId = SwordsmanTypeId, Quantity = 5, UnitType = swordsmanType },
+            new() { UnitTypeId = ArcherTypeId, Quantity = 5, UnitType = archerType },
+        };
+        var opposing = new List<MilitaryUnit>
+        {
+            new() { UnitTypeId = KnightTypeId, Quantity = 10, UnitType = knightType },
+        };
+        var matchups = CreateMatchups();
+
+        var strength = Game.CalculateArmyStrength(units, opposing, matchups, new List<FactionUnitBonus>());
+
+        // Swordsmen: 5 * 10 * matchup(Sword->Knight=0.75) * 1.0 = 37.5
+        // Archers: 5 * 8 * matchup(Archer->Knight=1.25) * 1.0 = 50
+        // Total = 87.5
+        strength.ShouldBe(87.5m);
+    }
+
+    [Fact]
+    public void CalculateStrength_FactionBonus_SpecificOverGlobal()
+    {
+        // Mage Council: specific Mage +20% (1.2), no global
+        var mageType = CreateMage();
+        var swordsmanType = CreateSwordsman();
+        var units = new List<MilitaryUnit>
+        {
+            new() { UnitTypeId = MageTypeId, Quantity = 10, UnitType = mageType },
+        };
+        var opposing = new List<MilitaryUnit>
+        {
+            new() { UnitTypeId = SwordsmanTypeId, Quantity = 10, UnitType = swordsmanType },
+        };
+        var matchups = CreateMatchups();
+        var factionBonuses = new List<FactionUnitBonus>
+        {
+            new() { FactionTypeId = Guid.NewGuid(), UnitTypeId = MageTypeId, Multiplier = 1.2m },
+        };
+
+        var strength = Game.CalculateArmyStrength(units, opposing, matchups, factionBonuses);
+
+        // 10 * 12 * matchup(Mage->Swordsman=1.25) * 1.2 = 180
+        strength.ShouldBe(180m);
+    }
+
+    [Fact]
+    public void CalculateStrength_FactionBonus_GlobalFallback()
+    {
+        // Iron Throne: null UnitTypeId = 1.2 (applies to all)
+        var swordsmanType = CreateSwordsman();
+        var archerType = CreateArcher();
+        var units = new List<MilitaryUnit>
+        {
+            new() { UnitTypeId = SwordsmanTypeId, Quantity = 10, UnitType = swordsmanType },
+        };
+        var opposing = new List<MilitaryUnit>
+        {
+            new() { UnitTypeId = ArcherTypeId, Quantity = 10, UnitType = archerType },
+        };
+        var matchups = CreateMatchups();
+        var factionBonuses = new List<FactionUnitBonus>
+        {
+            new() { FactionTypeId = Guid.NewGuid(), UnitTypeId = null, Multiplier = 1.2m },
+        };
+
+        var strength = Game.CalculateArmyStrength(units, opposing, matchups, factionBonuses);
+
+        // 10 * 10 * 1.25 * 1.2 = 150
+        strength.ShouldBe(150m);
+    }
+
+    [Fact]
+    public void CalculateStrength_NoOpposingUnits_ReturnsZero()
+    {
+        var swordsmanType = CreateSwordsman();
+        var units = new List<MilitaryUnit>
+        {
+            new() { UnitTypeId = SwordsmanTypeId, Quantity = 10, UnitType = swordsmanType },
+        };
+        var opposing = new List<MilitaryUnit>();
+        var matchups = CreateMatchups();
+
+        var strength = Game.CalculateArmyStrength(units, opposing, matchups, new List<FactionUnitBonus>());
+
+        strength.ShouldBe(0m);
+    }
+
+    // =========================================================================
+    // ResolveCombat tests
+    // =========================================================================
+
+    [Fact]
+    public void Attack_ValidAdjacentEnemy_ResolvesCombat()
+    {
+        // 10 Swordsmen attack 10 Archers on Plains
+        // Attacker strength = 10*10*1.25*1.0 = 125
+        // Defender strength = 10*8*0.75*1.0*(1+0.0) = 60
+        // Attacker casualty ratio = min(1, 60/125) = 0.48
+        // Defender casualty ratio = min(1, 125/60) = 1.0
+        // Attacker losses = floor(10*0.48) = 4, remaining 6
+        // Defender losses = floor(10*1.0) = 10, remaining 0 -> destroyed
+        var game = CreateGame(Kingdom1Id);
+        var swordsmanType = CreateSwordsman();
+        var archerType = CreateArcher();
+        var attackerTile = CreateTile(TileAId, Kingdom1Id, q: 0, r: 0);
+        var defenderTile = CreateTile(TileBId, Kingdom2Id, q: 1, r: 0);
+        var terrain = CreateTerrain(0.0m);
+
+        var attackerUnits = new List<MilitaryUnit>
+        {
+            new() { UnitTypeId = SwordsmanTypeId, Quantity = 10, UnitType = swordsmanType },
+        };
+        var defenderUnits = new List<MilitaryUnit>
+        {
+            new() { UnitTypeId = ArcherTypeId, Quantity = 10, UnitType = archerType },
+        };
+        var attackerArmy = CreateArmyWithUnits(Kingdom1Id, TileAId, attackerUnits);
+        var defenderArmy = CreateArmyWithUnits(Kingdom2Id, TileBId, defenderUnits);
+        var matchups = CreateMatchups();
+
+        var result = game.ResolveCombat(attackerArmy, attackerTile, defenderTile, defenderArmy,
+            matchups, new List<FactionUnitBonus>(), new List<FactionUnitBonus>(), terrain);
+
+        result.IsSuccess.ShouldBeTrue();
+        var combat = result.Value!;
+        combat.AttackerStrength.ShouldBe(125m);
+        combat.DefenderStrength.ShouldBe(60m);
+        combat.WinnerKingdomId.ShouldBe(Kingdom1Id);
+        combat.TileCaptured.ShouldBeTrue();
+        combat.DefenderArmyDestroyed.ShouldBeTrue();
+        combat.AttackerArmyDestroyed.ShouldBeFalse();
+        // Attacker lost 4 swordsmen, remaining 6
+        combat.AttackerCasualties.ShouldHaveSingleItem();
+        combat.AttackerCasualties[0].Lost.ShouldBe(4);
+        combat.AttackerCasualties[0].After.ShouldBe(6);
+        // Tile captured
+        defenderTile.KingdomId.ShouldBe(Kingdom1Id);
+        attackerArmy.TileId.ShouldBe(TileBId);
+    }
+
+    [Fact]
+    public void Attack_ArmyNotOwnedByKingdom_Fails()
+    {
+        var game = CreateGame(Kingdom1Id);
+        var attackerTile = CreateTile(TileAId, Kingdom2Id, q: 0, r: 0);
+        var defenderTile = CreateTile(TileBId, Kingdom2Id, q: 1, r: 0);
+        var terrain = CreateTerrain();
+        var attackerArmy = CreateArmyWithUnits(Kingdom2Id, TileAId, // wrong kingdom
+            [new() { UnitTypeId = SwordsmanTypeId, Quantity = 5, UnitType = CreateSwordsman() }]);
+        var defenderArmy = CreateArmyWithUnits(Kingdom2Id, TileBId,
+            [new() { UnitTypeId = ArcherTypeId, Quantity = 5, UnitType = CreateArcher() }]);
+
+        var result = game.ResolveCombat(attackerArmy, attackerTile, defenderTile, defenderArmy,
+            CreateMatchups(), new List<FactionUnitBonus>(), new List<FactionUnitBonus>(), terrain);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.Error!.ShouldContain("does not belong");
+    }
+
+    [Fact]
+    public void Attack_NotAdjacent_Fails()
+    {
+        var game = CreateGame(Kingdom1Id);
+        var attackerTile = CreateTile(TileAId, Kingdom1Id, q: 0, r: 0);
+        var defenderTile = CreateTile(TileBId, Kingdom2Id, q: 3, r: 3); // not adjacent
+        var terrain = CreateTerrain();
+        var attackerArmy = CreateArmyWithUnits(Kingdom1Id, TileAId,
+            [new() { UnitTypeId = SwordsmanTypeId, Quantity = 5, UnitType = CreateSwordsman() }]);
+        var defenderArmy = CreateArmyWithUnits(Kingdom2Id, TileBId,
+            [new() { UnitTypeId = ArcherTypeId, Quantity = 5, UnitType = CreateArcher() }]);
+
+        var result = game.ResolveCombat(attackerArmy, attackerTile, defenderTile, defenderArmy,
+            CreateMatchups(), new List<FactionUnitBonus>(), new List<FactionUnitBonus>(), terrain);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.Error!.ShouldContain("not adjacent");
+    }
+
+    [Fact]
+    public void Attack_NoEnemyOnTile_Fails()
+    {
+        var game = CreateGame(Kingdom1Id);
+        var attackerTile = CreateTile(TileAId, Kingdom1Id, q: 0, r: 0);
+        var defenderTile = CreateTile(TileBId, Kingdom2Id, q: 1, r: 0);
+        var terrain = CreateTerrain();
+        var attackerArmy = CreateArmyWithUnits(Kingdom1Id, TileAId,
+            [new() { UnitTypeId = SwordsmanTypeId, Quantity = 5, UnitType = CreateSwordsman() }]);
+        // Defender army has no units with quantity > 0
+        var defenderArmy = CreateArmyWithUnits(Kingdom2Id, TileBId,
+            [new() { UnitTypeId = ArcherTypeId, Quantity = 0, UnitType = CreateArcher() }]);
+
+        var result = game.ResolveCombat(attackerArmy, attackerTile, defenderTile, defenderArmy,
+            CreateMatchups(), new List<FactionUnitBonus>(), new List<FactionUnitBonus>(), terrain);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.Error!.ShouldContain("No enemy");
+    }
+
+    [Fact]
+    public void Attack_AlreadyAttacked_Fails()
+    {
+        var game = CreateGame(Kingdom1Id);
+        var attackerTile = CreateTile(TileAId, Kingdom1Id, q: 0, r: 0);
+        var defenderTile = CreateTile(TileBId, Kingdom2Id, q: 1, r: 0);
+        var terrain = CreateTerrain();
+        var attackerArmy = CreateArmyWithUnits(Kingdom1Id, TileAId,
+            [new() { UnitTypeId = SwordsmanTypeId, Quantity = 5, UnitType = CreateSwordsman() }]);
+        attackerArmy.HasAttackedThisTurn = true; // already attacked
+        var defenderArmy = CreateArmyWithUnits(Kingdom2Id, TileBId,
+            [new() { UnitTypeId = ArcherTypeId, Quantity = 5, UnitType = CreateArcher() }]);
+
+        var result = game.ResolveCombat(attackerArmy, attackerTile, defenderTile, defenderArmy,
+            CreateMatchups(), new List<FactionUnitBonus>(), new List<FactionUnitBonus>(), terrain);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.Error!.ShouldContain("already attacked");
+    }
+
+    [Fact]
+    public void Attack_DefenderWins_AttackerDestroyed()
+    {
+        // Weak attacker: 2 Archers (str=8) vs 10 Knights (str=15)
+        // Attacker: 2*8*matchup(Archer->Knight=1.25)*1.0 = 20
+        // Defender: 10*15*matchup(Knight->Archer=0.75)*1.0 = 112.5
+        // Attacker casualty = min(1, 112.5/20) = 1.0 -> all archers die
+        // Defender casualty = min(1, 20/112.5) = 0.177.. -> floor(10*0.177) = 1 knight dies
+        var game = CreateGame(Kingdom1Id);
+        var archerType = CreateArcher();
+        var knightType = CreateKnight();
+        var attackerTile = CreateTile(TileAId, Kingdom1Id, q: 0, r: 0);
+        var defenderTile = CreateTile(TileBId, Kingdom2Id, q: 1, r: 0);
+        var terrain = CreateTerrain(0.0m);
+
+        var attackerArmy = CreateArmyWithUnits(Kingdom1Id, TileAId,
+            [new() { UnitTypeId = ArcherTypeId, Quantity = 2, UnitType = archerType }]);
+        var defenderArmy = CreateArmyWithUnits(Kingdom2Id, TileBId,
+            [new() { UnitTypeId = KnightTypeId, Quantity = 10, UnitType = knightType }]);
+
+        var result = game.ResolveCombat(attackerArmy, attackerTile, defenderTile, defenderArmy,
+            CreateMatchups(), new List<FactionUnitBonus>(), new List<FactionUnitBonus>(), terrain);
+
+        result.IsSuccess.ShouldBeTrue();
+        var combat = result.Value!;
+        combat.WinnerKingdomId.ShouldBe(Kingdom2Id);
+        combat.AttackerArmyDestroyed.ShouldBeTrue();
+        combat.DefenderArmyDestroyed.ShouldBeFalse();
+        combat.TileCaptured.ShouldBeFalse();
+        defenderTile.KingdomId.ShouldBe(Kingdom2Id); // unchanged
+    }
+
+    [Fact]
+    public void Attack_MutualDestruction_Draw()
+    {
+        // Equal armies that wipe each other out
+        // 1 Swordsman vs 1 Swordsman on Plains
+        // Both strength = 1*10*1.0*1.0 = 10
+        // Both casualty ratio = 1.0 -> both lose floor(1*1.0) = 1 -> both destroyed
+        var game = CreateGame(Kingdom1Id);
+        var swordsmanType = CreateSwordsman();
+        var attackerTile = CreateTile(TileAId, Kingdom1Id, q: 0, r: 0);
+        var defenderTile = CreateTile(TileBId, Kingdom2Id, q: 1, r: 0);
+        var terrain = CreateTerrain(0.0m);
+
+        var attackerArmy = CreateArmyWithUnits(Kingdom1Id, TileAId,
+            [new() { UnitTypeId = SwordsmanTypeId, Quantity = 1, UnitType = swordsmanType }]);
+        var defenderArmy = CreateArmyWithUnits(Kingdom2Id, TileBId,
+            [new() { UnitTypeId = SwordsmanTypeId, Quantity = 1, UnitType = swordsmanType }]);
+
+        var result = game.ResolveCombat(attackerArmy, attackerTile, defenderTile, defenderArmy,
+            CreateMatchups(), new List<FactionUnitBonus>(), new List<FactionUnitBonus>(), terrain);
+
+        result.IsSuccess.ShouldBeTrue();
+        var combat = result.Value!;
+        combat.WinnerKingdomId.ShouldBeNull(); // draw
+        combat.AttackerArmyDestroyed.ShouldBeTrue();
+        combat.DefenderArmyDestroyed.ShouldBeTrue();
+        combat.TileCaptured.ShouldBeFalse();
+        defenderTile.KingdomId.ShouldBe(Kingdom2Id); // unchanged
+    }
+
+    [Fact]
+    public void Attack_AttackerWins_CapturesTile()
+    {
+        // 10 Knights (str=15) vs 3 Archers (str=8) on Plains
+        // Attacker: 10*15*0.75*1.0 = 112.5
+        // Defender: 3*8*1.25*1.0 = 30
+        // Attacker casualty = min(1, 30/112.5) = 0.2666 -> floor(10*0.266) = 2 lost
+        // Defender casualty = min(1, 112.5/30) = 1.0 -> all die
+        var game = CreateGame(Kingdom1Id);
+        var knightType = CreateKnight();
+        var archerType = CreateArcher();
+        var attackerTile = CreateTile(TileAId, Kingdom1Id, q: 0, r: 0);
+        var defenderTile = CreateTile(TileBId, Kingdom2Id, q: 1, r: 0);
+        var terrain = CreateTerrain(0.0m);
+
+        var attackerArmy = CreateArmyWithUnits(Kingdom1Id, TileAId,
+            [new() { UnitTypeId = KnightTypeId, Quantity = 10, UnitType = knightType }]);
+        var defenderArmy = CreateArmyWithUnits(Kingdom2Id, TileBId,
+            [new() { UnitTypeId = ArcherTypeId, Quantity = 3, UnitType = archerType }]);
+
+        var result = game.ResolveCombat(attackerArmy, attackerTile, defenderTile, defenderArmy,
+            CreateMatchups(), new List<FactionUnitBonus>(), new List<FactionUnitBonus>(), terrain);
+
+        result.IsSuccess.ShouldBeTrue();
+        var combat = result.Value!;
+        combat.WinnerKingdomId.ShouldBe(Kingdom1Id);
+        combat.TileCaptured.ShouldBeTrue();
+        combat.DefenderArmyDestroyed.ShouldBeTrue();
+        defenderTile.KingdomId.ShouldBe(Kingdom1Id);
+        attackerArmy.TileId.ShouldBe(TileBId);
+    }
+
+    [Fact]
+    public void Attack_DefenderTerrainBonus_Applied()
+    {
+        // 10 Swordsmen vs 10 Swordsmen on Forest (0.20 defense)
+        // Attacker strength = 10*10*1.0*1.0 = 100
+        // Defender strength = 10*10*1.0*1.0 * (1+0.20) = 120
+        // Attacker casualty = min(1, 120/100) = 1.0
+        // Defender casualty = min(1, 100/120) = 0.8333 -> floor(10*0.833) = 8 lost, 2 remain
+        var game = CreateGame(Kingdom1Id);
+        var swordsmanType = CreateSwordsman();
+        var attackerTile = CreateTile(TileAId, Kingdom1Id, q: 0, r: 0);
+        var defenderTile = CreateTile(TileBId, Kingdom2Id, q: 1, r: 0);
+        var terrain = CreateTerrain(0.20m); // Forest
+
+        var attackerArmy = CreateArmyWithUnits(Kingdom1Id, TileAId,
+            [new() { UnitTypeId = SwordsmanTypeId, Quantity = 10, UnitType = swordsmanType }]);
+        var defenderArmy = CreateArmyWithUnits(Kingdom2Id, TileBId,
+            [new() { UnitTypeId = SwordsmanTypeId, Quantity = 10, UnitType = swordsmanType }]);
+
+        var result = game.ResolveCombat(attackerArmy, attackerTile, defenderTile, defenderArmy,
+            CreateMatchups(), new List<FactionUnitBonus>(), new List<FactionUnitBonus>(), terrain);
+
+        result.IsSuccess.ShouldBeTrue();
+        var combat = result.Value!;
+        combat.AttackerStrength.ShouldBe(100m);
+        combat.DefenderStrength.ShouldBe(120m);
+        // Attacker loses all (ratio = 1.0)
+        combat.AttackerArmyDestroyed.ShouldBeTrue();
+        // Defender loses 8, keeps 2
+        combat.DefenderCasualties[0].Lost.ShouldBe(8);
+        combat.DefenderCasualties[0].After.ShouldBe(2);
+        combat.WinnerKingdomId.ShouldBe(Kingdom2Id);
+    }
+
+    [Fact]
+    public void Attack_ProportionalCasualties_Floored()
+    {
+        // Mixed army: 7 Swordsmen + 3 Archers attack 5 Knights on Plains
+        // Attacker:
+        //   Swordsmen: 7*10*matchup(Sword->Knight=0.75)*1.0 = 52.5
+        //   Archers: 3*8*matchup(Archer->Knight=1.25)*1.0 = 30
+        //   Total = 82.5
+        // Defender:
+        //   Knights vs mixed: weighted matchup = (1.25*7 + 0.75*3)/10 = (8.75+2.25)/10 = 1.1
+        //   5*15*1.1*1.0 = 82.5
+        //   With Plains (0.0): 82.5 * 1.0 = 82.5
+        // Equal strength -> both casualty ratios = 1.0
+        // All units die -> mutual destruction
+        var game = CreateGame(Kingdom1Id);
+        var swordsmanType = CreateSwordsman();
+        var archerType = CreateArcher();
+        var knightType = CreateKnight();
+        var attackerTile = CreateTile(TileAId, Kingdom1Id, q: 0, r: 0);
+        var defenderTile = CreateTile(TileBId, Kingdom2Id, q: 1, r: 0);
+        var terrain = CreateTerrain(0.0m);
+
+        var attackerArmy = CreateArmyWithUnits(Kingdom1Id, TileAId,
+        [
+            new() { UnitTypeId = SwordsmanTypeId, Quantity = 7, UnitType = swordsmanType },
+            new() { UnitTypeId = ArcherTypeId, Quantity = 3, UnitType = archerType },
+        ]);
+        var defenderArmy = CreateArmyWithUnits(Kingdom2Id, TileBId,
+            [new() { UnitTypeId = KnightTypeId, Quantity = 5, UnitType = knightType }]);
+
+        var result = game.ResolveCombat(attackerArmy, attackerTile, defenderTile, defenderArmy,
+            CreateMatchups(), new List<FactionUnitBonus>(), new List<FactionUnitBonus>(), terrain);
+
+        result.IsSuccess.ShouldBeTrue();
+        var combat = result.Value!;
+        // Both at 82.5 => both casualty ratio = 1.0, all die
+        combat.AttackerArmyDestroyed.ShouldBeTrue();
+        combat.DefenderArmyDestroyed.ShouldBeTrue();
+        combat.WinnerKingdomId.ShouldBeNull(); // draw
+        // Verify floor rounding on casualties
+        var swordsmanCasualty = combat.AttackerCasualties.First(c => c.UnitTypeId == SwordsmanTypeId);
+        swordsmanCasualty.Before.ShouldBe(7);
+        swordsmanCasualty.Lost.ShouldBe(7); // floor(7*1.0) = 7
+        var archerCasualty = combat.AttackerCasualties.First(c => c.UnitTypeId == ArcherTypeId);
+        archerCasualty.Before.ShouldBe(3);
+        archerCasualty.Lost.ShouldBe(3); // floor(3*1.0) = 3
     }
 }
