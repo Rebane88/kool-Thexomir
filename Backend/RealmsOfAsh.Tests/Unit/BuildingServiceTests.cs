@@ -163,7 +163,7 @@ public class BuildingServiceTests
         var result = await _sut.PlaceBuildingAsync(GameId, UserId, DefaultRequest());
 
         result.IsSuccess.ShouldBeFalse();
-        result.Error.ShouldContain("do not own");
+        result.Error!.ShouldContain("do not own");
     }
 
     // -------------------------------------------------------------------------
@@ -181,7 +181,7 @@ public class BuildingServiceTests
         var result = await _sut.PlaceBuildingAsync(GameId, UserId, DefaultRequest());
 
         result.IsSuccess.ShouldBeFalse();
-        result.Error.ShouldContain("already has a building");
+        result.Error!.ShouldContain("already has a building");
     }
 
     // -------------------------------------------------------------------------
@@ -220,7 +220,7 @@ public class BuildingServiceTests
         var result = await _sut.PlaceBuildingAsync(GameId, UserId, DefaultRequest());
 
         result.IsSuccess.ShouldBeFalse();
-        result.Error.ShouldContain("prerequisite");
+        result.Error!.ShouldContain("prerequisite");
     }
 
     // -------------------------------------------------------------------------
@@ -235,7 +235,7 @@ public class BuildingServiceTests
         var result = await _sut.PlaceBuildingAsync(GameId, UserId, DefaultRequest());
 
         result.IsSuccess.ShouldBeFalse();
-        result.Error.ShouldContain("Not enough Gold");
+        result.Error!.ShouldContain("Not enough Gold");
     }
 
     // -------------------------------------------------------------------------
