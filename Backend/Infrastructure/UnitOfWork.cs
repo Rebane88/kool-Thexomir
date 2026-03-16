@@ -38,6 +38,7 @@ public class UnitOfWork(AppDbContext context) : IUnitOfWork
     private readonly Lazy<IUnitTypeRepository> _unitTypes = new(() => new UnitTypeRepository(context));
     private readonly Lazy<IUnitTypeMatchupRepository> _unitTypeMatchups = new(() => new UnitTypeMatchupRepository(context));
     private readonly Lazy<IBattleRepository> _battles = new(() => new BattleRepository(context));
+    private readonly Lazy<IBuildingUnitTypeRepository> _buildingUnitTypes = new(() => new BuildingUnitTypeRepository(context));
 
     // Resources
     private readonly Lazy<IKingdomResourceRepository> _kingdomResources = new(() => new KingdomResourceRepository(context));
@@ -61,6 +62,7 @@ public class UnitOfWork(AppDbContext context) : IUnitOfWork
     public IUnitTypeRepository UnitTypes => _unitTypes.Value;
     public IUnitTypeMatchupRepository UnitTypeMatchups => _unitTypeMatchups.Value;
     public IBattleRepository Battles => _battles.Value;
+    public IBuildingUnitTypeRepository BuildingUnitTypes => _buildingUnitTypes.Value;
     public IKingdomResourceRepository KingdomResources => _kingdomResources.Value;
     public IFactionTypeRepository FactionTypes => _factionTypes.Value;
     public IFactionResourceBonusRepository FactionResourceBonuses => _factionResourceBonuses.Value;

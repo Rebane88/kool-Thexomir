@@ -39,6 +39,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<UnitType> UnitTypes { get; set; }
     public DbSet<UnitTypeMatchup> UnitTypeMatchups { get; set; }
     public DbSet<Battle> Battles { get; set; }
+    public DbSet<BuildingUnitType> BuildingUnitTypes { get; set; }
 
     // Resources
     public DbSet<KingdomResource> KingdomResources { get; set; }
@@ -164,6 +165,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .WithMany()
             .HasForeignKey(b => b.DefenderArmyId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // BuildingUnitType: junction table for building->unit type mapping
+        builder.Entity<BuildingUnitType>(entity =>
+        {
+            entity.HasIndex(e => new { e.BuildingTypeId, e.UnitTypeId }).IsUnique();
+            entity.HasOne(e => e.BuildingType).WithMany().HasForeignKey(e => e.BuildingTypeId);
+            entity.HasOne(e => e.UnitType).WithMany().HasForeignKey(e => e.UnitTypeId);
+        });
 
         // BuildingType: self-reference (upgrade chain)
         builder.Entity<BuildingType>()

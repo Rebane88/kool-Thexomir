@@ -34,9 +34,9 @@ public class BuildingTypeSeeder : ISeeder
     private static readonly Guid ArcaneSanctumId   = new Guid("BBBBBBBB-0001-0000-0000-00000000000F");
 
     // Military chain
-    private static readonly Guid BarracksId        = new Guid("BBBBBBBB-0001-0000-0000-000000000010");
-    private static readonly Guid StablesId         = new Guid("BBBBBBBB-0001-0000-0000-000000000011");
-    private static readonly Guid WarAcademyId      = new Guid("BBBBBBBB-0001-0000-0000-000000000012");
+    public static readonly Guid BarracksId        = new Guid("BBBBBBBB-0001-0000-0000-000000000010");
+    public static readonly Guid StablesId         = new Guid("BBBBBBBB-0001-0000-0000-000000000011");
+    public static readonly Guid WarAcademyId      = new Guid("BBBBBBBB-0001-0000-0000-000000000012");
 
     // Defense chain
     private static readonly Guid PalisadeId        = new Guid("BBBBBBBB-0001-0000-0000-000000000013");

@@ -119,6 +119,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitTypeRepository, UnitTypeRepository>();
         services.AddScoped<IUnitTypeMatchupRepository, UnitTypeMatchupRepository>();
         services.AddScoped<IBattleRepository, BattleRepository>();
+        services.AddScoped<IBuildingUnitTypeRepository, BuildingUnitTypeRepository>();
 
         // Repositories - Resources
         services.AddScoped<IKingdomResourceRepository, KingdomResourceRepository>();
