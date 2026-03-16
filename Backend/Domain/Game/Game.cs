@@ -365,7 +365,8 @@ public class Game : BaseEntity
 
     /// <summary>
     /// Calculates the total strength of an army against an opposing army.
-    /// Uses weighted average matchup multipliers and faction unit bonuses.
+    /// Uses weighted average matchup multipliers (weighted by opposing unit quantity proportions)
+    /// and faction unit bonuses (specific > global > 1.0 default).
     /// </summary>
     public static decimal CalculateArmyStrength(
         ICollection<Unit> units,
@@ -373,20 +374,58 @@ public class Game : BaseEntity
         ICollection<UnitTypeMatchup> matchups,
         ICollection<FactionUnitBonus> factionBonuses)
     {
-        throw new NotImplementedException();
+        int totalOpposingQty = opposingUnits.Sum(u => u.Quantity);
+        if (totalOpposingQty == 0) return 0;
+
+        decimal totalStrength = 0;
+
+        foreach (var unit in units)
+        {
+            // Faction bonus: specific unit type first, then global (null UnitTypeId), then 1.0
+            var specificBonus = factionBonuses.FirstOrDefault(b => b.UnitTypeId == unit.UnitTypeId);
+            var globalBonus = factionBonuses.FirstOrDefault(b => b.UnitTypeId == null);
+            decimal factionMultiplier = specificBonus?.Multiplier ?? globalBonus?.Multiplier ?? 1.0m;
+
+            // Weighted average matchup against all opposing unit types
+            decimal weightedMatchup = 0;
+            foreach (var opposing in opposingUnits)
+            {
+                var matchup = matchups.FirstOrDefault(
+                    m => m.AttackerTypeId == unit.UnitTypeId && m.DefenderTypeId == opposing.UnitTypeId);
+                decimal multiplier = matchup?.Multiplier ?? 1.0m;
+                decimal weight = (decimal)opposing.Quantity / totalOpposingQty;
+                weightedMatchup += multiplier * weight;
+            }
+
+            totalStrength += unit.Quantity * unit.UnitType!.BaseStrength * weightedMatchup * factionMultiplier;
+        }
+
+        return totalStrength;
     }
 
     /// <summary>
     /// Applies proportional casualties to an army. Each unit type loses floor(qty * ratio) units.
+    /// Returns a list of (UnitTypeId, UnitTypeName, Before, Lost, After) tuples.
     /// </summary>
     public static List<(Guid UnitTypeId, string UnitTypeName, int Before, int Lost, int After)> ApplyCasualties(
         ICollection<Unit> units, decimal casualtyRatio)
     {
-        throw new NotImplementedException();
+        var casualties = new List<(Guid, string, int, int, int)>();
+        foreach (var unit in units)
+        {
+            int before = unit.Quantity;
+            int lost = (int)Math.Floor(before * casualtyRatio);
+            unit.Quantity = before - lost;
+            casualties.Add((unit.UnitTypeId, unit.UnitType?.Name.Translate() ?? string.Empty, before, lost, unit.Quantity));
+        }
+        return casualties;
     }
 
     /// <summary>
-    /// Resolves combat between an attacker army and defender army on adjacent tiles.
+    /// Resolves combat between an attacker army and defender army. Validates adjacency,
+    /// army ownership, one-attack-per-turn, and presence of defender. Calculates strength
+    /// with matchup matrix, faction bonuses, and terrain defense bonus. Applies proportional
+    /// casualties. Handles attacker win (capture + advance), defender win, and mutual destruction.
     /// </summary>
     public Result<CombatResult> ResolveCombat(
         Army attackerArmy,
@@ -398,6 +437,99 @@ public class Game : BaseEntity
         ICollection<FactionUnitBonus> defenderFactionBonuses,
         TerrainType defenderTerrain)
     {
-        throw new NotImplementedException();
+        var kingdom = Kingdoms!.SingleOrDefault(k => k.Id == CurrentTurnKingdomId);
+        if (kingdom is null)
+            return Result<CombatResult>.Fail("Current turn kingdom not found.");
+
+        // Validate attacker owns the army
+        if (attackerArmy.KingdomId != kingdom.Id)
+            return Result<CombatResult>.Fail("This army does not belong to your kingdom.");
+
+        // Validate one attack per turn
+        if (attackerArmy.HasAttackedThisTurn)
+            return Result<CombatResult>.Fail("This army has already attacked this turn.");
+
+        // Validate adjacency
+        var neighbors = HexGridHelper.GetNeighbors(attackerTile.CoordQ, attackerTile.CoordR);
+        if (!neighbors.Contains((defenderTile.CoordQ, defenderTile.CoordR)))
+            return Result<CombatResult>.Fail("Target tile is not adjacent.");
+
+        // Validate defender exists on tile
+        if (defenderArmy.Units is null || !defenderArmy.Units.Any(u => u.Quantity > 0))
+            return Result<CombatResult>.Fail("No enemy units on target tile.");
+
+        // Calculate strengths
+        decimal attackerStrength = CalculateArmyStrength(
+            attackerArmy.Units!, defenderArmy.Units!, matchups, attackerFactionBonuses);
+        decimal defenderStrength = CalculateArmyStrength(
+            defenderArmy.Units!, attackerArmy.Units!, matchups, defenderFactionBonuses);
+
+        // Apply terrain defense bonus to defender
+        defenderStrength *= (1 + defenderTerrain.DefenseBonus);
+
+        // Calculate casualty ratios (simultaneous damage)
+        decimal attackerCasualtyRatio = attackerStrength > 0
+            ? Math.Min(1.0m, defenderStrength / attackerStrength)
+            : 1.0m;
+        decimal defenderCasualtyRatio = defenderStrength > 0
+            ? Math.Min(1.0m, attackerStrength / defenderStrength)
+            : 1.0m;
+
+        // Apply casualties
+        var attackerCasualties = ApplyCasualties(attackerArmy.Units!, attackerCasualtyRatio);
+        var defenderCasualties = ApplyCasualties(defenderArmy.Units!, defenderCasualtyRatio);
+
+        // Mark army as attacked
+        attackerArmy.HasAttackedThisTurn = true;
+
+        // Remove zero-quantity units
+        var deadAttackerUnits = attackerArmy.Units!.Where(u => u.Quantity <= 0).ToList();
+        foreach (var dead in deadAttackerUnits) attackerArmy.Units!.Remove(dead);
+
+        var deadDefenderUnits = defenderArmy.Units!.Where(u => u.Quantity <= 0).ToList();
+        foreach (var dead in deadDefenderUnits) defenderArmy.Units!.Remove(dead);
+
+        bool attackerDestroyed = !attackerArmy.Units!.Any();
+        bool defenderDestroyed = !defenderArmy.Units!.Any();
+
+        // Determine winner and tile capture
+        Guid? winnerKingdomId = null;
+        bool tileCaptured = false;
+
+        if (attackerDestroyed && defenderDestroyed)
+        {
+            // Mutual destruction = draw
+            winnerKingdomId = null;
+        }
+        else if (defenderDestroyed)
+        {
+            // Attacker wins — capture tile and auto-advance
+            winnerKingdomId = kingdom.Id;
+            defenderTile.KingdomId = kingdom.Id;
+            tileCaptured = true;
+            attackerArmy.TileId = defenderTile.Id;
+        }
+        else
+        {
+            // Defender wins (attacker destroyed or weakened)
+            winnerKingdomId = defenderArmy.KingdomId;
+        }
+
+        // Create battle record
+        var battle = new Battle
+        {
+            AttackerArmyId = attackerArmy.Id,
+            DefenderArmyId = defenderArmy.Id,
+            WinnerId = winnerKingdomId,
+            TileId = defenderTile.Id,
+            GameId = Id,
+            TurnNumber = TurnNumber
+        };
+
+        return Result<CombatResult>.Ok(new CombatResult(
+            battle, winnerKingdomId, tileCaptured,
+            attackerStrength, defenderStrength,
+            attackerCasualties, defenderCasualties,
+            attackerDestroyed, defenderDestroyed));
     }
 }
