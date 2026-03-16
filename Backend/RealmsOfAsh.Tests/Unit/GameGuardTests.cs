@@ -43,7 +43,7 @@ public class GameGuardTests
     [Fact]
     public async Task ValidateAsync_GameNotFound_ReturnsFailure()
     {
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync((Game?)null);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync((Game?)null);
 
         var result = await _sut.ValidateAsync(GameId, UserId);
 
@@ -56,7 +56,7 @@ public class GameGuardTests
     {
         var game = CreateValidGame();
         game.Status = EGameStatus.Lobby;
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
 
         var result = await _sut.ValidateAsync(GameId, UserId);
 
@@ -67,7 +67,7 @@ public class GameGuardTests
     [Fact]
     public async Task ValidateAsync_UserNotInGame_ReturnsFailure()
     {
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(CreateValidGame());
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(CreateValidGame());
         _kingdomsMock.Setup(k => k.GetKingdomByUserAndGameAsync(UserId, GameId)).ReturnsAsync((Kingdom?)null);
 
         var result = await _sut.ValidateAsync(GameId, UserId);
@@ -79,7 +79,7 @@ public class GameGuardTests
     [Fact]
     public async Task ValidateAsync_KingdomEliminated_ReturnsFailure()
     {
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(CreateValidGame());
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(CreateValidGame());
         var kingdom = CreateValidKingdom();
         kingdom.IsEliminated = true;
         _kingdomsMock.Setup(k => k.GetKingdomByUserAndGameAsync(UserId, GameId)).ReturnsAsync(kingdom);
@@ -95,7 +95,7 @@ public class GameGuardTests
     {
         var game = CreateValidGame();
         game.CurrentTurnKingdomId = OtherKingdomId;
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomByUserAndGameAsync(UserId, GameId)).ReturnsAsync(CreateValidKingdom());
 
         var result = await _sut.ValidateAsync(GameId, UserId);
@@ -109,7 +109,7 @@ public class GameGuardTests
     {
         var game = CreateValidGame();
         var kingdom = CreateValidKingdom();
-        _gamesMock.Setup(g => g.GetByIdForUpdateAsync(GameId)).ReturnsAsync(game);
+        _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(game);
         _kingdomsMock.Setup(k => k.GetKingdomByUserAndGameAsync(UserId, GameId)).ReturnsAsync(kingdom);
 
         var result = await _sut.ValidateAsync(GameId, UserId);

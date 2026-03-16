@@ -12,7 +12,7 @@ public class GameRepository(AppDbContext context)
             .FirstOrDefaultAsync(g => g.LobbyCode == code);
     }
 
-    public async Task<Domain.Game.Game?> GetLobbyWithPlayersAsync(Guid gameId)
+    public async Task<Domain.Game.Game?> GetGameWithKingdomsAsync(Guid gameId)
     {
         return await Context.Games
             .Include(g => g.Kingdoms!)
@@ -20,7 +20,7 @@ public class GameRepository(AppDbContext context)
             .FirstOrDefaultAsync(g => g.Id == gameId);
     }
 
-    public async Task<Domain.Game.Game?> GetByIdForUpdateAsync(Guid id)
+    public async Task<Domain.Game.Game?> GetByIdWithLockAsync(Guid id)
     {
         return await Context.Games
             .AsTracking()

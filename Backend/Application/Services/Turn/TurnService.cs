@@ -41,7 +41,7 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : ITurnSe
 
         var income = Game.CalculateIncome(tiles, bonusLookup);
 
-        var resources = await unitOfWork.KingdomResources.GetResourcesForKingdomTrackedAsync(nextKingdom.Id);
+        var resources = await unitOfWork.KingdomResources.GetMutableResourcesForKingdomAsync(nextKingdom.Id);
         foreach (var (type, amount) in income.Where(i => i.Value > 0))
         {
             var resource = resources.Single(r => r.ResourceType == type);

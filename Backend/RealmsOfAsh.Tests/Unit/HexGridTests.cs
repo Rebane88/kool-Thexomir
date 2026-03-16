@@ -1,4 +1,4 @@
-using Application.Services.GameInitialization;
+using Domain.Map;
 using Shouldly;
 
 namespace RealmsOfAsh.Tests.Unit;

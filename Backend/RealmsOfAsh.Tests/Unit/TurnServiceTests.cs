@@ -102,7 +102,7 @@ public class TurnServiceTests
             .ReturnsAsync([]);
         _factionResourceBonusesMock.Setup(f => f.GetBonusesForFactionAsync(FactionId))
             .ReturnsAsync([]);
-        _kingdomResourcesMock.Setup(r => r.GetResourcesForKingdomTrackedAsync(kingdomId))
+        _kingdomResourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(kingdomId))
             .ReturnsAsync(CreateDefaultResources(kingdomId));
     }
 
@@ -230,7 +230,7 @@ public class TurnServiceTests
             .ReturnsAsync([new FactionResourceBonus { ResourceType = EResourceType.Gold, Multiplier = 1.0m }]);
 
         var resources = CreateDefaultResources(Kingdom2Id, initialGold: 10);
-        _kingdomResourcesMock.Setup(r => r.GetResourcesForKingdomTrackedAsync(Kingdom2Id))
+        _kingdomResourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom2Id))
             .ReturnsAsync(resources);
 
         var result = await _sut.EndTurnAsync(GameId, UserId);
@@ -279,7 +279,7 @@ public class TurnServiceTests
             .ReturnsAsync([]); // no faction bonus = 1.0
 
         var resources = CreateDefaultResources(Kingdom2Id);
-        _kingdomResourcesMock.Setup(r => r.GetResourcesForKingdomTrackedAsync(Kingdom2Id))
+        _kingdomResourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom2Id))
             .ReturnsAsync(resources);
 
         var result = await _sut.EndTurnAsync(GameId, UserId);
@@ -328,7 +328,7 @@ public class TurnServiceTests
             .ReturnsAsync([new FactionResourceBonus { ResourceType = EResourceType.Gold, Multiplier = 1.3m }]);
 
         var resources = CreateDefaultResources(Kingdom2Id);
-        _kingdomResourcesMock.Setup(r => r.GetResourcesForKingdomTrackedAsync(Kingdom2Id))
+        _kingdomResourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom2Id))
             .ReturnsAsync(resources);
 
         var result = await _sut.EndTurnAsync(GameId, UserId);
@@ -377,7 +377,7 @@ public class TurnServiceTests
             .ReturnsAsync([new FactionResourceBonus { ResourceType = EResourceType.Wood, Multiplier = 1.1m }]);
 
         var resources = CreateDefaultResources(Kingdom2Id);
-        _kingdomResourcesMock.Setup(r => r.GetResourcesForKingdomTrackedAsync(Kingdom2Id))
+        _kingdomResourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom2Id))
             .ReturnsAsync(resources);
 
         var result = await _sut.EndTurnAsync(GameId, UserId);

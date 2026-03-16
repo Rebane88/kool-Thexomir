@@ -28,7 +28,7 @@ public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBu
 
         // Load data for domain method
         var existingBuildings = await unitOfWork.Buildings.GetBuildingsForKingdomAsync(kingdom.Id);
-        var resources = await unitOfWork.KingdomResources.GetResourcesForKingdomTrackedAsync(kingdom.Id);
+        var resources = await unitOfWork.KingdomResources.GetMutableResourcesForKingdomAsync(kingdom.Id);
 
         var faction = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId!.Value);
         var costModifier = faction?.BuildingCostModifier ?? 1.0m;

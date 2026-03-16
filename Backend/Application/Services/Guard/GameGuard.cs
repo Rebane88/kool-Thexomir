@@ -8,7 +8,7 @@ public class GameGuard(IUnitOfWork unitOfWork) : IGameGuard
 {
     public async Task<Result<GameGuardContext>> ValidateAsync(Guid gameId, Guid userId)
     {
-        var game = await unitOfWork.Games.GetByIdForUpdateAsync(gameId);
+        var game = await unitOfWork.Games.GetByIdWithLockAsync(gameId);
         if (game is null)
             return Result<GameGuardContext>.Fail("Game not found.");
 

@@ -1,4 +1,4 @@
-namespace Application.Services.GameInitialization;
+namespace Domain.Map;
 
 public static class HexGridHelper
 {
