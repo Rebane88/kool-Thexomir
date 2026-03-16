@@ -43,6 +43,9 @@ public class BuildingTypeSeeder : ISeeder
     private static readonly Guid StoneWallId       = new Guid("BBBBBBBB-0001-0000-0000-000000000014");
     private static readonly Guid FortressId        = new Guid("BBBBBBBB-0001-0000-0000-000000000015");
 
+    // Capital (special)
+    public static readonly Guid CapitalId          = new Guid("BBBBBBBB-0001-0000-0000-000000000100");
+
     public void Seed(object context)
     {
         var db = (AppDbContext)context;
@@ -272,6 +275,18 @@ public class BuildingTypeSeeder : ISeeder
                 GoldCost = 200, WoodCost = 0, StoneCost = 120, ManaCost = 0,
                 FoodYield = 0, WoodYield = 0, StoneYield = 0, GoldYield = 0, ManaYield = 0,
                 PrerequisiteBuildingTypeId = StoneWallId,
+                CreatedAt = now, UpdatedAt = now
+            },
+
+            // ---- Capital (special) ----
+            new BuildingType
+            {
+                Id = CapitalId,
+                Name = new LangStr("Capital"),
+                Tier = 0, Chain = "Capital",
+                GoldCost = 0, WoodCost = 0, StoneCost = 0, ManaCost = 0,
+                FoodYield = 5, WoodYield = 2, StoneYield = 2, GoldYield = 5, ManaYield = 1,
+                PrerequisiteBuildingTypeId = null,
                 CreatedAt = now, UpdatedAt = now
             }
         );

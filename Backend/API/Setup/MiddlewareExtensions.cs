@@ -57,6 +57,8 @@ public static class MiddlewareExtensions
                 pattern: "{controller=Home}/{action=Index}/{id?}")
             .WithStaticAssets();
 
+        app.MapAppHubs();
+
         return app;
     }
 }

@@ -7,6 +7,7 @@ using Domain.Identity;
 using Domain.Map;
 using Domain.Military;
 using Domain.Resources;
+using Infrastructure.Concurrency;
 using Infrastructure.Identity;
 using Infrastructure.Repositories.Buildings;
 using Infrastructure.Repositories.Factions;
@@ -54,6 +55,21 @@ public static class DependencyInjection
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) &&
+                            path.StartsWithSegments("/hubs/game"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
                 };
             })
             .AddCookie("AdminCookie", options =>
@@ -117,6 +133,9 @@ public static class DependencyInjection
         services.AddScoped<IFactionTypeRepository, FactionTypeRepository>();
         services.AddScoped<IFactionResourceBonusRepository, FactionResourceBonusRepository>();
         services.AddScoped<IFactionUnitBonusRepository, FactionUnitBonusRepository>();
+
+        // Concurrency
+        services.AddSingleton<IGameLockManager, GameLockManager>();
 
         return services;
     }
