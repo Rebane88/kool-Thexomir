@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useAuthStore } from '@/features/auth/auth-store';
+import { createGameHubConnection } from '@/lib/signalr-client';
+import type * as signalR from '@microsoft/signalr';
 import { getLobby, selectFaction, leaveLobby, startGame } from './lobby-api';
 import type { LobbyResponse } from './lobby-types';
 import { WIN_CONDITION_LABELS, GAME_STATUS } from './lobby-types';
@@ -20,7 +22,10 @@ export function LobbyDetailPage() {
 
   useEffect(() => {
     let active = true;
-    const poll = async () => {
+    let connection: signalR.HubConnection | null = null;
+
+    const setup = async () => {
+      // Initial load via REST (get current state)
       try {
         const data = await getLobby(id!);
         if (!active) return;
@@ -28,14 +33,82 @@ export function LobbyDetailPage() {
         setConnectionError(false);
         if (data.status === GAME_STATUS.InProgress) {
           navigate(`/game/${data.id}`, { replace: true });
+          return;
         }
+      } catch {
+        if (active) setConnectionError(true);
+        return;
+      }
+
+      // Establish SignalR connection for real-time updates
+      connection = createGameHubConnection(id!);
+
+      connection.on('lobbyPlayerJoined', (lobby: LobbyResponse) => {
+        if (active) {
+          setLobby(lobby);
+          setConnectionError(false);
+        }
+      });
+
+      connection.on('lobbyPlayerLeft', (lobby: LobbyResponse) => {
+        if (active) {
+          setLobby(lobby);
+          setConnectionError(false);
+        }
+      });
+
+      connection.on('lobbyFactionSelected', (lobby: LobbyResponse) => {
+        if (active) {
+          setLobby(lobby);
+          setConnectionError(false);
+        }
+      });
+
+      connection.on('lobbyGameStarting', () => {
+        if (active) {
+          navigate(`/game/${id}`, { replace: true });
+        }
+      });
+
+      connection.onclose(() => {
+        if (active) setConnectionError(true);
+      });
+
+      connection.onreconnected(async () => {
+        if (!active) return;
+        setConnectionError(false);
+        // Refresh lobby state after reconnect
+        try {
+          const data = await getLobby(id!);
+          if (active) {
+            setLobby(data);
+            if (data.status === GAME_STATUS.InProgress) {
+              navigate(`/game/${data.id}`, { replace: true });
+            }
+          }
+        } catch {
+          // ignore -- SignalR events will continue delivering updates
+        }
+      });
+
+      connection.onreconnecting(() => {
+        if (active) setConnectionError(true);
+      });
+
+      try {
+        await connection.start();
+        if (active) setConnectionError(false);
       } catch {
         if (active) setConnectionError(true);
       }
     };
-    poll();
-    const intervalId = setInterval(poll, 3000);
-    return () => { active = false; clearInterval(intervalId); };
+
+    setup();
+
+    return () => {
+      active = false;
+      connection?.stop();
+    };
   }, [id, navigate]);
 
   const isHost = lobby?.hostUserId === userId;
