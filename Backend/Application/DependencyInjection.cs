@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<IGameInitializationService, GameInitializationService>();
         services.AddScoped<IGameGuard, GameGuard>();
         services.AddScoped<ITurnService, TurnService>();
+        services.AddScoped<IBuildingService, BuildingService>();
         return services;
     }
 }
