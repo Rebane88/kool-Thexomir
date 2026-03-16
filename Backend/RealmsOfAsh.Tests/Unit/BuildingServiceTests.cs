@@ -63,7 +63,7 @@ public class BuildingServiceTests
 
     private void SetupGuardSuccess()
     {
-        var game = new Game { Id = GameId, Status = EGameStatus.InProgress, TurnNumber = 1 };
+        var game = new Game { Id = GameId, Status = EGameStatus.InProgress, TurnNumber = 1, CurrentTurnKingdomId = KingdomId };
         var kingdom = new Kingdom { Id = KingdomId, GameId = GameId, AppUserId = UserId, FactionTypeId = FactionId };
         _gameGuardMock.Setup(g => g.ValidateAsync(GameId, UserId))
             .ReturnsAsync(Base.Contracts.Result<GameGuardContext>.Ok(new GameGuardContext(game, kingdom)));
@@ -159,6 +159,10 @@ public class BuildingServiceTests
         var tile = CreateOwnedTile();
         tile.KingdomId = Guid.NewGuid(); // different kingdom
         _tilesMock.Setup(t => t.GetByIdAsync(TileId)).ReturnsAsync(tile);
+        _buildingTypesMock.Setup(bt => bt.GetByIdAsync(BuildingTypeId)).ReturnsAsync(CreateBuildingType());
+        _buildingsMock.Setup(b => b.GetBuildingsForKingdomAsync(KingdomId)).ReturnsAsync([]);
+        _kingdomResourcesMock.Setup(r => r.GetResourcesForKingdomTrackedAsync(KingdomId)).ReturnsAsync(CreateResources());
+        _factionTypesMock.Setup(f => f.GetByIdAsync(FactionId)).ReturnsAsync(CreateFaction());
 
         var result = await _sut.PlaceBuildingAsync(GameId, UserId, DefaultRequest());
 
@@ -175,8 +179,11 @@ public class BuildingServiceTests
     {
         SetupGuardSuccess();
         _tilesMock.Setup(t => t.GetByIdAsync(TileId)).ReturnsAsync(CreateOwnedTile());
+        _buildingTypesMock.Setup(bt => bt.GetByIdAsync(BuildingTypeId)).ReturnsAsync(CreateBuildingType());
         _buildingsMock.Setup(b => b.GetBuildingsForKingdomAsync(KingdomId))
             .ReturnsAsync([new Domain.Buildings.Building { TileId = TileId, BuildingTypeId = BuildingTypeId }]);
+        _kingdomResourcesMock.Setup(r => r.GetResourcesForKingdomTrackedAsync(KingdomId)).ReturnsAsync(CreateResources());
+        _factionTypesMock.Setup(f => f.GetByIdAsync(FactionId)).ReturnsAsync(CreateFaction());
 
         var result = await _sut.PlaceBuildingAsync(GameId, UserId, DefaultRequest());
 
@@ -216,6 +223,8 @@ public class BuildingServiceTests
         var buildingType = CreateBuildingType();
         buildingType.PrerequisiteBuildingTypeId = PrereqBuildingTypeId;
         _buildingTypesMock.Setup(bt => bt.GetByIdAsync(BuildingTypeId)).ReturnsAsync(buildingType);
+        _kingdomResourcesMock.Setup(r => r.GetResourcesForKingdomTrackedAsync(KingdomId)).ReturnsAsync(CreateResources());
+        _factionTypesMock.Setup(f => f.GetByIdAsync(FactionId)).ReturnsAsync(CreateFaction());
 
         var result = await _sut.PlaceBuildingAsync(GameId, UserId, DefaultRequest());
 

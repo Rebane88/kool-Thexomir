@@ -16,70 +16,37 @@ public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBu
 
         var (game, kingdom) = guardResult.Value!;
 
-        // Validate tile
+        // Validate tile exists
         var tile = await unitOfWork.Tiles.GetByIdAsync(request.TileId);
         if (tile is null)
             return Result<BuildingPlacedDto>.Fail("Tile not found.");
 
-        if (tile.KingdomId != kingdom.Id)
-            return Result<BuildingPlacedDto>.Fail("You do not own this tile.");
-
-        // Check one building per tile
-        var existingBuildings = await unitOfWork.Buildings.GetBuildingsForKingdomAsync(kingdom.Id);
-        if (existingBuildings.Any(b => b.TileId == request.TileId))
-            return Result<BuildingPlacedDto>.Fail("This tile already has a building.");
-
-        // Validate building type
+        // Validate building type exists
         var buildingType = await unitOfWork.BuildingTypes.GetByIdAsync(request.BuildingTypeId);
         if (buildingType is null)
             return Result<BuildingPlacedDto>.Fail("Building type not found.");
 
-        // Check prerequisite chain
-        if (buildingType.PrerequisiteBuildingTypeId.HasValue)
-        {
-            var hasPrerequisite = existingBuildings.Any(b => b.BuildingTypeId == buildingType.PrerequisiteBuildingTypeId.Value);
-            if (!hasPrerequisite)
-                return Result<BuildingPlacedDto>.Fail("Missing prerequisite building. Build the required lower-tier building first.");
-        }
+        // Load data for domain method
+        var existingBuildings = await unitOfWork.Buildings.GetBuildingsForKingdomAsync(kingdom.Id);
+        var resources = await unitOfWork.KingdomResources.GetResourcesForKingdomTrackedAsync(kingdom.Id);
 
-        // Calculate costs with faction modifier
         var faction = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId!.Value);
         var costModifier = faction?.BuildingCostModifier ?? 1.0m;
 
-        var costs = new Dictionary<EResourceType, int>
-        {
-            { EResourceType.Gold, (int)Math.Floor(buildingType.GoldCost * costModifier) },
-            { EResourceType.Wood, (int)Math.Floor(buildingType.WoodCost * costModifier) },
-            { EResourceType.Stone, (int)Math.Floor(buildingType.StoneCost * costModifier) },
-            { EResourceType.Mana, (int)Math.Floor(buildingType.ManaCost * costModifier) },
-        };
+        // Ensure game has kingdoms loaded for PlaceBuilding
+        game.Kingdoms = [kingdom];
 
-        // Load tracked resources for atomic deduction
-        var resources = await unitOfWork.KingdomResources.GetResourcesForKingdomTrackedAsync(kingdom.Id);
+        // Domain does the validation and resource deduction
+        var result = game.PlaceBuilding(request.TileId, buildingType, tile, existingBuildings, resources, costModifier);
+        if (!result.IsSuccess)
+            return Result<BuildingPlacedDto>.Fail(result.Error!);
 
-        // Check ALL costs first (all-or-nothing)
-        foreach (var (type, cost) in costs.Where(c => c.Value > 0))
-        {
-            var resource = resources.SingleOrDefault(r => r.ResourceType == type);
-            if (resource is null || resource.Amount < cost)
-                return Result<BuildingPlacedDto>.Fail($"Not enough {type}. Need {cost}, have {(int)(resource?.Amount ?? 0)}.");
-        }
-
-        // Deduct ALL costs
-        foreach (var (type, cost) in costs.Where(c => c.Value > 0))
-        {
-            var resource = resources.Single(r => r.ResourceType == type);
-            resource.Amount -= cost;
-            await unitOfWork.KingdomResources.UpdateAsync(resource);
-        }
-
-        // Create building
-        var building = new Domain.Buildings.Building
-        {
-            TileId = request.TileId,
-            BuildingTypeId = request.BuildingTypeId,
-        };
+        var building = result.Value!;
         await unitOfWork.Buildings.AddAsync(building);
+
+        // Persist resource changes (resources were mutated by domain method)
+        foreach (var resource in resources)
+            await unitOfWork.KingdomResources.UpdateAsync(resource);
 
         // Log the build action
         await unitOfWork.TurnLogs.AddAsync(new TurnLog

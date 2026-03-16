@@ -284,7 +284,7 @@ public class GameDomainTests
         var result = game.PlaceBuilding(TileId, bt, tile, [], resources, 1.0m);
 
         result.IsSuccess.ShouldBeFalse();
-        result.Error.ShouldContain("do not own");
+        result.Error!.ShouldContain("do not own");
     }
 
     [Fact]
@@ -302,7 +302,7 @@ public class GameDomainTests
         var result = game.PlaceBuilding(TileId, bt, tile, existingBuildings, resources, 1.0m);
 
         result.IsSuccess.ShouldBeFalse();
-        result.Error.ShouldContain("already has a building");
+        result.Error!.ShouldContain("already has a building");
     }
 
     [Fact]
@@ -317,7 +317,7 @@ public class GameDomainTests
         var result = game.PlaceBuilding(TileId, bt, tile, [], resources, 1.0m);
 
         result.IsSuccess.ShouldBeFalse();
-        result.Error.ShouldContain("prerequisite");
+        result.Error!.ShouldContain("prerequisite");
     }
 
     [Fact]
@@ -331,7 +331,7 @@ public class GameDomainTests
         var result = game.PlaceBuilding(TileId, bt, tile, [], resources, 1.0m);
 
         result.IsSuccess.ShouldBeFalse();
-        result.Error.ShouldContain("Not enough Gold");
+        result.Error!.ShouldContain("Not enough Gold");
     }
 
     [Fact]

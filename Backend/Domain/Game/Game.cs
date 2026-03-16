@@ -1,4 +1,6 @@
 using Base;
+using Base.Contracts;
+using Domain.Buildings;
 using Domain.Map;
 using Domain.Resources;
 
@@ -113,4 +115,73 @@ public class Game : BaseEntity
         ETerrainResourceBonus.Mana => EResourceType.Mana,
         _ => null,
     };
+
+    /// <summary>
+    /// Validates and places a building on a tile. Validates tile ownership, one-building-per-tile,
+    /// prerequisite chain, and resource affordability. Deducts costs atomically (all-or-nothing).
+    /// Returns the created Building on success, or a failure Result with error message.
+    /// </summary>
+    public Result<Building> PlaceBuilding(
+        Guid tileId,
+        BuildingType buildingType,
+        Tile tile,
+        ICollection<Building> existingKingdomBuildings,
+        ICollection<KingdomResource> kingdomResources,
+        decimal factionCostModifier)
+    {
+        // Determine which kingdom is placing (current turn kingdom)
+        var kingdom = Kingdoms!.SingleOrDefault(k => k.Id == CurrentTurnKingdomId);
+        if (kingdom is null)
+            return Result<Building>.Fail("Current turn kingdom not found.");
+
+        // Validate tile ownership
+        if (tile.KingdomId != kingdom.Id)
+            return Result<Building>.Fail("You do not own this tile.");
+
+        // Check one building per tile
+        if (existingKingdomBuildings.Any(b => b.TileId == tileId))
+            return Result<Building>.Fail("This tile already has a building.");
+
+        // Check prerequisite chain
+        if (buildingType.PrerequisiteBuildingTypeId.HasValue)
+        {
+            var hasPrerequisite = existingKingdomBuildings.Any(
+                b => b.BuildingTypeId == buildingType.PrerequisiteBuildingTypeId.Value);
+            if (!hasPrerequisite)
+                return Result<Building>.Fail("Missing prerequisite building. Build the required lower-tier building first.");
+        }
+
+        // Calculate costs with faction modifier
+        var costs = new Dictionary<EResourceType, int>
+        {
+            { EResourceType.Gold, (int)Math.Floor(buildingType.GoldCost * factionCostModifier) },
+            { EResourceType.Wood, (int)Math.Floor(buildingType.WoodCost * factionCostModifier) },
+            { EResourceType.Stone, (int)Math.Floor(buildingType.StoneCost * factionCostModifier) },
+            { EResourceType.Mana, (int)Math.Floor(buildingType.ManaCost * factionCostModifier) },
+        };
+
+        // Validate ALL costs first (all-or-nothing)
+        foreach (var (type, cost) in costs.Where(c => c.Value > 0))
+        {
+            var resource = kingdomResources.SingleOrDefault(r => r.ResourceType == type);
+            if (resource is null || resource.Amount < cost)
+                return Result<Building>.Fail($"Not enough {type}. Need {cost}, have {(int)(resource?.Amount ?? 0)}.");
+        }
+
+        // Deduct ALL costs (mutates the passed-in resources)
+        foreach (var (type, cost) in costs.Where(c => c.Value > 0))
+        {
+            var resource = kingdomResources.Single(r => r.ResourceType == type);
+            resource.Amount -= cost;
+        }
+
+        // Create building
+        var building = new Building
+        {
+            TileId = tileId,
+            BuildingTypeId = buildingType.Id,
+        };
+
+        return Result<Building>.Ok(building);
+    }
 }
