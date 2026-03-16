@@ -1,4 +1,5 @@
 using Application.Services.Auth;
+using Application.Services.GameInitialization;
 using Application.Services.Lobby;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +11,7 @@ public static class DependencyInjection
     {
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ILobbyService, LobbyService>();
+        services.AddScoped<IGameInitializationService, GameInitializationService>();
         return services;
     }
 }
