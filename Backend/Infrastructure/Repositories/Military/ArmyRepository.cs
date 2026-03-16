@@ -24,4 +24,10 @@ public class ArmyRepository(AppDbContext context)
     public async Task<Army?> GetEnemyArmyOnTileAsync(Guid tileId, Guid excludeKingdomId)
         => await context.Armies
             .FirstOrDefaultAsync(a => a.TileId == tileId && a.KingdomId != excludeKingdomId);
+
+    public async Task<IEnumerable<Army>> GetArmiesWithUnitsForKingdomAsync(Guid kingdomId)
+        => await context.Armies
+            .Where(a => a.KingdomId == kingdomId)
+            .Include(a => a.Units!)
+            .ToListAsync();
 }

@@ -98,6 +98,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .HasIndex(t => new { t.GameId, t.CoordQ, t.CoordR })
             .IsUnique();
 
+        builder.Entity<Tile>()
+            .Property(t => t.IsCapital)
+            .HasDefaultValue(false);
+
         builder.Entity<Game>()
             .HasIndex(g => g.LobbyCode)
             .IsUnique();
@@ -122,6 +126,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .HasOne(g => g.CurrentTurnKingdom)
             .WithMany()
             .HasForeignKey(g => g.CurrentTurnKingdomId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // WinnerKingdomId FK to Kingdom (optional)
+        builder.Entity<Game>()
+            .HasOne(g => g.WinnerKingdom)
+            .WithMany()
+            .HasForeignKey(g => g.WinnerKingdomId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
 

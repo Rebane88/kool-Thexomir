@@ -3,6 +3,7 @@ using Application.Services.GameInitialization.DTOs;
 using Application.Services.Lobby.DTOs;
 using Application.Services.Military.DTOs;
 using Application.Services.Turn.DTOs;
+using Application.Services.WinCondition.DTOs;
 
 namespace Application.Services.GameHub;
 
@@ -27,4 +28,7 @@ public interface IGameClient
     Task TroopsTrained(TroopsTrainedDto troopsTrained);
     Task ArmyMoved(ArmyMovedDto armyMoved);
     Task CombatResolved(CombatResolvedDto combatResolved);
+
+    // Phase 13 events
+    Task GameOver(GameOverDto gameOver);
 }

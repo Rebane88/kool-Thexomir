@@ -25,4 +25,20 @@ public class TileRepository(AppDbContext context)
             .AsTracking()
             .ToListAsync();
     }
+
+    public async Task<List<Tile>> GetTilesForKingdomAsync(Guid kingdomId)
+    {
+        return await Context.Set<Tile>()
+            .Where(t => t.KingdomId == kingdomId)
+            .ToListAsync();
+    }
+
+    public async Task<List<Tile>> GetTilesWithBuildingsForGameAsync(Guid gameId)
+    {
+        return await Context.Set<Tile>()
+            .Where(t => t.GameId == gameId)
+            .Include(t => t.Buildings!)
+                .ThenInclude(b => b.BuildingType)
+            .ToListAsync();
+    }
 }

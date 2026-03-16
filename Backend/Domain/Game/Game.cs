@@ -30,10 +30,13 @@ public class Game : BaseEntity
     public int MapHeight { get; set; }
     public Guid? HostUserId { get; set; }
     public Guid? CurrentTurnKingdomId { get; set; }
+    public int? MaxTurnCount { get; set; }
+    public Guid? WinnerKingdomId { get; set; }
     public uint xmin { get; set; } // PostgreSQL xmin system column — concurrency token for lobby join race protection
 
     // Navigation
     public Kingdom? CurrentTurnKingdom { get; set; }
+    public Kingdom? WinnerKingdom { get; set; }
     public ICollection<Kingdom>? Kingdoms { get; set; }
     public ICollection<Tile>? Tiles { get; set; }
     public ICollection<TurnLog>? TurnLogs { get; set; }
@@ -531,5 +534,24 @@ public class Game : BaseEntity
             attackerStrength, defenderStrength,
             attackerCasualties, defenderCasualties,
             attackerDestroyed, defenderDestroyed));
+    }
+
+    /// <summary>
+    /// Checks if the game has ended via the provided win condition checker.
+    /// If a winner is determined, transitions Status to Completed and records WinnerKingdomId.
+    /// Returns the check result (null = not applicable, WinCheckResult with GameOver=true = game ended).
+    /// </summary>
+    public WinCheckResult? CheckWinCondition(
+        IWinConditionChecker checker,
+        IReadOnlyList<Kingdom> kingdoms,
+        IReadOnlyList<Tile> tiles)
+    {
+        var result = checker.Check(this, kingdoms, tiles);
+        if (result?.GameOver == true)
+        {
+            Status = EGameStatus.Completed;
+            WinnerKingdomId = result.WinnerKingdomId;
+        }
+        return result;
     }
 }

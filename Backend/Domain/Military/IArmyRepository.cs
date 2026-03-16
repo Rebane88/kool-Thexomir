@@ -8,4 +8,5 @@ public interface IArmyRepository : IBaseRepository<Army>
     Task<Army?> GetArmyWithUnitsAsync(Guid armyId);
     Task<IEnumerable<Army>> GetArmiesForKingdomAsync(Guid kingdomId);
     Task<Army?> GetEnemyArmyOnTileAsync(Guid tileId, Guid excludeKingdomId);
+    Task<IEnumerable<Army>> GetArmiesWithUnitsForKingdomAsync(Guid kingdomId);
 }

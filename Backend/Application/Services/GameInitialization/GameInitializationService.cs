@@ -55,6 +55,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
 
             centerTile.KingdomId = kingdom.Id;
             centerTile.TerrainTypeId = PlainsTerrainId; // Fair starting terrain
+            centerTile.IsCapital = true;
 
             // Assign neighbor tiles to kingdom
             var neighbors = HexGridHelper.GetNeighbors(center.q, center.r);

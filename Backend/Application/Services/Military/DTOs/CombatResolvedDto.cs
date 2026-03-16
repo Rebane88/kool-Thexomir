@@ -1,3 +1,5 @@
+using Application.Services.WinCondition.DTOs;
+
 namespace Application.Services.Military.DTOs;
 
 public class CombatResolvedDto
@@ -12,4 +14,5 @@ public class CombatResolvedDto
     public decimal DefenderStrength { get; set; }
     public List<CasualtyDto> AttackerCasualties { get; set; } = new();
     public List<CasualtyDto> DefenderCasualties { get; set; } = new();
+    public GameOverDto? GameOver { get; set; }
 }
