@@ -1,5 +1,4 @@
 using Base;
-using Domain.Identity;
 using Domain.Map;
 
 namespace Domain.Game;
@@ -18,7 +17,6 @@ public class Game : BaseEntity
     public uint xmin { get; set; } // PostgreSQL xmin system column — concurrency token for lobby join race protection
 
     // Navigation
-    public AppUser? HostUser { get; set; }
     public Kingdom? CurrentTurnKingdom { get; set; }
     public ICollection<Kingdom>? Kingdoms { get; set; }
     public ICollection<Tile>? Tiles { get; set; }

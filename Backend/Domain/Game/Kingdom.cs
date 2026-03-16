@@ -1,6 +1,5 @@
 using Base;
 using Domain.Factions;
-using Domain.Identity;
 using Domain.Map;
 using Domain.Military;
 using Domain.Resources;
@@ -18,7 +17,6 @@ public class Kingdom : BaseEntity
 
     // Navigation
     public Game? Game { get; set; }
-    public AppUser? AppUser { get; set; }
     public FactionType? FactionType { get; set; }
 
     public ICollection<Tile>? Tiles { get; set; }

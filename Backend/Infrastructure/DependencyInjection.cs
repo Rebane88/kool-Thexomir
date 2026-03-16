@@ -3,7 +3,6 @@ using Application.Contracts;
 using Domain.Buildings;
 using Domain.Factions;
 using Domain.Game;
-using Domain.Identity;
 using Domain.Map;
 using Domain.Military;
 using Domain.Resources;
@@ -12,7 +11,6 @@ using Infrastructure.Identity;
 using Infrastructure.Repositories.Buildings;
 using Infrastructure.Repositories.Factions;
 using Infrastructure.Repositories.Game;
-using Infrastructure.Repositories.Identity;
 using Infrastructure.Repositories.Map;
 using Infrastructure.Repositories.Military;
 using Infrastructure.Repositories.Resources;
@@ -100,10 +98,6 @@ public static class DependencyInjection
 
         // Identity abstraction
         services.AddScoped<IIdentityService, IdentityService>();
-
-        // Repositories - Identity
-        services.AddScoped<IAppUserRepository, AppUserRepository>();
-        services.AddScoped<IAppRefreshTokenRepository, AppRefreshTokenRepository>();
 
         // Repositories - Game
         services.AddScoped<IGameRepository, GameRepository>();

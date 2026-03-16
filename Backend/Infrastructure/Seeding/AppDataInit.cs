@@ -1,5 +1,5 @@
 using Base.Contracts;
-using Domain.Identity;
+using Infrastructure.Identity;
 using Infrastructure.Seeding.Seeders;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

@@ -2,7 +2,6 @@ using Base.Contracts;
 using Domain.Buildings;
 using Domain.Factions;
 using Domain.Game;
-using Domain.Identity;
 using Domain.Map;
 using Domain.Military;
 using Domain.Resources;
@@ -11,10 +10,6 @@ namespace Application.Contracts;
 
 public interface IUnitOfWork : IDisposable
 {
-    // Identity
-    IAppUserRepository Users { get; }
-    IAppRefreshTokenRepository RefreshTokens { get; }
-
     // Game
     IGameRepository Games { get; }
     IKingdomRepository Kingdoms { get; }

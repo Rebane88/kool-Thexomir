@@ -1,5 +1,5 @@
 using System.Threading;
-using Domain.Identity;
+using Infrastructure.Identity;
 using Infrastructure;
 using Infrastructure.Seeding;
 using Microsoft.AspNetCore.Builder;

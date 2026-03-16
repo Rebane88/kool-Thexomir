@@ -1,15 +1,14 @@
 using Application.Contracts;
+using Base.Contracts;
 using Domain.Buildings;
 using Domain.Factions;
 using Domain.Game;
-using Domain.Identity;
 using Domain.Map;
 using Domain.Military;
 using Domain.Resources;
 using Infrastructure.Repositories.Buildings;
 using Infrastructure.Repositories.Factions;
 using Infrastructure.Repositories.Game;
-using Infrastructure.Repositories.Identity;
 using Infrastructure.Repositories.Map;
 using Infrastructure.Repositories.Military;
 using Infrastructure.Repositories.Resources;
@@ -19,10 +18,6 @@ namespace Infrastructure;
 
 public class UnitOfWork(AppDbContext context) : IUnitOfWork
 {
-    // Identity
-    private readonly Lazy<IAppUserRepository> _users = new(() => new AppUserRepository(context));
-    private readonly Lazy<IAppRefreshTokenRepository> _refreshTokens = new(() => new AppRefreshTokenRepository(context));
-
     // Game
     private readonly Lazy<IGameRepository> _games = new(() => new GameRepository(context));
     private readonly Lazy<IKingdomRepository> _kingdoms = new(() => new KingdomRepository(context));
@@ -53,8 +48,6 @@ public class UnitOfWork(AppDbContext context) : IUnitOfWork
     private readonly Lazy<IFactionUnitBonusRepository> _factionUnitBonuses = new(() => new FactionUnitBonusRepository(context));
 
     // Properties
-    public IAppUserRepository Users => _users.Value;
-    public IAppRefreshTokenRepository RefreshTokens => _refreshTokens.Value;
     public IGameRepository Games => _games.Value;
     public IKingdomRepository Kingdoms => _kingdoms.Value;
     public ITurnLogRepository TurnLogs => _turnLogs.Value;
@@ -75,7 +68,14 @@ public class UnitOfWork(AppDbContext context) : IUnitOfWork
 
     public async Task<int> CommitAsync(CancellationToken ct = default)
     {
-        return await context.SaveChangesAsync(ct);
+        try
+        {
+            return await context.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            throw new ConcurrencyException(ex.Message);
+        }
     }
 
     public async Task RollbackAsync(CancellationToken ct = default)

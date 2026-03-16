@@ -1,20 +1,23 @@
+using Application.Contracts.Identity;
 using Base.Contracts;
-using Domain.Identity;
 
 namespace Application.Contracts;
 
 public interface IIdentityService
 {
-    Task<Result<AppUser>> GetByEmailAsync(string email);
-    Task<Result<AppUser>> CreateUserAsync(string email, string password);
-    Task<Result<bool>> CheckPasswordAsync(AppUser user, string password);
-    Task<bool> IsLockedOutAsync(AppUser user);
-    Task<Result<bool>> AddToRoleAsync(AppUser user, string role);
-    Task<Result<IList<string>>> GetRolesAsync(AppUser user);
+    Task<Result<AppUserInfo>> GetByEmailAsync(string email);
+    Task<Result<AppUserInfo>> CreateUserAsync(string email, string password);
+    Task<Result<bool>> CheckPasswordAsync(Guid userId, string password);
+    Task<bool> IsLockedOutAsync(Guid userId);
+    Task<Result<bool>> AddToRoleAsync(Guid userId, string role);
+    Task<Result<IList<string>>> GetRolesAsync(Guid userId);
 
-    Task<Result<string>> GenerateJwtAsync(AppUser user, DateTime expires);
-    Task<Result<AppRefreshToken>> CreateRefreshTokenAsync(Guid userId);
-    Task<Result<AppRefreshToken>> ValidateRefreshTokenAsync(string refreshToken);
-    Task<Result<AppRefreshToken>> RotateRefreshTokenAsync(AppRefreshToken token);
+    Task<Result<string>> GenerateJwtAsync(Guid userId, DateTime expires);
+    Task<Result<RefreshTokenInfo>> CreateRefreshTokenAsync(Guid userId);
+    Task<Result<RefreshTokenInfo>> ValidateRefreshTokenAsync(string refreshToken);
+    Task<Result<RefreshTokenInfo>> RotateRefreshTokenAsync(string currentToken);
     Task<Result<bool>> RevokeRefreshTokenAsync(Guid userId, string refreshToken);
+
+    Task<string?> GetEmailAsync(Guid userId);
+    Task<Dictionary<Guid, string>> GetEmailsAsync(IEnumerable<Guid> userIds);
 }

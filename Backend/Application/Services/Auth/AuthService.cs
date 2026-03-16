@@ -4,10 +4,8 @@ using Base.Contracts;
 
 namespace Application.Services.Auth;
 
-public class AuthService(IIdentityService identityService, IUnitOfWork unitOfWork) : IAuthService
+public class AuthService(IIdentityService identityService) : IAuthService
 {
-    // ReSharper disable once NotAccessedField.Local
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private static readonly Random _random = new();
 
     public async Task<Result<RegisterResponse>> RegisterAsync(RegisterRequest request)
@@ -18,16 +16,16 @@ public class AuthService(IIdentityService identityService, IUnitOfWork unitOfWor
 
         var user = createResult.Value!;
 
-        var roleResult = await identityService.AddToRoleAsync(user, "Player");
+        var roleResult = await identityService.AddToRoleAsync(user.Id, "Player");
         if (!roleResult.IsSuccess)
             return Result<RegisterResponse>.Fail(roleResult.Error!);
 
-        var rolesResult = await identityService.GetRolesAsync(user);
+        var rolesResult = await identityService.GetRolesAsync(user.Id);
 
         return Result<RegisterResponse>.Ok(new RegisterResponse
         {
             UserId = user.Id,
-            Email = user.Email!,
+            Email = user.Email,
             Roles = rolesResult.Value!
         });
     }
@@ -43,22 +41,22 @@ public class AuthService(IIdentityService identityService, IUnitOfWork unitOfWor
 
         var user = userResult.Value!;
 
-        if (await identityService.IsLockedOutAsync(user))
+        if (await identityService.IsLockedOutAsync(user.Id))
         {
             await Task.Delay(_random.Next(500, 5001));
             return Result<LoginResponse>.Fail("Account is locked.");
         }
 
-        var passwordResult = await identityService.CheckPasswordAsync(user, request.Password);
+        var passwordResult = await identityService.CheckPasswordAsync(user.Id, request.Password);
         if (!passwordResult.IsSuccess)
         {
             await Task.Delay(_random.Next(500, 5001));
             return Result<LoginResponse>.Fail("Invalid credentials.");
         }
 
-        var rolesResult = await identityService.GetRolesAsync(user);
+        var rolesResult = await identityService.GetRolesAsync(user.Id);
 
-        var jwtResult = await identityService.GenerateJwtAsync(user, DateTime.UtcNow.AddMinutes(15));
+        var jwtResult = await identityService.GenerateJwtAsync(user.Id, DateTime.UtcNow.AddMinutes(15));
         if (!jwtResult.IsSuccess)
             return Result<LoginResponse>.Fail(jwtResult.Error!);
 
@@ -69,10 +67,10 @@ public class AuthService(IIdentityService identityService, IUnitOfWork unitOfWor
         return Result<LoginResponse>.Ok(new LoginResponse
         {
             UserId = user.Id,
-            Email = user.Email!,
+            Email = user.Email,
             Roles = rolesResult.Value!,
             AccessToken = jwtResult.Value!,
-            RefreshToken = refreshResult.Value!.RefreshToken
+            RefreshToken = refreshResult.Value!.Token
         });
     }
 
@@ -82,29 +80,28 @@ public class AuthService(IIdentityService identityService, IUnitOfWork unitOfWor
         if (!validateResult.IsSuccess)
             return Result<RefreshResponse>.Fail(validateResult.Error!);
 
-        var refreshTokenEntity = validateResult.Value!;
-        var user = refreshTokenEntity.User!;
+        var tokenInfo = validateResult.Value!;
 
-        if (await identityService.IsLockedOutAsync(user))
+        if (await identityService.IsLockedOutAsync(tokenInfo.UserId))
             return Result<RefreshResponse>.Fail("Account is locked.");
 
-        var rolesResult = await identityService.GetRolesAsync(user);
+        var rolesResult = await identityService.GetRolesAsync(tokenInfo.UserId);
 
-        var newJwtResult = await identityService.GenerateJwtAsync(user, DateTime.UtcNow.AddMinutes(15));
+        var newJwtResult = await identityService.GenerateJwtAsync(tokenInfo.UserId, DateTime.UtcNow.AddMinutes(15));
         if (!newJwtResult.IsSuccess)
             return Result<RefreshResponse>.Fail(newJwtResult.Error!);
 
-        var rotateResult = await identityService.RotateRefreshTokenAsync(refreshTokenEntity);
+        var rotateResult = await identityService.RotateRefreshTokenAsync(tokenInfo.Token);
         if (!rotateResult.IsSuccess)
             return Result<RefreshResponse>.Fail(rotateResult.Error!);
 
         return Result<RefreshResponse>.Ok(new RefreshResponse
         {
-            UserId = user.Id,
-            Email = user.Email!,
+            UserId = tokenInfo.UserId,
+            Email = tokenInfo.Email,
             Roles = rolesResult.Value!,
             AccessToken = newJwtResult.Value!,
-            RefreshToken = rotateResult.Value!.RefreshToken
+            RefreshToken = rotateResult.Value!.Token
         });
     }
 

@@ -2,11 +2,10 @@ using Application.Contracts;
 using Application.Services.Lobby.DTOs;
 using Base.Contracts;
 using Domain.Game;
-using Microsoft.EntityFrameworkCore;
 
 namespace Application.Services.Lobby;
 
-public class LobbyService(IUnitOfWork unitOfWork) : ILobbyService
+public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityService) : ILobbyService
 {
     private static readonly char[] Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".ToCharArray();
 
@@ -87,7 +86,7 @@ public class LobbyService(IUnitOfWork unitOfWork) : ILobbyService
         {
             await unitOfWork.CommitAsync();
         }
-        catch (DbUpdateConcurrencyException)
+        catch (ConcurrencyException)
         {
             return Result<LobbyResponse>.Fail("Lobby was updated concurrently. Please try again.");
         }
@@ -240,13 +239,20 @@ public class LobbyService(IUnitOfWork unitOfWork) : ILobbyService
         var allFactions = (await unitOfWork.FactionTypes.GetAllAsync()).ToList();
         var kingdoms = game.Kingdoms?.ToList() ?? [];
 
+        // Batch-resolve user emails via IIdentityService (no AppUser nav prop needed)
+        var userIds = kingdoms
+            .Where(k => k.AppUserId.HasValue)
+            .Select(k => k.AppUserId!.Value)
+            .ToList();
+        var emailMap = await identityService.GetEmailsAsync(userIds);
+
         var players = kingdoms
             .Where(k => k.AppUserId.HasValue)
             .Select(k => new PlayerInLobbyDto
             {
                 KingdomId = k.Id,
                 UserId = k.AppUserId!.Value,
-                UserEmail = k.AppUser?.Email ?? string.Empty,
+                UserEmail = emailMap.GetValueOrDefault(k.AppUserId!.Value, string.Empty),
                 FactionTypeId = k.FactionTypeId,
                 FactionName = k.FactionType?.Name.Translate(),
                 IsHost = game.HostUserId == k.AppUserId

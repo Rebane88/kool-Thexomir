@@ -1,7 +1,7 @@
 using Base;
 using Microsoft.AspNetCore.Identity;
 
-namespace Domain.Identity;
+namespace Infrastructure.Identity;
 
 public class AppRole : IdentityRole<Guid>, IBaseEntity
 {

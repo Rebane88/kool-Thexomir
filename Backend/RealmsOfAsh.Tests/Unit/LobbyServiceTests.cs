@@ -18,6 +18,7 @@ namespace RealmsOfAsh.Tests.Unit;
 public class LobbyServiceTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly Mock<IIdentityService> _identityMock = new();
     private readonly Mock<IGameRepository> _gamesMock = new();
     private readonly Mock<IKingdomRepository> _kingdomsMock = new();
     private readonly Mock<IFactionTypeRepository> _factionTypesMock = new();
@@ -29,8 +30,10 @@ public class LobbyServiceTests
         _unitOfWorkMock.Setup(u => u.Kingdoms).Returns(_kingdomsMock.Object);
         _unitOfWorkMock.Setup(u => u.FactionTypes).Returns(_factionTypesMock.Object);
         _unitOfWorkMock.Setup(u => u.CommitAsync(default)).ReturnsAsync(1);
+        _identityMock.Setup(i => i.GetEmailsAsync(It.IsAny<IEnumerable<Guid>>()))
+            .ReturnsAsync(new Dictionary<Guid, string>());
 
-        _sut = new LobbyService(_unitOfWorkMock.Object);
+        _sut = new LobbyService(_unitOfWorkMock.Object, _identityMock.Object);
     }
 
     // -------------------------------------------------------------------------

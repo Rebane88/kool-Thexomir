@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.RegularExpressions;
-using Domain.Identity;
+using Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using RealmsOfAsh.Tests.Fixtures;

@@ -2,7 +2,7 @@ using Base;
 using Domain.Buildings;
 using Domain.Factions;
 using Domain.Game;
-using Domain.Identity;
+using Infrastructure.Identity;
 using Domain.Map;
 using Domain.Military;
 using Domain.Resources;
@@ -108,9 +108,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .HasColumnName("xmin")
             .IsRowVersion();
 
-        // HostUserId FK to AspNetUsers
+        // HostUserId FK to AspNetUsers (no navigation property — Domain has no reference to Identity)
         builder.Entity<Game>()
-            .HasOne(g => g.HostUser)
+            .HasOne<AppUser>()
             .WithMany()
             .HasForeignKey(g => g.HostUserId)
             .IsRequired(false)
@@ -177,6 +177,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         builder.Entity<KingdomResource>()
             .Property(kr => kr.Amount)
             .HasPrecision(18, 2);
+
+        // AppUserId FK on Kingdom to AspNetUsers (no navigation property — Domain has no reference to Identity)
+        builder.Entity<Kingdom>()
+            .HasOne<AppUser>()
+            .WithMany()
+            .HasForeignKey(k => k.AppUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Disable cascade delete globally
         foreach (var relationship in builder.Model

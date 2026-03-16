@@ -11,7 +11,6 @@ public class KingdomRepository(AppDbContext context)
         return await Context.Kingdoms
             .Where(k => k.GameId == gameId)
             .Include(k => k.FactionType)
-            .Include(k => k.AppUser)
             .ToListAsync();
     }
 

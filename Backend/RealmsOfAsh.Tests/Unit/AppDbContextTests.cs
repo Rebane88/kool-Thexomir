@@ -1,7 +1,7 @@
 using Domain.Buildings;
 using Domain.Factions;
 using Domain.Game;
-using Domain.Identity;
+using Infrastructure.Identity;
 using Domain.Map;
 using Domain.Military;
 using Domain.Resources;

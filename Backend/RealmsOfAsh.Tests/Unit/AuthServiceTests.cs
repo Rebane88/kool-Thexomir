@@ -1,8 +1,8 @@
 using Application.Contracts;
+using Application.Contracts.Identity;
 using Application.Services.Auth;
 using Application.Services.Auth.DTOs;
 using Base.Contracts;
-using Domain.Identity;
 using Moq;
 using Shouldly;
 
@@ -17,31 +17,22 @@ namespace RealmsOfAsh.Tests.Unit;
 public class AuthServiceTests
 {
     private readonly Mock<IIdentityService> _identityMock = new();
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly AuthService _sut;
 
     public AuthServiceTests()
     {
-        _sut = new AuthService(_identityMock.Object, _unitOfWorkMock.Object);
+        _sut = new AuthService(_identityMock.Object);
     }
 
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
-    private static AppUser MakeUser(string email = "test@example.com") => new()
-    {
-        Id = Guid.NewGuid(),
-        Email = email,
-        UserName = email
-    };
+    private static AppUserInfo MakeUser(string email = "test@example.com") =>
+        new(Guid.NewGuid(), email);
 
-    private static AppRefreshToken MakeRefreshToken(Guid userId) => new()
-    {
-        Id = Guid.NewGuid(),
-        UserId = userId,
-        RefreshToken = "refresh-token-" + Guid.NewGuid()
-    };
+    private static RefreshTokenInfo MakeRefreshToken(Guid userId, string email = "test@example.com") =>
+        new(userId, email, "refresh-token-" + Guid.NewGuid());
 
     // -------------------------------------------------------------------------
     // Register tests
@@ -53,10 +44,10 @@ public class AuthServiceTests
         var user = MakeUser("test@example.com");
 
         _identityMock.Setup(x => x.CreateUserAsync(It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync(Result<AppUser>.Ok(user));
-        _identityMock.Setup(x => x.AddToRoleAsync(user, "Player"))
+            .ReturnsAsync(Result<AppUserInfo>.Ok(user));
+        _identityMock.Setup(x => x.AddToRoleAsync(user.Id, "Player"))
             .ReturnsAsync(Result<bool>.Ok(true));
-        _identityMock.Setup(x => x.GetRolesAsync(user))
+        _identityMock.Setup(x => x.GetRolesAsync(user.Id))
             .ReturnsAsync(Result<IList<string>>.Ok(new List<string> { "Player" }));
 
         var result = await _sut.RegisterAsync(new RegisterRequest
@@ -75,7 +66,7 @@ public class AuthServiceTests
     public async Task RegisterAsync_DuplicateEmail_ReturnsFail()
     {
         _identityMock.Setup(x => x.CreateUserAsync(It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync(Result<AppUser>.Fail("Email already taken."));
+            .ReturnsAsync(Result<AppUserInfo>.Fail("Email already taken."));
 
         var result = await _sut.RegisterAsync(new RegisterRequest
         {
@@ -95,18 +86,18 @@ public class AuthServiceTests
     public async Task LoginAsync_HappyPath_ReturnsTokens()
     {
         var user = MakeUser("login@example.com");
-        var refreshToken = MakeRefreshToken(user.Id);
+        var refreshToken = MakeRefreshToken(user.Id, user.Email);
 
         _identityMock.Setup(x => x.GetByEmailAsync("login@example.com"))
-            .ReturnsAsync(Result<AppUser>.Ok(user));
-        _identityMock.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>()))
+            .ReturnsAsync(Result<AppUserInfo>.Ok(user));
+        _identityMock.Setup(x => x.CheckPasswordAsync(user.Id, It.IsAny<string>()))
             .ReturnsAsync(Result<bool>.Ok(true));
-        _identityMock.Setup(x => x.GetRolesAsync(user))
+        _identityMock.Setup(x => x.GetRolesAsync(user.Id))
             .ReturnsAsync(Result<IList<string>>.Ok(new List<string> { "Player" }));
-        _identityMock.Setup(x => x.GenerateJwtAsync(user, It.IsAny<DateTime>()))
+        _identityMock.Setup(x => x.GenerateJwtAsync(user.Id, It.IsAny<DateTime>()))
             .ReturnsAsync(Result<string>.Ok("jwt-token"));
         _identityMock.Setup(x => x.CreateRefreshTokenAsync(user.Id))
-            .ReturnsAsync(Result<AppRefreshToken>.Ok(refreshToken));
+            .ReturnsAsync(Result<RefreshTokenInfo>.Ok(refreshToken));
 
         var result = await _sut.LoginAsync(new LoginRequest
         {
@@ -128,8 +119,8 @@ public class AuthServiceTests
         var user = MakeUser("wp@example.com");
 
         _identityMock.Setup(x => x.GetByEmailAsync("wp@example.com"))
-            .ReturnsAsync(Result<AppUser>.Ok(user));
-        _identityMock.Setup(x => x.CheckPasswordAsync(user, It.IsAny<string>()))
+            .ReturnsAsync(Result<AppUserInfo>.Ok(user));
+        _identityMock.Setup(x => x.CheckPasswordAsync(user.Id, It.IsAny<string>()))
             .ReturnsAsync(Result<bool>.Fail("Wrong password."));
 
         var result = await _sut.LoginAsync(new LoginRequest
@@ -149,21 +140,20 @@ public class AuthServiceTests
     public async Task RefreshAsync_HappyPath_ReturnsNewTokens()
     {
         const string email = "refresh@example.com";
-        var user = MakeUser(email);
-        var oldRefreshToken = MakeRefreshToken(user.Id);
-        oldRefreshToken.User = user;
-        var newRefreshToken = MakeRefreshToken(user.Id);
+        var userId = Guid.NewGuid();
+        var oldRefreshToken = MakeRefreshToken(userId, email);
+        var newRefreshToken = MakeRefreshToken(userId, email);
 
-        _identityMock.Setup(x => x.ValidateRefreshTokenAsync(oldRefreshToken.RefreshToken))
-            .ReturnsAsync(Result<AppRefreshToken>.Ok(oldRefreshToken));
-        _identityMock.Setup(x => x.GetRolesAsync(user))
+        _identityMock.Setup(x => x.ValidateRefreshTokenAsync(oldRefreshToken.Token))
+            .ReturnsAsync(Result<RefreshTokenInfo>.Ok(oldRefreshToken));
+        _identityMock.Setup(x => x.GetRolesAsync(userId))
             .ReturnsAsync(Result<IList<string>>.Ok(new List<string> { "Player" }));
-        _identityMock.Setup(x => x.GenerateJwtAsync(user, It.IsAny<DateTime>()))
+        _identityMock.Setup(x => x.GenerateJwtAsync(userId, It.IsAny<DateTime>()))
             .ReturnsAsync(Result<string>.Ok("new-jwt-token"));
-        _identityMock.Setup(x => x.RotateRefreshTokenAsync(oldRefreshToken))
-            .ReturnsAsync(Result<AppRefreshToken>.Ok(newRefreshToken));
+        _identityMock.Setup(x => x.RotateRefreshTokenAsync(oldRefreshToken.Token))
+            .ReturnsAsync(Result<RefreshTokenInfo>.Ok(newRefreshToken));
 
-        var result = await _sut.RefreshAsync(oldRefreshToken.RefreshToken);
+        var result = await _sut.RefreshAsync(oldRefreshToken.Token);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.ShouldNotBeNull();
@@ -175,7 +165,7 @@ public class AuthServiceTests
     public async Task RefreshAsync_InvalidToken_ReturnsFail()
     {
         _identityMock.Setup(x => x.ValidateRefreshTokenAsync(It.IsAny<string>()))
-            .ReturnsAsync(Result<AppRefreshToken>.Fail("Invalid refresh token"));
+            .ReturnsAsync(Result<RefreshTokenInfo>.Fail("Invalid refresh token"));
 
         var result = await _sut.RefreshAsync("invalid-refresh");
 
@@ -188,7 +178,7 @@ public class AuthServiceTests
     public async Task RefreshAsync_ExpiredToken_ReturnsFail()
     {
         _identityMock.Setup(x => x.ValidateRefreshTokenAsync(It.IsAny<string>()))
-            .ReturnsAsync(Result<AppRefreshToken>.Fail("Refresh token expired"));
+            .ReturnsAsync(Result<RefreshTokenInfo>.Fail("Refresh token expired"));
 
         var result = await _sut.RefreshAsync("expired-refresh");
 

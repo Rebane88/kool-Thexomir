@@ -1,5 +1,5 @@
 using API.Areas.Root.ViewModels;
-using Domain.Identity;
+using Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

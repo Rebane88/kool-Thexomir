@@ -2,8 +2,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Application.Contracts;
+using Application.Contracts.Identity;
 using Base.Contracts;
-using Domain.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,49 +19,57 @@ public class IdentityService(
     private static readonly JwtSecurityTokenHandler JwtHandler = new();
 
     // ---------------------------------------------------------------
-    // Existing methods
+    // User operations
     // ---------------------------------------------------------------
 
-    public async Task<Result<AppUser>> GetByEmailAsync(string email)
+    public async Task<Result<AppUserInfo>> GetByEmailAsync(string email)
     {
         var user = await userManager.FindByEmailAsync(email);
         return user is null
-            ? Result<AppUser>.Fail($"User with email '{email}' not found.")
-            : Result<AppUser>.Ok(user);
+            ? Result<AppUserInfo>.Fail($"User with email '{email}' not found.")
+            : Result<AppUserInfo>.Ok(new AppUserInfo(user.Id, user.Email!));
     }
 
-    public async Task<Result<AppUser>> CreateUserAsync(string email, string password)
+    public async Task<Result<AppUserInfo>> CreateUserAsync(string email, string password)
     {
         var user = new AppUser { Email = email, UserName = email };
         var result = await userManager.CreateAsync(user, password);
         return result.Succeeded
-            ? Result<AppUser>.Ok(user)
-            : Result<AppUser>.Fail(string.Join("; ", result.Errors.Select(e => e.Description)));
+            ? Result<AppUserInfo>.Ok(new AppUserInfo(user.Id, user.Email!))
+            : Result<AppUserInfo>.Fail(string.Join("; ", result.Errors.Select(e => e.Description)));
     }
 
-    public async Task<Result<bool>> CheckPasswordAsync(AppUser user, string password)
+    public async Task<Result<bool>> CheckPasswordAsync(Guid userId, string password)
     {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return Result<bool>.Fail("User not found.");
         var valid = await userManager.CheckPasswordAsync(user, password);
         return valid
             ? Result<bool>.Ok(true)
             : Result<bool>.Fail("Invalid password.");
     }
 
-    public async Task<bool> IsLockedOutAsync(AppUser user)
+    public async Task<bool> IsLockedOutAsync(Guid userId)
     {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return false;
         return await userManager.IsLockedOutAsync(user);
     }
 
-    public async Task<Result<bool>> AddToRoleAsync(AppUser user, string role)
+    public async Task<Result<bool>> AddToRoleAsync(Guid userId, string role)
     {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return Result<bool>.Fail("User not found.");
         var result = await userManager.AddToRoleAsync(user, role);
         return result.Succeeded
             ? Result<bool>.Ok(true)
             : Result<bool>.Fail(string.Join("; ", result.Errors.Select(e => e.Description)));
     }
 
-    public async Task<Result<IList<string>>> GetRolesAsync(AppUser user)
+    public async Task<Result<IList<string>>> GetRolesAsync(Guid userId)
     {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return Result<IList<string>>.Fail("User not found.");
         var roles = await userManager.GetRolesAsync(user);
         return Result<IList<string>>.Ok(roles);
     }
@@ -70,8 +78,11 @@ public class IdentityService(
     // JWT and refresh token methods
     // ---------------------------------------------------------------
 
-    public async Task<Result<string>> GenerateJwtAsync(AppUser user, DateTime expires)
+    public async Task<Result<string>> GenerateJwtAsync(Guid userId, DateTime expires)
     {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return Result<string>.Fail("User not found.");
+
         var key = configuration["JWT:Key"]!;
         var issuer = configuration["JWT:Issuer"]!;
         var audience = configuration["JWT:Audience"]!;
@@ -103,8 +114,11 @@ public class IdentityService(
         return Result<string>.Ok(JwtHandler.WriteToken(token));
     }
 
-    public async Task<Result<AppRefreshToken>> CreateRefreshTokenAsync(Guid userId)
+    public async Task<Result<RefreshTokenInfo>> CreateRefreshTokenAsync(Guid userId)
     {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return Result<RefreshTokenInfo>.Fail("User not found.");
+
         var token = new AppRefreshToken
         {
             RefreshToken = Guid.NewGuid().ToString(),
@@ -115,16 +129,14 @@ public class IdentityService(
         await context.RefreshTokens.AddAsync(token);
         await context.SaveChangesAsync();
 
-        return Result<AppRefreshToken>.Ok(token);
+        return Result<RefreshTokenInfo>.Ok(new RefreshTokenInfo(userId, user.Email!, token.RefreshToken));
     }
 
-    public async Task<Result<AppRefreshToken>> ValidateRefreshTokenAsync(string refreshToken)
+    public async Task<Result<RefreshTokenInfo>> ValidateRefreshTokenAsync(string refreshToken)
     {
         var now = DateTime.UtcNow;
         var graceExpiry = now.AddMinutes(-1);
 
-        // Look up the refresh token directly — it's a unique GUID, no JWT needed.
-        // Include the User so the caller can identify who owns this session.
         var token = await context.RefreshTokens
             .Include(t => t.User)
             .Where(t => (t.RefreshToken == refreshToken && t.Expiration > now) ||
@@ -132,13 +144,21 @@ public class IdentityService(
             .FirstOrDefaultAsync();
 
         if (token is null)
-            return Result<AppRefreshToken>.Fail("Invalid or expired refresh token.");
+            return Result<RefreshTokenInfo>.Fail("Invalid or expired refresh token.");
 
-        return Result<AppRefreshToken>.Ok(token);
+        return Result<RefreshTokenInfo>.Ok(
+            new RefreshTokenInfo(token.UserId, token.User!.Email!, token.RefreshToken));
     }
 
-    public async Task<Result<AppRefreshToken>> RotateRefreshTokenAsync(AppRefreshToken token)
+    public async Task<Result<RefreshTokenInfo>> RotateRefreshTokenAsync(string currentToken)
     {
+        var token = await context.RefreshTokens
+            .Include(t => t.User)
+            .FirstOrDefaultAsync(t => t.RefreshToken == currentToken);
+
+        if (token is null)
+            return Result<RefreshTokenInfo>.Fail("Refresh token not found.");
+
         token.PreviousRefreshToken = token.RefreshToken;
         token.PreviousExpiration = DateTime.UtcNow.AddMinutes(1);
         token.RefreshToken = Guid.NewGuid().ToString();
@@ -147,7 +167,8 @@ public class IdentityService(
         context.Entry(token).State = EntityState.Modified;
         await context.SaveChangesAsync();
 
-        return Result<AppRefreshToken>.Ok(token);
+        return Result<RefreshTokenInfo>.Ok(
+            new RefreshTokenInfo(token.UserId, token.User!.Email!, token.RefreshToken));
     }
 
     public async Task<Result<bool>> RevokeRefreshTokenAsync(Guid userId, string refreshToken)
@@ -166,4 +187,23 @@ public class IdentityService(
         return Result<bool>.Ok(true);
     }
 
+    // ---------------------------------------------------------------
+    // Email resolution
+    // ---------------------------------------------------------------
+
+    public async Task<string?> GetEmailAsync(Guid userId)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        return user?.Email;
+    }
+
+    public async Task<Dictionary<Guid, string>> GetEmailsAsync(IEnumerable<Guid> userIds)
+    {
+        var ids = userIds.ToList();
+        if (ids.Count == 0) return new Dictionary<Guid, string>();
+
+        return await context.Users
+            .Where(u => ids.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.Email ?? string.Empty);
+    }
 }

@@ -1,6 +1,4 @@
-using Domain.Factions;
 using Domain.Game;
-using Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories.Game;
@@ -17,8 +15,6 @@ public class GameRepository(AppDbContext context)
     public async Task<Domain.Game.Game?> GetLobbyWithPlayersAsync(Guid gameId)
     {
         return await Context.Games
-            .Include(g => g.Kingdoms!)
-                .ThenInclude(k => k.AppUser)
             .Include(g => g.Kingdoms!)
                 .ThenInclude(k => k.FactionType)
             .FirstOrDefaultAsync(g => g.Id == gameId);
