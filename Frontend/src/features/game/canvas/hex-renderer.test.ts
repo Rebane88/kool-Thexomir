@@ -60,7 +60,7 @@ describe('drawHexGrid', () => {
     drawHexGrid(ctx, coords, layout);
     const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
     const centerCall = fillTextCalls.find(
-      (call: [string, number, number]) => call[0] === '0,0',
+      (call: unknown[]) => call[0] === '0,0',
     );
     expect(centerCall).toBeDefined();
   });

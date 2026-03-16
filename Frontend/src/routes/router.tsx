@@ -3,7 +3,8 @@ import { ProtectedRoute } from '@/shared/components/ProtectedRoute';
 import { NavBar } from '@/shared/components/NavBar';
 import { NotFoundPage } from '@/shared/components/NotFoundPage';
 import { LoginPage, RegisterPage } from '@/features/auth';
-import { LobbyHomePage, LobbyDetailPage, GamePage } from '@/features/lobby';
+import { LobbyHomePage, LobbyDetailPage } from '@/features/lobby';
+import { GamePage } from '@/features/game';
 
 function LayoutWithNavBar() {
   return (
