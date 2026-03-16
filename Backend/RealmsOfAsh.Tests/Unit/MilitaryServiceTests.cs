@@ -23,6 +23,7 @@ public class MilitaryServiceTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IGameGuard> _gameGuardMock = new();
+    private readonly Mock<IServiceProvider> _serviceProviderMock = new();
     private readonly Mock<IBuildingRepository> _buildingsMock = new();
     private readonly Mock<IBuildingTypeRepository> _buildingTypesMock = new();
     private readonly Mock<IBuildingUnitTypeRepository> _buildingUnitTypesMock = new();
@@ -96,7 +97,7 @@ public class MilitaryServiceTests
         _battlesMock.Setup(b => b.AddAsync(It.IsAny<Battle>()))
             .ReturnsAsync((Battle b) => { _addedBattles.Add(b); return b; });
 
-        _sut = new MilitaryService(_unitOfWorkMock.Object, _gameGuardMock.Object);
+        _sut = new MilitaryService(_unitOfWorkMock.Object, _gameGuardMock.Object, _serviceProviderMock.Object);
     }
 
     private void SetupGuardSuccess()

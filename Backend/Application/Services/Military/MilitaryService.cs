@@ -1,13 +1,16 @@
 using Application.Contracts;
 using Application.Services.Military.DTOs;
+using Application.Services.WinCondition.DTOs;
 using Base.Contracts;
 using Domain.Factions;
 using Domain.Game;
+using Domain.Map;
 using Domain.Military;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Application.Services.Military;
 
-public class MilitaryService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IMilitaryService
+public class MilitaryService(IUnitOfWork unitOfWork, IGameGuard gameGuard, IServiceProvider serviceProvider) : IMilitaryService
 {
     public async Task<Result<TroopsTrainedDto>> TrainTroopsAsync(Guid gameId, Guid userId, TrainTroopsRequest request)
     {
@@ -272,6 +275,45 @@ public class MilitaryService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IMi
             Action = "Attack"
         });
 
+        // --- Phase 13: Elimination cleanup + win condition check ---
+        GameOverDto? gameOverDto = null;
+
+        if (combat.TileCaptured && defenderTile.IsCapital)
+        {
+            // Mark defender kingdom eliminated
+            defenderKingdom!.IsEliminated = true;
+            await unitOfWork.Kingdoms.UpdateAsync(defenderKingdom);
+
+            // Nullify all remaining defender tiles
+            var defenderTiles = await unitOfWork.Tiles.GetTilesForKingdomAsync(defenderKingdom.Id);
+            foreach (var tile in defenderTiles)
+            {
+                tile.KingdomId = null;
+                await unitOfWork.Tiles.UpdateAsync(tile);
+            }
+
+            // Hard-delete all defender armies and their units
+            var defenderArmies = await unitOfWork.Armies.GetArmiesWithUnitsForKingdomAsync(defenderKingdom.Id);
+            foreach (var army in defenderArmies)
+            {
+                foreach (var unit in army.Units ?? [])
+                    await unitOfWork.Units.DeleteAsync(unit.Id);
+                await unitOfWork.Armies.DeleteAsync(army.Id);
+            }
+
+            // Check win condition
+            var checker = serviceProvider.GetRequiredKeyedService<IWinConditionChecker>(game.WinCondition);
+            var allKingdoms = (await unitOfWork.Kingdoms.GetKingdomsForGameAsync(gameId)).ToList();
+            var allTiles = await unitOfWork.Tiles.GetTilesWithBuildingsForGameAsync(gameId);
+            var winResult = game.CheckWinCondition(checker, allKingdoms, allTiles);
+
+            if (winResult?.GameOver == true)
+            {
+                await unitOfWork.Games.UpdateAsync(game);
+                gameOverDto = BuildGameOverDto(game, winResult, allKingdoms, allTiles);
+            }
+        }
+
         await unitOfWork.CommitAsync();
 
         return Result<CombatResolvedDto>.Ok(new CombatResolvedDto
@@ -299,7 +341,36 @@ public class MilitaryService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IMi
                 Before = c.Before,
                 Lost = c.Lost,
                 After = c.After
-            }).ToList()
+            }).ToList(),
+            GameOver = gameOverDto
         });
+    }
+
+    private static GameOverDto BuildGameOverDto(
+        Game game,
+        WinCheckResult winResult,
+        List<Kingdom> allKingdoms,
+        List<Tile> allTiles)
+    {
+        var tiles = allTiles.AsReadOnly();
+        return new GameOverDto
+        {
+            GameId = game.Id,
+            WinnerKingdomId = winResult.WinnerKingdomId,
+            WinConditionType = winResult.WinConditionType.ToString(),
+            FinalScores = allKingdoms.Select(k => new KingdomScoreDto
+            {
+                KingdomId = k.Id,
+                KingdomName = k.Name,
+                Score = ScoreChecker.CalculateScore(k, tiles),
+                TilesOwned = allTiles.Count(t => t.KingdomId == k.Id),
+                IsEliminated = k.IsEliminated
+            }).OrderByDescending(s => s.Score).ToList(),
+            EliminationOrder = allKingdoms
+                .Where(k => k.IsEliminated)
+                .OrderBy(k => k.UpdatedAt)
+                .Select(k => k.Id)
+                .ToList()
+        };
     }
 }

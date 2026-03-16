@@ -132,6 +132,10 @@ public static class DependencyInjection
         // Concurrency
         services.AddSingleton<IGameLockManager, GameLockManager>();
 
+        // Win condition checkers (keyed by EWinCondition enum)
+        services.AddKeyedScoped<IWinConditionChecker, EliminationChecker>(EWinCondition.Elimination);
+        services.AddKeyedScoped<IWinConditionChecker, ScoreChecker>(EWinCondition.Score);
+
         return services;
     }
 }

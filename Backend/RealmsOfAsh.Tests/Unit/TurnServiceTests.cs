@@ -22,6 +22,7 @@ public class TurnServiceTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IGameGuard> _gameGuardMock = new();
+    private readonly Mock<IServiceProvider> _serviceProviderMock = new();
     private readonly Mock<IGameRepository> _gamesMock = new();
     private readonly Mock<IKingdomRepository> _kingdomsMock = new();
     private readonly Mock<ITileRepository> _tilesMock = new();
@@ -68,7 +69,7 @@ public class TurnServiceTests
         _kingdomResourcesMock.Setup(r => r.UpdateAsync(It.IsAny<KingdomResource>()))
             .ReturnsAsync((KingdomResource r) => r);
 
-        _sut = new TurnService(_unitOfWorkMock.Object, _gameGuardMock.Object);
+        _sut = new TurnService(_unitOfWorkMock.Object, _gameGuardMock.Object, _serviceProviderMock.Object);
     }
 
     private Game CreateGame(Guid currentTurnKingdomId, int turnNumber = 1) => new()
