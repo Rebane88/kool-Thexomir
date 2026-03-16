@@ -371,7 +371,7 @@ public class GameDomainMilitaryTests
         var sourceTile = CreateTile(TileAId, Kingdom1Id, q: 0, r: 0);
         var targetTile = CreateTile(TileBId, Kingdom1Id, q: 1, r: 0);
 
-        var movingUnit = new Unit
+        var movingUnit = new MilitaryUnit
         {
             UnitTypeId = UnitTypeId1, Quantity = 3,
             UnitType = CreateUnitType(id: UnitTypeId1),

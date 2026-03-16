@@ -2,6 +2,7 @@ using Base;
 using Base.Contracts;
 using Domain.Buildings;
 using Domain.Map;
+using Domain.Military;
 using Domain.Resources;
 
 namespace Domain.Game;
@@ -183,5 +184,170 @@ public class Game : BaseEntity
         };
 
         return Result<Building>.Ok(building);
+    }
+
+    /// <summary>
+    /// Validates and trains troops at a building. Validates building ownership, unit production capability,
+    /// one-training-per-turn limit, and resource affordability. Deducts costs atomically.
+    /// Returns the Army (new or existing) and the list of Unit entries.
+    /// </summary>
+    public Result<(Army army, List<Unit> units)> TrainTroops(
+        Building building,
+        BuildingUnitType? buildingUnitType,
+        UnitType unitType,
+        int quantity,
+        Army? existingArmyOnTile,
+        Tile tile,
+        ICollection<KingdomResource> kingdomResources,
+        decimal factionCostModifier)
+    {
+        var kingdom = Kingdoms!.SingleOrDefault(k => k.Id == CurrentTurnKingdomId);
+        if (kingdom is null)
+            return Result<(Army, List<Unit>)>.Fail("Current turn kingdom not found.");
+
+        // Validate tile ownership (building's tile must be owned by current kingdom)
+        if (tile.KingdomId != kingdom.Id)
+            return Result<(Army, List<Unit>)>.Fail("You do not own the tile this building is on.");
+
+        // Validate building can produce this unit type
+        if (buildingUnitType is null)
+            return Result<(Army, List<Unit>)>.Fail("This building cannot produce that unit type.");
+
+        // Validate one training per building per turn
+        if (building.HasTrainedThisTurn)
+            return Result<(Army, List<Unit>)>.Fail("This building has already trained troops this turn.");
+
+        // Validate quantity > 0
+        if (quantity <= 0)
+            return Result<(Army, List<Unit>)>.Fail("Quantity must be greater than zero.");
+
+        // Calculate costs with faction modifier (per resource type, floored)
+        var costs = new Dictionary<EResourceType, int>
+        {
+            { EResourceType.Gold, (int)Math.Floor(unitType.GoldCost * quantity * factionCostModifier) },
+            { EResourceType.Food, (int)Math.Floor(unitType.FoodCost * quantity * factionCostModifier) },
+            { EResourceType.Wood, (int)Math.Floor(unitType.WoodCost * quantity * factionCostModifier) },
+            { EResourceType.Stone, (int)Math.Floor(unitType.StoneCost * quantity * factionCostModifier) },
+            { EResourceType.Mana, (int)Math.Floor(unitType.ManaCost * quantity * factionCostModifier) },
+        };
+
+        // All-or-nothing cost validation
+        foreach (var (type, cost) in costs.Where(c => c.Value > 0))
+        {
+            var resource = kingdomResources.SingleOrDefault(r => r.ResourceType == type);
+            if (resource is null || resource.Amount < cost)
+                return Result<(Army, List<Unit>)>.Fail($"Not enough {type}. Need {cost}, have {(int)(resource?.Amount ?? 0)}.");
+        }
+
+        // Deduct costs
+        foreach (var (type, cost) in costs.Where(c => c.Value > 0))
+        {
+            var resource = kingdomResources.Single(r => r.ResourceType == type);
+            resource.Amount -= cost;
+        }
+
+        // Mark building as trained this turn
+        building.HasTrainedThisTurn = true;
+
+        // Create or merge army
+        var army = existingArmyOnTile ?? new Army
+        {
+            TileId = tile.Id,
+            KingdomId = kingdom.Id,
+            Units = new List<Unit>()
+        };
+
+        var units = army.Units!.ToList();
+
+        // Check if army already has units of this type -> merge quantity
+        var existingUnit = units.FirstOrDefault(u => u.UnitTypeId == unitType.Id);
+        if (existingUnit != null)
+        {
+            existingUnit.Quantity += quantity;
+        }
+        else
+        {
+            var newUnit = new Unit
+            {
+                ArmyId = army.Id,
+                UnitTypeId = unitType.Id,
+                Quantity = quantity,
+                UnitType = unitType
+            };
+            units.Add(newUnit);
+            army.Units!.Add(newUnit);
+        }
+
+        return Result<(Army, List<Unit>)>.Ok((army, units));
+    }
+
+    /// <summary>
+    /// Validates and moves an army to an adjacent tile. Validates adjacency, blocks enemy-occupied tiles,
+    /// claims unowned tiles, and auto-merges with friendly armies on the destination.
+    /// </summary>
+    public Result<(bool tileClaimed, bool armyMerged, Army? mergedIntoArmy)> MoveArmy(
+        Army army,
+        Tile sourceTile,
+        Tile targetTile,
+        Army? existingFriendlyArmy,
+        Army? existingEnemyArmy)
+    {
+        var kingdom = Kingdoms!.SingleOrDefault(k => k.Id == CurrentTurnKingdomId);
+        if (kingdom is null)
+            return Result<(bool, bool, Army?)>.Fail("Current turn kingdom not found.");
+
+        // Validate army belongs to current kingdom
+        if (army.KingdomId != kingdom.Id)
+            return Result<(bool, bool, Army?)>.Fail("This army does not belong to your kingdom.");
+
+        // Validate adjacency using HexGridHelper
+        var neighbors = HexGridHelper.GetNeighbors(sourceTile.CoordQ, sourceTile.CoordR);
+        if (!neighbors.Contains((targetTile.CoordQ, targetTile.CoordR)))
+            return Result<(bool, bool, Army?)>.Fail("Target tile is not adjacent.");
+
+        // Block move onto enemy-occupied tile
+        if (existingEnemyArmy != null)
+            return Result<(bool, bool, Army?)>.Fail("Cannot move into enemy-occupied tile. Use attack instead.");
+
+        // Claim unowned tile
+        bool tileClaimed = false;
+        if (targetTile.KingdomId is null)
+        {
+            targetTile.KingdomId = kingdom.Id;
+            tileClaimed = true;
+        }
+
+        // Auto-merge with friendly army
+        bool armyMerged = false;
+        Army? mergedIntoArmy = null;
+        if (existingFriendlyArmy != null)
+        {
+            foreach (var unit in army.Units!)
+            {
+                var matchingUnit = existingFriendlyArmy.Units!.FirstOrDefault(u => u.UnitTypeId == unit.UnitTypeId);
+                if (matchingUnit != null)
+                {
+                    matchingUnit.Quantity += unit.Quantity;
+                }
+                else
+                {
+                    existingFriendlyArmy.Units!.Add(new Unit
+                    {
+                        ArmyId = existingFriendlyArmy.Id,
+                        UnitTypeId = unit.UnitTypeId,
+                        Quantity = unit.Quantity,
+                        UnitType = unit.UnitType
+                    });
+                }
+            }
+            armyMerged = true;
+            mergedIntoArmy = existingFriendlyArmy;
+        }
+        else
+        {
+            army.TileId = targetTile.Id;
+        }
+
+        return Result<(bool, bool, Army?)>.Ok((tileClaimed, armyMerged, mergedIntoArmy));
     }
 }
