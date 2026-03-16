@@ -1,6 +1,6 @@
 using Application.Contracts;
 using Application.Services.GameInitialization.DTOs;
-using Domain.Buildings;
+using DomainBuilding = Domain.Buildings.Building;
 using Domain.Game;
 using Domain.Map;
 using Domain.Resources;
@@ -41,7 +41,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
 
         // Calculate starting positions and assign kingdoms
         var positions = HexGridHelper.CalculateStartingPositions(radius, kingdoms.Count);
-        var allBuildings = new List<Building>();
+        var allBuildings = new List<DomainBuilding>();
         var allResources = new List<KingdomResource>();
 
         for (int i = 0; i < kingdoms.Count; i++)
@@ -67,7 +67,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
             }
 
             // Create Capital building on center tile
-            var capital = new Building
+            var capital = new DomainBuilding
             {
                 TileId = centerTile.Id,
                 BuildingTypeId = CapitalBuildingTypeId,
@@ -185,7 +185,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
         Game game,
         List<Tile> tiles,
         List<Kingdom> kingdoms,
-        List<Building> buildings,
+        List<DomainBuilding> buildings,
         List<KingdomResource> resources)
     {
         var buildingsByTile = buildings

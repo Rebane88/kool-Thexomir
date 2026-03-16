@@ -7,6 +7,7 @@ public class GameStateDto
     public int TurnNumber { get; set; }
     public string WinCondition { get; set; } = string.Empty;
     public int MapRadius { get; set; }
+    public Guid? CurrentTurnKingdomId { get; set; }
     public List<TileDto> Tiles { get; set; } = [];
     public List<KingdomDto> Kingdoms { get; set; } = [];
 }

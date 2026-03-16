@@ -116,6 +116,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // CurrentTurnKingdomId FK to Kingdom
+        builder.Entity<Game>()
+            .HasOne(g => g.CurrentTurnKingdom)
+            .WithMany()
+            .HasForeignKey(g => g.CurrentTurnKingdomId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // One building per tile
+        builder.Entity<Building>()
+            .HasIndex(b => b.TileId)
+            .IsUnique();
+
         // FK configuration for tricky relationships
 
         // UnitTypeMatchup: two FKs to UnitType — EF Core can't auto-resolve

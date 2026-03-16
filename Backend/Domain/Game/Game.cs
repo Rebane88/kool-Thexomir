@@ -14,10 +14,12 @@ public class Game : BaseEntity
     public int MapWidth { get; set; }
     public int MapHeight { get; set; }
     public Guid? HostUserId { get; set; }
+    public Guid? CurrentTurnKingdomId { get; set; }
     public uint xmin { get; set; } // PostgreSQL xmin system column — concurrency token for lobby join race protection
 
     // Navigation
     public AppUser? HostUser { get; set; }
+    public Kingdom? CurrentTurnKingdom { get; set; }
     public ICollection<Kingdom>? Kingdoms { get; set; }
     public ICollection<Tile>? Tiles { get; set; }
     public ICollection<TurnLog>? TurnLogs { get; set; }

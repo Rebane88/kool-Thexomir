@@ -1,5 +1,7 @@
+using Application.Services.Building.DTOs;
 using Application.Services.GameInitialization.DTOs;
 using Application.Services.Lobby.DTOs;
+using Application.Services.Turn.DTOs;
 
 namespace Application.Services.GameHub;
 
@@ -15,4 +17,8 @@ public interface IGameClient
     Task GameStateSnapshot(GameStateDto gameState);
     Task PlayerJoinedGame(string userId);
     Task PlayerLeftGame(string userId);
+
+    // Phase 11 events
+    Task TurnAdvanced(TurnAdvancedDto turnAdvanced);
+    Task BuildingPlaced(BuildingPlacedDto buildingPlaced);
 }
