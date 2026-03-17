@@ -112,6 +112,8 @@ export function GamePage() {
           if (Math.sqrt(dx * dx + dy * dy) >= 5) {
             isDraggingRef.current = true;
             lastDragPosRef.current = { x, y };
+            setHoveredTileKey(null);
+            setTooltipPos(null);
           }
         }
         if (isDraggingRef.current && lastDragPosRef.current) {
@@ -235,6 +237,11 @@ export function GamePage() {
 
   const isLoading = connectionStatus === 'connecting' || connectionStatus === 'disconnected';
   const isFailed = connectionStatus === 'failed';
+
+  // Force redraw when canvas transitions from hidden to visible
+  useEffect(() => {
+    if (!isLoading) markDirty();
+  }, [isLoading, markDirty]);
 
   if (isFailed) {
     return <ErrorScreen onRetry={() => gameId && connectToGame(gameId)} />;
