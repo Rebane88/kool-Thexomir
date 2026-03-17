@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { Panel, Button, Input, Select } from '@/shared/ui';
 import { createLobby, joinLobby } from './lobby-api';
 import { WIN_CONDITION_LABELS } from './lobby-types';
 
@@ -53,124 +54,104 @@ export function LobbyHomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-gray-800 rounded-lg p-6 shadow-lg">
-        <h1 className="text-amber-500 text-2xl font-bold text-center mb-6">
-          Lobby
+    <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+      <div className="max-w-md w-full">
+        <h1 className="font-heading text-gold-500 text-3xl text-center mb-6 tracking-wide">
+          War Council
         </h1>
 
-        <div className="flex border-b border-gray-700 mb-4">
-          <button
-            type="button"
-            onClick={() => handleTabChange('create')}
-            className={`flex-1 py-2 text-sm font-medium ${
-              activeTab === 'create'
-                ? 'text-amber-500 border-b-2 border-amber-500'
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            Create
-          </button>
-          <button
-            type="button"
-            onClick={() => handleTabChange('join')}
-            className={`flex-1 py-2 text-sm font-medium ${
-              activeTab === 'join'
-                ? 'text-amber-500 border-b-2 border-amber-500'
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            Join
-          </button>
-        </div>
-
-        {error && (
-          <div className="bg-red-900/50 border border-red-600 text-red-200 px-4 py-2 rounded text-sm mb-4">
-            {error}
+        <Panel className="p-6">
+          <div className="flex border-b border-bronze-700 mb-5">
+            <button
+              type="button"
+              onClick={() => handleTabChange('create')}
+              className={`flex-1 py-2 text-sm font-heading font-medium tracking-wide ${
+                activeTab === 'create'
+                  ? 'text-gold-500 border-b-2 border-gold-500'
+                  : 'text-parchment-400 hover:text-parchment-200'
+              }`}
+            >
+              Create
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange('join')}
+              className={`flex-1 py-2 text-sm font-heading font-medium tracking-wide ${
+                activeTab === 'join'
+                  ? 'text-gold-500 border-b-2 border-gold-500'
+                  : 'text-parchment-400 hover:text-parchment-200'
+              }`}
+            >
+              Join
+            </button>
           </div>
-        )}
 
-        {activeTab === 'create' ? (
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <label
-                htmlFor="maxPlayers"
-                className="block text-gray-300 text-sm font-medium mb-1"
-              >
-                Max Players
-              </label>
-              <select
+          {error && (
+            <div className="bg-blood-600/20 border border-blood-600/30 text-blood-500 px-4 py-2 text-sm mb-4">
+              {error}
+            </div>
+          )}
+
+          {activeTab === 'create' ? (
+            <form onSubmit={handleCreate} className="space-y-4">
+              <Select
                 id="maxPlayers"
+                label="Max Players"
                 value={maxPlayers}
                 onChange={(e) => setMaxPlayers(Number(e.target.value))}
-                className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-amber-500"
               >
                 {[2, 3, 4, 5, 6, 7, 8].map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
                 ))}
-              </select>
-            </div>
+              </Select>
 
-            <div>
-              <label
-                htmlFor="winCondition"
-                className="block text-gray-300 text-sm font-medium mb-1"
-              >
-                Win Condition
-              </label>
-              <select
+              <Select
                 id="winCondition"
+                label="Win Condition"
                 value={winCondition}
                 onChange={(e) => setWinCondition(Number(e.target.value))}
-                className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-amber-500"
               >
                 {Object.entries(WIN_CONDITION_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
                 ))}
-              </select>
-            </div>
+              </Select>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-amber-600 hover:bg-amber-500 disabled:bg-amber-600/50 disabled:cursor-not-allowed text-white font-medium py-2 rounded transition-colors"
-            >
-              {isSubmitting ? 'Creating...' : 'Create Lobby'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleJoin} className="space-y-4">
-            <div>
-              <label
-                htmlFor="inviteCode"
-                className="block text-gray-300 text-sm font-medium mb-1"
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                variant="primary"
+                className="w-full"
               >
-                Invite Code
-              </label>
-              <input
+                {isSubmitting ? 'Creating...' : 'Create Lobby'}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleJoin} className="space-y-4">
+              <Input
                 id="inviteCode"
+                label="Invite Code"
                 type="text"
                 placeholder="Enter invite code"
                 maxLength={6}
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-amber-500"
               />
-            </div>
 
-            <button
-              type="submit"
-              disabled={inviteCode.length !== 6 || isSubmitting}
-              className="w-full bg-amber-600 hover:bg-amber-500 disabled:bg-amber-600/50 disabled:cursor-not-allowed text-white font-medium py-2 rounded transition-colors"
-            >
-              {isSubmitting ? 'Joining...' : 'Join Lobby'}
-            </button>
-          </form>
-        )}
+              <Button
+                type="submit"
+                disabled={inviteCode.length !== 6 || isSubmitting}
+                variant="primary"
+                className="w-full"
+              >
+                {isSubmitting ? 'Joining...' : 'Join Lobby'}
+              </Button>
+            </form>
+          )}
+        </Panel>
       </div>
     </div>
   );

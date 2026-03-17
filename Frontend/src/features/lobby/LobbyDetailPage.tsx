@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { createGameHubConnection } from '@/lib/signalr-client';
 import type * as signalR from '@microsoft/signalr';
+import { Panel, Button, Badge, Select } from '@/shared/ui';
+import { CrownIcon } from '@/assets/icons';
 import { getLobby, selectFaction, leaveLobby, startGame } from './lobby-api';
 import type { LobbyResponse } from './lobby-types';
 import { WIN_CONDITION_LABELS, GAME_STATUS } from './lobby-types';
@@ -178,128 +180,122 @@ export function LobbyDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
-      <div className="max-w-xl w-full bg-gray-800 rounded-lg p-6 shadow-lg">
+    <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+      <div className="max-w-xl w-full">
         {!lobby ? (
-          <p className="text-gray-400 text-center">Loading...</p>
+          <p className="text-parchment-400 text-center">Loading...</p>
         ) : (
           <>
             {connectionError && (
-              <div className="bg-red-900/50 border border-red-600 text-red-200 px-4 py-2 rounded text-sm mb-4">
+              <div className="bg-blood-600/20 border border-blood-600/30 text-blood-500 px-4 py-2 text-sm mb-4">
                 Connection lost
               </div>
             )}
 
-            <div className="text-center mb-6">
-              <p className="text-gray-400 text-sm mb-1">Invite Code</p>
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-3xl font-mono font-bold text-amber-500 tracking-widest">
-                  {lobby.lobbyCode}
-                </span>
-                <button
-                  onClick={handleCopy}
-                  className="text-gray-400 hover:text-amber-500 text-sm"
-                >
-                  {copied ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex justify-between text-gray-400 text-sm mb-4 border-b border-gray-700 pb-3">
-              <span>
-                Win: {WIN_CONDITION_LABELS[lobby.winCondition] ?? 'Unknown'}
-              </span>
-              <span>
-                Players: {lobby.playerCount}/{lobby.maxPlayers}
-              </span>
-            </div>
-
-            <div className="space-y-2 mb-4">
-              <h2 className="text-gray-300 text-sm font-medium mb-2">
-                Players
-              </h2>
-              {lobby.players.map((player) => (
-                <div
-                  key={player.kingdomId}
-                  className="flex items-center justify-between bg-gray-700/50 rounded px-3 py-2"
-                >
-                  <div className="flex items-center gap-2">
-                    {player.isHost && (
-                      <span className="text-amber-500" title="Host">
-                        &#9813;
-                      </span>
-                    )}
-                    <span className="text-gray-100">{player.userEmail}</span>
-                  </div>
-                  <span
-                    className={
-                      player.factionName
-                        ? 'text-amber-400 text-sm'
-                        : 'text-gray-500 text-sm italic'
-                    }
-                  >
-                    {player.factionName ?? 'No faction'}
+            <Panel className="p-6">
+              <div className="text-center mb-6">
+                <p className="text-parchment-400 text-xs uppercase tracking-widest mb-1 font-heading">
+                  Invite Code
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-3xl font-mono font-bold text-gold-500 tracking-[0.3em]">
+                    {lobby.lobbyCode}
                   </span>
+                  <button
+                    onClick={handleCopy}
+                    className="text-parchment-400 hover:text-gold-500 text-sm transition-colors"
+                  >
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
                 </div>
-              ))}
-            </div>
+              </div>
 
-            {lobby.status === GAME_STATUS.Lobby && (
-              <div className="mb-4">
-                <label className="block text-gray-300 text-sm font-medium mb-1">
-                  Select Faction
-                </label>
-                <select
-                  value={currentPlayerFaction ?? ''}
-                  onChange={(e) => handleFactionChange(e.target.value)}
-                  disabled={pendingFaction}
-                  className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-amber-500 disabled:opacity-50"
+              <div className="flex justify-between text-parchment-400 text-sm mb-4 border-b border-bronze-700 pb-3">
+                <span>
+                  Win: {WIN_CONDITION_LABELS[lobby.winCondition] ?? 'Unknown'}
+                </span>
+                <span>
+                  Players: {lobby.playerCount}/{lobby.maxPlayers}
+                </span>
+              </div>
+
+              <div className="space-y-2 mb-4">
+                <h2 className="text-parchment-200 text-sm font-heading font-medium mb-2 tracking-wide">
+                  Players
+                </h2>
+                {lobby.players.map((player) => (
+                  <div
+                    key={player.kingdomId}
+                    className="flex items-center justify-between bg-ash-700/50 border border-bronze-700/50 px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      {player.isHost && (
+                        <CrownIcon size={16} className="text-gold-500" />
+                      )}
+                      <span className="text-parchment-200">{player.userEmail}</span>
+                    </div>
+                    {player.factionName ? (
+                      <Badge variant="success">{player.factionName}</Badge>
+                    ) : (
+                      <span className="text-parchment-400 text-sm italic">No faction</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {lobby.status === GAME_STATUS.Lobby && (
+                <div className="mb-4">
+                  <Select
+                    id="factionSelect"
+                    label="Select Faction"
+                    value={currentPlayerFaction ?? ''}
+                    onChange={(e) => handleFactionChange(e.target.value)}
+                    disabled={pendingFaction}
+                  >
+                    <option value="">-- Select --</option>
+                    {lobby.factions.map((f) => (
+                      <option
+                        key={f.factionTypeId}
+                        value={f.factionTypeId}
+                        disabled={!f.isAvailable}
+                      >
+                        {f.name}
+                        {!f.isAvailable ? ' (Taken)' : ''}
+                      </option>
+                    ))}
+                  </Select>
+                  {factionError && (
+                    <p className="text-blood-500 text-xs mt-1">{factionError}</p>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-3 mt-4">
+                <Button
+                  onClick={handleLeave}
+                  disabled={isLeaving}
+                  variant="secondary"
+                  className="flex-1"
                 >
-                  <option value="">-- Select --</option>
-                  {lobby.factions.map((f) => (
-                    <option
-                      key={f.factionTypeId}
-                      value={f.factionTypeId}
-                      disabled={!f.isAvailable}
-                    >
-                      {f.name}
-                      {!f.isAvailable ? ' (Taken)' : ''}
-                    </option>
-                  ))}
-                </select>
-                {factionError && (
-                  <p className="text-red-400 text-xs mt-1">{factionError}</p>
+                  {isLeaving ? 'Leaving...' : 'Leave Lobby'}
+                </Button>
+                {isHost && (
+                  <Button
+                    onClick={handleStart}
+                    disabled={!canStart || isStarting}
+                    variant="primary"
+                    className="flex-1"
+                  >
+                    {isStarting ? 'Starting...' : 'Start Game'}
+                  </Button>
                 )}
               </div>
-            )}
-
-            <div className="flex gap-3 mt-4">
-              <button
-                onClick={handleLeave}
-                disabled={isLeaving}
-                className="flex-1 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-gray-200 font-medium py-2 rounded transition-colors"
-              >
-                {isLeaving ? 'Leaving...' : 'Leave Lobby'}
-              </button>
-              {isHost && (
-                <button
-                  onClick={handleStart}
-                  disabled={!canStart || isStarting}
-                  className={`flex-1 font-medium py-2 rounded transition-colors ${
-                    canStart
-                      ? 'bg-amber-600 hover:bg-amber-500 text-white'
-                      : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {isStarting ? 'Starting...' : 'Start Game'}
-                </button>
+              {isHost && !canStart && startReason && (
+                <p className="text-parchment-400 text-xs mt-1 text-center">
+                  {startReason}
+                </p>
               )}
-            </div>
-            {isHost && !canStart && startReason && (
-              <p className="text-gray-400 text-xs mt-1 text-center">
-                {startReason}
-              </p>
-            )}
+            </Panel>
           </>
         )}
       </div>
