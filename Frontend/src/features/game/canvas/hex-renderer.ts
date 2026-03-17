@@ -211,6 +211,44 @@ export function drawGameMap(
     }
   }
 
+  // Layer 2.5: Build mode overlays
+  if (renderState.buildModeTypeId) {
+    for (const [key, tile] of state.tiles) {
+      // Only overlay player's own tiles
+      if (tile.kingdomId !== state.myKingdomId) continue;
+
+      const data = tileRenderData.get(key)!;
+
+      // Invalid: tile already has a building (backend enforces ONE building per tile)
+      if (tile.buildings.length > 0) {
+        drawHexPath(ctx, data.corners);
+        ctx.fillStyle = 'rgba(220, 38, 38, 0.25)';
+        ctx.fill();
+      } else {
+        // Valid: owned tile with no building -- green border only (no fill)
+        drawHexPath(ctx, data.corners);
+        ctx.strokeStyle = 'rgba(34, 197, 94, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    // Hover highlight on valid tile: bold green fill
+    if (renderState.hoveredTileKey) {
+      const hoveredTile = state.tiles.get(renderState.hoveredTileKey);
+      if (
+        hoveredTile &&
+        hoveredTile.kingdomId === state.myKingdomId &&
+        hoveredTile.buildings.length === 0
+      ) {
+        const data = tileRenderData.get(renderState.hoveredTileKey)!;
+        drawHexPath(ctx, data.corners);
+        ctx.fillStyle = 'rgba(34, 197, 94, 0.35)';
+        ctx.fill();
+      }
+    }
+  }
+
   // Layer 3: Indicators
   for (const [key, tile] of state.tiles) {
     const data = tileRenderData.get(key)!;
