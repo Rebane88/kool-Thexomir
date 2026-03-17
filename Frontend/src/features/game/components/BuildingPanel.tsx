@@ -1,22 +1,36 @@
+import { useState, useEffect } from 'react';
 import { Panel } from '@/shared/ui/Panel';
 import { useGameStore } from '../game-store';
 import { BuildingRow } from './BuildingRow';
+import { MilitaryPanel } from './MilitaryPanel';
 import type { BuildingTypeRef } from '../types/building-types';
 
 interface BuildingPanelProps {
   selectedTileKey: string;
 }
 
-export function BuildingPanel({ selectedTileKey: _selectedTileKey }: BuildingPanelProps) {
+export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
   const buildingTypes = useGameStore((s) => s.buildingTypes);
   const buildModeTypeId = useGameStore((s) => s.buildModeTypeId);
   const myKingdomId = useGameStore((s) => s.myKingdomId);
   const kingdoms = useGameStore((s) => s.kingdoms);
   const tiles = useGameStore((s) => s.tiles);
   const setBuildMode = useGameStore((s) => s.setBuildMode);
+  const unitTypes = useGameStore((s) => s.unitTypes);
+
+  const [activeTab, setActiveTab] = useState<'buildings' | 'military'>('buildings');
+
+  // Reset tab when tile selection changes
+  useEffect(() => setActiveTab('buildings'), [selectedTileKey]);
 
   const myKingdom = myKingdomId ? kingdoms.get(myKingdomId) : undefined;
   const resources = myKingdom?.resources ?? {};
+
+  // Check if military tab should be visible
+  const selectedTile = tiles.get(selectedTileKey);
+  const tileBuilding = selectedTile?.buildings[0] ?? null;
+  const hasMilitaryTab = tileBuilding !== null
+    && unitTypes.some((ut) => ut.producedByBuildingTypeIds.includes(tileBuilding.buildingTypeId));
 
   function canAfford(bt: BuildingTypeRef): boolean {
     if (bt.goldCost > 0 && (resources['Gold'] ?? 0) < bt.goldCost) return false;
@@ -57,11 +71,8 @@ export function BuildingPanel({ selectedTileKey: _selectedTileKey }: BuildingPan
     setBuildMode(buildModeTypeId === typeId ? null : typeId);
   }
 
-  return (
-    <Panel className="absolute top-12 right-0 bottom-0 w-72 z-30 overflow-y-auto p-3 border-l border-bronze-700">
-      <h2 className="text-parchment-100 font-heading text-sm font-semibold mb-3 uppercase tracking-wider">
-        Buildings
-      </h2>
+  const buildingsContent = (
+    <>
       {[...grouped.entries()].map(([chain, types]) => (
         <div key={chain} className="mb-3">
           <div className="text-bronze-400 text-xs font-semibold uppercase tracking-wide mb-1 px-3">
@@ -80,6 +91,45 @@ export function BuildingPanel({ selectedTileKey: _selectedTileKey }: BuildingPan
           ))}
         </div>
       ))}
+    </>
+  );
+
+  return (
+    <Panel className="absolute top-12 right-0 bottom-0 w-72 z-30 overflow-y-auto p-3 border-l border-bronze-700">
+      {hasMilitaryTab ? (
+        <>
+          <div className="flex gap-1 mb-3 border-b border-bronze-700">
+            <button
+              onClick={() => setActiveTab('buildings')}
+              className={`text-sm font-semibold uppercase tracking-wider px-3 py-1.5 ${
+                activeTab === 'buildings'
+                  ? 'border-b-2 border-gold-500 text-parchment-100'
+                  : 'text-bronze-400 hover:text-parchment-200'
+              }`}
+            >
+              Buildings
+            </button>
+            <button
+              onClick={() => setActiveTab('military')}
+              className={`text-sm font-semibold uppercase tracking-wider px-3 py-1.5 ${
+                activeTab === 'military'
+                  ? 'border-b-2 border-gold-500 text-parchment-100'
+                  : 'text-bronze-400 hover:text-parchment-200'
+              }`}
+            >
+              Military
+            </button>
+          </div>
+          {activeTab === 'buildings' ? buildingsContent : <MilitaryPanel selectedTileKey={selectedTileKey} />}
+        </>
+      ) : (
+        <>
+          <h2 className="text-parchment-100 font-heading text-sm font-semibold mb-3 uppercase tracking-wider">
+            Buildings
+          </h2>
+          {buildingsContent}
+        </>
+      )}
     </Panel>
   );
 }
