@@ -1,0 +1,104 @@
+import type { ComponentType, SVGProps } from 'react';
+import type { BuildingTypeRef } from '../types/building-types';
+import { GoldIcon, FoodIcon, WoodIcon, StoneIcon, ManaIcon } from '@/assets/icons';
+
+interface IconProps extends SVGProps<SVGSVGElement> {
+  size?: number;
+}
+
+const RESOURCE_ICONS: Record<string, ComponentType<IconProps>> = {
+  Gold: GoldIcon,
+  Food: FoodIcon,
+  Wood: WoodIcon,
+  Stone: StoneIcon,
+  Mana: ManaIcon,
+};
+
+const COST_RESOURCE_MAP: { key: keyof BuildingTypeRef; resource: string }[] = [
+  { key: 'goldCost', resource: 'Gold' },
+  { key: 'woodCost', resource: 'Wood' },
+  { key: 'stoneCost', resource: 'Stone' },
+  { key: 'manaCost', resource: 'Mana' },
+];
+
+const YIELD_RESOURCE_MAP: { key: keyof BuildingTypeRef; resource: string }[] = [
+  { key: 'goldYield', resource: 'Gold' },
+  { key: 'foodYield', resource: 'Food' },
+  { key: 'woodYield', resource: 'Wood' },
+  { key: 'stoneYield', resource: 'Stone' },
+  { key: 'manaYield', resource: 'Mana' },
+];
+
+interface BuildingRowProps {
+  buildingType: BuildingTypeRef;
+  canAfford: boolean;
+  hasPrerequisite: boolean;
+  insufficientResources: string[];
+  isActive: boolean;
+  onSelect: (typeId: string) => void;
+}
+
+export function BuildingRow({
+  buildingType,
+  canAfford,
+  hasPrerequisite,
+  insufficientResources,
+  isActive,
+  onSelect,
+}: BuildingRowProps) {
+  const disabled = !canAfford || !hasPrerequisite;
+
+  const rowClasses = [
+    'px-3 py-2 rounded border transition-colors',
+    disabled
+      ? 'opacity-50 pointer-events-none border-transparent'
+      : isActive
+        ? 'bg-gold-500/20 border-gold-500 cursor-pointer'
+        : 'hover:bg-ash-700 cursor-pointer border-transparent',
+  ].join(' ');
+
+  return (
+    <div className={rowClasses} onClick={() => onSelect(buildingType.id)}>
+      <div className="flex items-center justify-between">
+        <span className="text-parchment-100 font-medium text-sm">{buildingType.name}</span>
+        <div className="flex items-center gap-1.5">
+          {YIELD_RESOURCE_MAP.map(({ key, resource }) => {
+            const value = buildingType[key] as number;
+            if (value <= 0) return null;
+            const Icon = RESOURCE_ICONS[resource];
+            return (
+              <span key={resource} className="flex items-center gap-0.5 text-green-400">
+                <Icon size={14} />
+                <span className="text-xs">{value}</span>
+              </span>
+            );
+          })}
+        </div>
+      </div>
+
+      {buildingType.prerequisiteBuildingName && !hasPrerequisite && (
+        <div className="text-xs text-ember-400 mt-0.5">
+          Requires: {buildingType.prerequisiteBuildingName}
+        </div>
+      )}
+
+      <div className="flex items-center gap-1.5 mt-1">
+        {COST_RESOURCE_MAP.map(({ key, resource }) => {
+          const value = buildingType[key] as number;
+          if (value <= 0) return null;
+          const Icon = RESOURCE_ICONS[resource];
+          const isInsufficient = insufficientResources.includes(resource);
+          return (
+            <span
+              key={resource}
+              className={`flex items-center gap-0.5 text-xs ${isInsufficient ? 'text-ember-400' : 'text-parchment-300'}`}
+            >
+              <Icon size={14} />
+              <span>{value}</span>
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
