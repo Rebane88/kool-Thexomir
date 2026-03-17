@@ -21,6 +21,14 @@ public class MilitaryController(
     IHubContext<GameHub, IGameClient> hubContext,
     IGameLockManager gameLockManager) : ControllerBase
 {
+    [HttpGet("unit-types")]
+    [ProducesResponseType(typeof(IEnumerable<UnitTypeDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetUnitTypes(Guid gameId)
+    {
+        var types = await militaryService.GetUnitTypesAsync();
+        return Ok(types);
+    }
+
     [HttpPost("train")]
     [ProducesResponseType(typeof(TroopsTrainedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

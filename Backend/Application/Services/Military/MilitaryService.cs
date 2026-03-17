@@ -12,6 +12,31 @@ namespace Application.Services.Military;
 
 public class MilitaryService(IUnitOfWork unitOfWork, IGameGuard gameGuard, IServiceProvider serviceProvider) : IMilitaryService
 {
+    public async Task<IEnumerable<UnitTypeDto>> GetUnitTypesAsync()
+    {
+        var unitTypes = await unitOfWork.UnitTypes.GetAllAsync();
+        var buildingUnitTypes = await unitOfWork.BuildingUnitTypes.GetAllAsync();
+
+        var lookup = buildingUnitTypes
+            .GroupBy(but => but.UnitTypeId)
+            .ToDictionary(g => g.Key, g => g.Select(but => but.BuildingTypeId).ToList());
+
+        return unitTypes.Select(ut => new UnitTypeDto
+        {
+            Id = ut.Id,
+            Name = ut.Name.Translate() ?? string.Empty,
+            BaseStrength = ut.BaseStrength,
+            GoldCost = ut.GoldCost,
+            FoodCost = ut.FoodCost,
+            WoodCost = ut.WoodCost,
+            StoneCost = ut.StoneCost,
+            ManaCost = ut.ManaCost,
+            Upkeep = ut.Upkeep,
+            Description = ut.Description,
+            ProducedByBuildingTypeIds = lookup.TryGetValue(ut.Id, out var ids) ? ids : []
+        });
+    }
+
     public async Task<Result<TroopsTrainedDto>> TrainTroopsAsync(Guid gameId, Guid userId, TrainTroopsRequest request)
     {
         var guardResult = await gameGuard.ValidateAsync(gameId, userId);
