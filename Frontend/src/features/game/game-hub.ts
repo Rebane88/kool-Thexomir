@@ -13,13 +13,19 @@ import type {
 } from './types';
 
 let connection: signalR.HubConnection | null = null;
+let generation = 0;
 
 export async function connectToGame(gameId: string): Promise<void> {
+  const thisGen = ++generation;
+
   // Clean up any existing connection
   if (connection) {
     await connection.stop();
     connection = null;
   }
+
+  // Superseded by a newer connect/disconnect call (e.g. StrictMode double-mount)
+  if (thisGen !== generation) return;
 
   useGameStore.getState().setConnectionStatus('connecting');
 
@@ -78,11 +84,14 @@ export async function connectToGame(gameId: string): Promise<void> {
     // Note: connectionStatus set to 'connected' in GameStateSnapshot handler,
     // since that's when we actually have data to display
   } catch {
+    // Ignore errors from superseded connections (StrictMode double-mount)
+    if (thisGen !== generation) return;
     useGameStore.getState().setConnectionStatus('failed');
   }
 }
 
 export function disconnectFromGame(): void {
+  generation++;
   connection?.stop();
   connection = null;
   useGameStore.getState().resetState();

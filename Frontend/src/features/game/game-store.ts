@@ -126,6 +126,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       armies,
       myKingdomId,
       gameId: snapshot.gameId,
+      activeGameId: snapshot.gameId,
       status: snapshot.status as GameStatus,
       turnNumber: snapshot.turnNumber,
       currentTurnKingdomId: snapshot.currentTurnKingdomId,
@@ -150,7 +151,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       mapRadius: 0,
       gameOver: null,
       connectionStatus: 'disconnected',
-      activeGameId: null,
+      // activeGameId intentionally preserved — cleared only by setActiveGameId(null)
     });
   },
 
