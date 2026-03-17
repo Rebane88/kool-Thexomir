@@ -138,6 +138,7 @@ export function drawGameMap(
   ctx.fillStyle = '#0a0a0f';
   ctx.fillRect(0, 0, width, height);
 
+
   // 2. Compute layout
   const layout: HexLayoutConfig = {
     size: 30,
