@@ -36,6 +36,18 @@ public class GameHub(IGameInitializationService gameInitializationService) : Hub
         await base.OnConnectedAsync();
     }
 
+    public async Task RequestGameSnapshot()
+    {
+        var httpContext = Context.GetHttpContext();
+        var gameId = httpContext?.Request.Query["gameId"].ToString();
+
+        if (!string.IsNullOrEmpty(gameId) && Guid.TryParse(gameId, out var parsedGameId))
+        {
+            var gameState = await gameInitializationService.BuildGameStateSnapshotAsync(parsedGameId);
+            await Clients.Caller.GameStateSnapshot(gameState);
+        }
+    }
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         await base.OnDisconnectedAsync(exception);

@@ -20,4 +20,12 @@ public class KingdomRepository(AppDbContext context)
             .AsTracking()
             .FirstOrDefaultAsync(k => k.AppUserId == userId && k.GameId == gameId);
     }
+
+    public async Task<Guid?> GetActiveGameIdForUserAsync(Guid userId)
+    {
+        return await Context.Kingdoms
+            .Where(k => k.AppUserId == userId && !k.IsEliminated && k.Game!.Status == EGameStatus.InProgress)
+            .Select(k => (Guid?)k.Game!.Id)
+            .FirstOrDefaultAsync();
+    }
 }
