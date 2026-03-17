@@ -5,10 +5,13 @@ import { connectToGame, disconnectFromGame } from './game-hub';
 import { useGameCanvas } from './canvas/useGameCanvas';
 import { drawGameMap } from './canvas/hex-renderer';
 import { pixelToAxial } from './canvas/hex-math';
+import { screenToWorld, computeZoom, DEFAULT_CAMERA } from './canvas/camera';
+import type { CameraState } from './canvas/camera';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ErrorScreen } from './components/ErrorScreen';
 import { ReconnectBanner } from './components/ReconnectBanner';
 import { HexTooltip } from './components/HexTooltip';
+import { ResetCameraButton } from './components/ResetCameraButton';
 import type { HexLayoutConfig, MapRenderState } from './canvas/types';
 
 export function GamePage() {
@@ -24,6 +27,11 @@ export function GamePage() {
   hoveredRef.current = hoveredTileKey;
   selectedRef.current = selectedTileKey;
 
+  const cameraRef = useRef<CameraState>({ ...DEFAULT_CAMERA });
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const isDraggingRef = useRef(false);
+  const lastDragPosRef = useRef<{ x: number; y: number } | null>(null);
+
   useEffect(() => {
     if (!gameId) return;
     connectToGame(gameId);
@@ -37,6 +45,17 @@ export function GamePage() {
         hoveredTileKey: hoveredRef.current,
         selectedTileKey: selectedRef.current,
       };
+      const cam = cameraRef.current;
+
+      // Clear in untransformed coordinates (only DPI scale active)
+      ctx.fillStyle = '#0a0a0f';
+      ctx.fillRect(0, 0, width, height);
+
+      // Apply camera transform
+      ctx.save();
+      ctx.translate(cam.offsetX, cam.offsetY);
+      ctx.scale(cam.zoom, cam.zoom);
+
       drawGameMap(
         ctx,
         width,
@@ -50,7 +69,10 @@ export function GamePage() {
           mapRadius: state.mapRadius,
         },
         renderState,
+        { skipClear: true },
       );
+
+      ctx.restore();
     },
     [],
   );
@@ -62,6 +84,18 @@ export function GamePage() {
     return unsub;
   }, [markDirty]);
 
+  const screenToAxial = useCallback(
+    (screenX: number, screenY: number, rectWidth: number, rectHeight: number) => {
+      const world = screenToWorld(screenX, screenY, cameraRef.current);
+      const layout: HexLayoutConfig = {
+        size: 30,
+        origin: { x: rectWidth / 2, y: rectHeight / 2 },
+      };
+      return { axial: pixelToAxial(world, layout), layout };
+    },
+    [],
+  );
+
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
@@ -69,11 +103,34 @@ export function GamePage() {
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      const layout: HexLayoutConfig = {
-        size: 30,
-        origin: { x: rect.width / 2, y: rect.height / 2 },
-      };
-      const axial = pixelToAxial({ x, y }, layout);
+
+      // Drag handling
+      if (dragStartRef.current) {
+        if (!isDraggingRef.current) {
+          const dx = x - dragStartRef.current.x;
+          const dy = y - dragStartRef.current.y;
+          if (Math.sqrt(dx * dx + dy * dy) >= 5) {
+            isDraggingRef.current = true;
+            lastDragPosRef.current = { x, y };
+          }
+        }
+        if (isDraggingRef.current && lastDragPosRef.current) {
+          const dx = x - lastDragPosRef.current.x;
+          const dy = y - lastDragPosRef.current.y;
+          cameraRef.current = {
+            ...cameraRef.current,
+            offsetX: cameraRef.current.offsetX + dx,
+            offsetY: cameraRef.current.offsetY + dy,
+          };
+          lastDragPosRef.current = { x, y };
+          canvas.style.cursor = 'grabbing';
+          markDirty();
+          return; // Skip hover update during drag
+        }
+      }
+
+      // Hover handling (only when not dragging)
+      const { axial } = screenToAxial(x, y, rect.width, rect.height);
       const key = `${axial.q},${axial.r}`;
       const tile = useGameStore.getState().tiles.get(key);
       const newKey = tile ? key : null;
@@ -83,27 +140,40 @@ export function GamePage() {
       );
       markDirty();
     },
-    [canvasRef, markDirty],
+    [canvasRef, markDirty, screenToAxial],
   );
 
-  const handleMouseLeave = useCallback(() => {
-    setHoveredTileKey(null);
-    setTooltipPos(null);
-    markDirty();
-  }, [markDirty]);
-
-  const handleClick = useCallback(
+  const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
+      if (e.button !== 0) return; // Left click only
       const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      dragStartRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      isDraggingRef.current = false;
+      lastDragPosRef.current = null;
+    },
+    [canvasRef],
+  );
+
+  const handleMouseUp = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const wasDragging = isDraggingRef.current;
+      dragStartRef.current = null;
+      isDraggingRef.current = false;
+      lastDragPosRef.current = null;
+
+      const canvas = canvasRef.current;
+      if (canvas) canvas.style.cursor = 'grab';
+
+      if (wasDragging) return; // Swallow click after drag
+
+      // Click handling (was < 5px movement)
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      const layout: HexLayoutConfig = {
-        size: 30,
-        origin: { x: rect.width / 2, y: rect.height / 2 },
-      };
-      const axial = pixelToAxial({ x, y }, layout);
+      const { axial } = screenToAxial(x, y, rect.width, rect.height);
       const key = `${axial.q},${axial.r}`;
       const tile = useGameStore.getState().tiles.get(key);
       if (!tile) {
@@ -113,8 +183,55 @@ export function GamePage() {
       }
       markDirty();
     },
-    [canvasRef, markDirty],
+    [canvasRef, markDirty, screenToAxial],
   );
+
+  const handleMouseLeave = useCallback(() => {
+    dragStartRef.current = null;
+    isDraggingRef.current = false;
+    lastDragPosRef.current = null;
+    setHoveredTileKey(null);
+    setTooltipPos(null);
+    const canvas = canvasRef.current;
+    if (canvas) canvas.style.cursor = 'grab';
+    markDirty();
+  }, [canvasRef, markDirty]);
+
+  // Wheel zoom (must use addEventListener for passive:false)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    function onWheel(e: WheelEvent) {
+      e.preventDefault();
+      const rect = canvas!.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      cameraRef.current = computeZoom(cameraRef.current, mouseX, mouseY, e.deltaY);
+      markDirty();
+    }
+
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', onWheel);
+  }, [canvasRef, markDirty]);
+
+  // Reset camera handler
+  const handleResetCamera = useCallback(() => {
+    cameraRef.current = { ...DEFAULT_CAMERA };
+    markDirty();
+  }, [markDirty]);
+
+  // Home key shortcut
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Home') {
+        e.preventDefault();
+        handleResetCamera();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [handleResetCamera]);
 
   const isLoading = connectionStatus === 'connecting' || connectionStatus === 'disconnected';
   const isFailed = connectionStatus === 'failed';
@@ -130,10 +247,13 @@ export function GamePage() {
       <canvas
         ref={canvasRef}
         className={`block w-full h-full ${isLoading ? 'hidden' : ''}`}
+        onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
-        onClick={handleClick}
+        style={{ cursor: 'grab' }}
       />
+      {!isLoading && <ResetCameraButton onReset={handleResetCamera} />}
       {hoveredTileKey &&
         tooltipPos &&
         (() => {
