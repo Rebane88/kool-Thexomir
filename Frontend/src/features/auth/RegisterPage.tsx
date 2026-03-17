@@ -3,6 +3,8 @@ import { Link, Navigate, useNavigate } from 'react-router';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { API_BASE_URL } from '@/lib/constants';
 import type { LoginResponse, ProblemDetails } from '@/shared/types/api';
+import { Button, Panel, Input } from '@/shared/ui';
+import { EyeIcon, EyeOffIcon } from '@/assets/icons';
 
 function validateRegisterForm(
   email: string,
@@ -40,8 +42,8 @@ export function RegisterPage() {
 
   if (isInitializing) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <p className="text-gray-400">Loading...</p>
+      <div className="min-h-dvh flex items-center justify-center">
+        <p className="text-parchment-400">Loading...</p>
       </div>
     );
   }
@@ -125,122 +127,103 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-gray-800 rounded-lg p-6 shadow-lg">
-        <h1 className="text-amber-500 text-2xl font-bold text-center mb-6">
+    <div className="min-h-dvh flex flex-col items-center justify-center px-4 relative">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--color-ash-800)_0%,_transparent_70%)] pointer-events-none" />
+
+      <div className="relative z-10 max-w-md w-full">
+        <h1 className="font-heading text-gold-500 text-4xl text-center mb-8 tracking-wide">
           Realms of Ash
         </h1>
 
-        {generalError && (
-          <div className="bg-red-900/50 border border-red-600 text-red-200 px-4 py-2 rounded text-sm mb-4">
-            {generalError}
-          </div>
-        )}
+        <Panel className="p-6">
+          {generalError && (
+            <div className="bg-blood-600/20 border border-blood-600/30 text-blood-500 px-4 py-2 text-sm mb-4">
+              {generalError}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-gray-300 text-sm font-medium mb-1"
-            >
-              Email
-            </label>
-            <input
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
               id="email"
               type="email"
               autoComplete="email"
+              label="Email"
               value={email}
               onChange={(e) => handleFieldChange('email', e.target.value)}
-              className={`w-full bg-gray-700 border rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-amber-500 ${
-                errors.email ? 'border-red-500' : 'border-gray-600'
-              }`}
+              error={errors.email}
             />
-            {errors.email && (
-              <p className="text-red-400 text-xs mt-1">{errors.email}</p>
-            )}
-          </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-gray-300 text-sm font-medium mb-1"
-            >
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => handleFieldChange('password', e.target.value)}
-                className={`w-full bg-gray-700 border rounded px-3 py-2 pr-10 text-gray-100 focus:outline-none focus:border-amber-500 ${
-                  errors.password ? 'border-red-500' : 'border-gray-600'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 text-sm"
+            <div>
+              <label
+                htmlFor="password"
+                className="text-parchment-300 text-sm font-medium mb-1 block"
               >
-                {showPassword ? 'Hide' : 'Show'}
-              </button>
+                Password
+              </label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => handleFieldChange('password', e.target.value)}
+                  error={errors.password}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-parchment-400 hover:text-gold-500 transition-colors"
+                >
+                  {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+                </button>
+              </div>
             </div>
-            {errors.password && (
-              <p className="text-red-400 text-xs mt-1">{errors.password}</p>
-            )}
-          </div>
 
-          <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-gray-300 text-sm font-medium mb-1"
-            >
-              Confirm Password
-            </label>
-            <div className="relative">
-              <input
-                id="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) =>
-                  handleFieldChange('confirmPassword', e.target.value)
-                }
-                className={`w-full bg-gray-700 border rounded px-3 py-2 pr-10 text-gray-100 focus:outline-none focus:border-amber-500 ${
-                  errors.confirmPassword ? 'border-red-500' : 'border-gray-600'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200 text-sm"
+            <div>
+              <label
+                htmlFor="confirmPassword"
+                className="text-parchment-300 text-sm font-medium mb-1 block"
               >
-                {showConfirmPassword ? 'Hide' : 'Show'}
-              </button>
+                Confirm Password
+              </label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) =>
+                    handleFieldChange('confirmPassword', e.target.value)
+                  }
+                  error={errors.confirmPassword}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-parchment-400 hover:text-gold-500 transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+                </button>
+              </div>
             </div>
-            {errors.confirmPassword && (
-              <p className="text-red-400 text-xs mt-1">
-                {errors.confirmPassword}
-              </p>
-            )}
-          </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-amber-600 hover:bg-amber-500 disabled:bg-amber-600/50 disabled:cursor-not-allowed text-white font-medium py-2 rounded transition-colors"
-          >
-            {isSubmitting ? 'Creating account...' : 'Create Account'}
-          </button>
-        </form>
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? 'Creating account...' : 'Create Account'}
+            </Button>
+          </form>
 
-        <p className="text-center text-sm text-gray-400 mt-4">
-          Already have an account?{' '}
-          <Link to="/login" className="text-amber-500 hover:text-amber-400">
-            Log in
-          </Link>
-        </p>
+          <p className="text-center text-sm text-parchment-400 mt-4">
+            Already have an account?{' '}
+            <Link
+              to="/login"
+              className="text-gold-500 hover:text-gold-300 transition-colors"
+            >
+              Log in
+            </Link>
+          </p>
+        </Panel>
       </div>
     </div>
   );
