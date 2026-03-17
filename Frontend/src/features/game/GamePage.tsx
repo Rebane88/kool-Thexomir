@@ -4,18 +4,20 @@ import { useGameStore } from './game-store';
 import { connectToGame, disconnectFromGame } from './game-hub';
 import { useGameCanvas } from './canvas/useGameCanvas';
 import { drawGameMap } from './canvas/hex-renderer';
-import { pixelToAxial } from './canvas/hex-math';
+import { pixelToAxial, getHexNeighbors } from './canvas/hex-math';
 import { screenToWorld, computeZoom, DEFAULT_CAMERA } from './canvas/camera';
 import type { CameraState } from './canvas/camera';
-import { placeBuilding, fetchBuildingTypes } from './game-api';
+import { placeBuilding, fetchBuildingTypes, fetchUnitTypes, moveArmy, attackTile } from './game-api';
 import { BuildingPanel } from './components/BuildingPanel';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ErrorScreen } from './components/ErrorScreen';
 import { ReconnectBanner } from './components/ReconnectBanner';
 import { HexTooltip } from './components/HexTooltip';
+import { AttackConfirmModal } from './components/AttackConfirmModal';
 import { ResetCameraButton } from './components/ResetCameraButton';
 import { GameHud } from './components/GameHud';
 import type { HexLayoutConfig, MapRenderState } from './canvas/types';
+import type { Army } from './types/military-types';
 
 export function GamePage() {
   const { id: gameId } = useParams();
@@ -25,10 +27,15 @@ export function GamePage() {
   const [selectedTileKey, setSelectedTileKey] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
+  const [armyHighlightTileKey, setArmyHighlightTileKey] = useState<string | null>(null);
+  const [attackTarget, setAttackTarget] = useState<{ tileId: string; tileKey: string } | null>(null);
+
   const hoveredRef = useRef(hoveredTileKey);
   const selectedRef = useRef(selectedTileKey);
+  const armyHighlightRef = useRef(armyHighlightTileKey);
   hoveredRef.current = hoveredTileKey;
   selectedRef.current = selectedTileKey;
+  armyHighlightRef.current = armyHighlightTileKey;
 
   const cameraRef = useRef<CameraState>({ ...DEFAULT_CAMERA });
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -44,6 +51,24 @@ export function GamePage() {
     return s.tiles.get(selectedTileKey) ?? null;
   });
   const showBuildingPanel = selectedTile !== null && selectedTile.kingdomId === myKingdomId;
+
+  const findMyArmyOnTile = useCallback((tileKey: string) => {
+    const state = useGameStore.getState();
+    if (!state.myKingdomId) return null;
+    for (const army of state.armies.values()) {
+      const coord = state.tileIdToCoord.get(army.tileId);
+      if (coord === tileKey && army.kingdomId === state.myKingdomId) return army;
+    }
+    return null;
+  }, []);
+
+  const isNeighborOfHighlight = useCallback((targetKey: string, highlightKey: string) => {
+    const state = useGameStore.getState();
+    const highlightTile = state.tiles.get(highlightKey);
+    if (!highlightTile) return false;
+    const neighbors = getHexNeighbors(highlightTile.coordQ, highlightTile.coordR);
+    return neighbors.some(n => `${n.q},${n.r}` === targetKey);
+  }, []);
 
   useEffect(() => {
     if (!gameId) return;
@@ -61,12 +86,42 @@ export function GamePage() {
       .catch((err) => console.error('Failed to fetch building types:', err));
   }, [gameId, connectionStatus]);
 
+  // Fetch unit types once on connection
+  useEffect(() => {
+    if (!gameId || connectionStatus !== 'connected') return;
+    const { unitTypes } = useGameStore.getState();
+    if (unitTypes.length > 0) return;
+    fetchUnitTypes(gameId)
+      .then((types) => useGameStore.getState().setUnitTypes(types))
+      .catch((err) => console.error('Failed to fetch unit types:', err));
+  }, [gameId, connectionStatus]);
+
   // Clear build mode when panel hides
   useEffect(() => {
     if (!showBuildingPanel) {
       useGameStore.getState().setBuildMode(null);
     }
   }, [showBuildingPanel]);
+
+  // Auto-highlight army on selected tile
+  useEffect(() => {
+    if (!selectedTileKey || !isMyTurn) {
+      setArmyHighlightTileKey(null);
+      return;
+    }
+    const army = findMyArmyOnTile(selectedTileKey);
+    setArmyHighlightTileKey(army ? selectedTileKey : null);
+  }, [selectedTileKey, isMyTurn, findMyArmyOnTile]);
+
+  // Clear army highlights when build mode activates
+  useEffect(() => {
+    const unsub = useGameStore.subscribe((state) => {
+      if (state.buildModeTypeId) {
+        setArmyHighlightTileKey(null);
+      }
+    });
+    return unsub;
+  }, []);
 
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
@@ -75,7 +130,7 @@ export function GamePage() {
         hoveredTileKey: hoveredRef.current,
         selectedTileKey: selectedRef.current,
         buildModeTypeId: state.buildModeTypeId,
-        armyHighlightTileKey: null,
+        armyHighlightTileKey: armyHighlightRef.current,
       };
       const cam = cameraRef.current;
 
@@ -212,6 +267,27 @@ export function GamePage() {
       const state = useGameStore.getState();
       const tile = state.tiles.get(key);
 
+      // ARMY MOVEMENT/ATTACK INTERCEPT
+      if (armyHighlightRef.current && tile && isNeighborOfHighlight(key, armyHighlightRef.current)) {
+        const army = findMyArmyOnTile(armyHighlightRef.current);
+        if (army) {
+          const isEnemy = tile.kingdomId !== null && tile.kingdomId !== state.myKingdomId;
+          if (isEnemy) {
+            setAttackTarget({ tileId: tile.id, tileKey: key });
+            return;
+          }
+          // Friendly/empty tile: move army
+          if (state.gameId) {
+            moveArmy(state.gameId, { armyId: army.id, targetTileId: tile.id })
+              .catch((err) => console.error('Failed to move army:', err));
+          }
+          setSelectedTileKey(null);
+          setArmyHighlightTileKey(null);
+          markDirty();
+          return;
+        }
+      }
+
       // BUILD MODE INTERCEPT: handle placement instead of selection
       if (state.buildModeTypeId && tile) {
         if (tile.kingdomId === state.myKingdomId && tile.buildings.length === 0) {
@@ -288,6 +364,11 @@ export function GamePage() {
           useGameStore.getState().setBuildMode(null);
           markDirty();
         }
+        if (armyHighlightRef.current) {
+          setArmyHighlightTileKey(null);
+          setSelectedTileKey(null);
+          markDirty();
+        }
       }
     }
     window.addEventListener('keydown', onKeyDown);
@@ -300,6 +381,11 @@ export function GamePage() {
       const { buildModeTypeId } = useGameStore.getState();
       if (buildModeTypeId) {
         useGameStore.getState().setBuildMode(null);
+        markDirty();
+      }
+      if (armyHighlightRef.current) {
+        setArmyHighlightTileKey(null);
+        setSelectedTileKey(null);
         markDirty();
       }
     },
@@ -339,6 +425,44 @@ export function GamePage() {
         </div>
       )}
       {!isLoading && <ResetCameraButton onReset={handleResetCamera} />}
+      {attackTarget && armyHighlightTileKey && (() => {
+        const state = useGameStore.getState();
+        const myArmy = findMyArmyOnTile(armyHighlightTileKey);
+        const targetTile = state.tiles.get(attackTarget.tileKey);
+        if (!myArmy || !targetTile) return null;
+
+        let defenderArmy: Army | null = null;
+        for (const army of state.armies.values()) {
+          const coord = state.tileIdToCoord.get(army.tileId);
+          if (coord === attackTarget.tileKey) { defenderArmy = army; break; }
+        }
+
+        const myKingdomObj = state.myKingdomId ? state.kingdoms.get(state.myKingdomId) : null;
+        const defenderKingdom = targetTile.kingdomId ? state.kingdoms.get(targetTile.kingdomId) : null;
+
+        return (
+          <AttackConfirmModal
+            open={true}
+            onClose={() => setAttackTarget(null)}
+            onConfirm={() => {
+              if (state.gameId && myArmy) {
+                attackTile(state.gameId, {
+                  attackerArmyId: myArmy.id,
+                  defenderTileId: targetTile.id,
+                }).catch((err) => console.error('Failed to attack:', err));
+              }
+              setAttackTarget(null);
+              setSelectedTileKey(null);
+              setArmyHighlightTileKey(null);
+              markDirty();
+            }}
+            attackerArmy={myArmy}
+            defenderArmy={defenderArmy}
+            attackerKingdomName={myKingdomObj?.name ?? 'Your Army'}
+            defenderKingdomName={defenderKingdom?.name ?? 'Enemy'}
+          />
+        );
+      })()}
       {hoveredTileKey &&
         tooltipPos &&
         (() => {
