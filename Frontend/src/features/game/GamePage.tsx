@@ -7,6 +7,8 @@ import { drawGameMap } from './canvas/hex-renderer';
 import { pixelToAxial } from './canvas/hex-math';
 import { screenToWorld, computeZoom, DEFAULT_CAMERA } from './canvas/camera';
 import type { CameraState } from './canvas/camera';
+import { placeBuilding, fetchBuildingTypes } from './game-api';
+import { BuildingPanel } from './components/BuildingPanel';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ErrorScreen } from './components/ErrorScreen';
 import { ReconnectBanner } from './components/ReconnectBanner';
@@ -179,7 +181,27 @@ export function GamePage() {
       const y = e.clientY - rect.top;
       const { axial } = screenToAxial(x, y, rect.width, rect.height);
       const key = `${axial.q},${axial.r}`;
-      const tile = useGameStore.getState().tiles.get(key);
+      const state = useGameStore.getState();
+      const tile = state.tiles.get(key);
+
+      // BUILD MODE INTERCEPT: handle placement instead of selection
+      if (state.buildModeTypeId && tile) {
+        if (tile.kingdomId === state.myKingdomId && tile.buildings.length === 0) {
+          const currentGameId = state.gameId;
+          if (currentGameId) {
+            placeBuilding(currentGameId, {
+              tileId: tile.id,
+              buildingTypeId: state.buildModeTypeId,
+            }).catch((err) => {
+              console.error('Failed to place building:', err);
+            });
+          }
+        }
+        markDirty();
+        return;
+      }
+
+      // Normal tile selection (not in build mode)
       if (!tile) {
         setSelectedTileKey(null);
       } else {
@@ -225,17 +247,36 @@ export function GamePage() {
     markDirty();
   }, [markDirty]);
 
-  // Home key shortcut
+  // Keyboard shortcuts: Home (reset camera), Escape (exit build mode)
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Home') {
         e.preventDefault();
         handleResetCamera();
       }
+      if (e.key === 'Escape') {
+        const { buildModeTypeId } = useGameStore.getState();
+        if (buildModeTypeId) {
+          useGameStore.getState().setBuildMode(null);
+          markDirty();
+        }
+      }
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleResetCamera]);
+  }, [handleResetCamera, markDirty]);
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      const { buildModeTypeId } = useGameStore.getState();
+      if (buildModeTypeId) {
+        useGameStore.getState().setBuildMode(null);
+        markDirty();
+      }
+    },
+    [markDirty],
+  );
 
   const isLoading = connectionStatus === 'connecting' || connectionStatus === 'disconnected';
   const isFailed = connectionStatus === 'failed';
@@ -260,6 +301,7 @@ export function GamePage() {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
+        onContextMenu={handleContextMenu}
         style={{ cursor: 'grab' }}
       />
       {!isLoading && <GameHud />}
