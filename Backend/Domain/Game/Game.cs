@@ -48,11 +48,12 @@ public class Game : BaseEntity
     /// <summary>
     /// Advances the turn to the next non-eliminated kingdom in round-robin order.
     /// Increments TurnNumber when play wraps back to the first active kingdom.
-    /// Requires Kingdoms navigation to be loaded with non-null collection.
+    /// Accepts an explicit kingdoms list to avoid mutating the EF navigation property.
+    /// Falls back to the Kingdoms navigation if no list is provided.
     /// </summary>
-    public Kingdom AdvanceTurn()
+    public Kingdom AdvanceTurn(IEnumerable<Kingdom>? kingdoms = null)
     {
-        var activeKingdoms = Kingdoms!
+        var activeKingdoms = (kingdoms ?? Kingdoms!)
             .Where(k => !k.IsEliminated)
             .OrderBy(k => k.CreatedAt)
             .ThenBy(k => k.Id)

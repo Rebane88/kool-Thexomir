@@ -27,8 +27,10 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, IServiceP
             Action = "EndTurn"
         });
 
-        // Load kingdoms for domain method
-        game.Kingdoms = (await unitOfWork.Kingdoms.GetKingdomsForGameAsync(gameId)).ToList();
+        // Load kingdoms separately — do NOT assign to game.Kingdoms navigation property
+        // because the DbContext default is NoTrackingWithIdentityResolution, and assigning
+        // untracked entities to a tracked game's navigation causes EF to sever relationships.
+        var kingdoms = await unitOfWork.Kingdoms.GetKingdomsForGameAsync(gameId);
 
         // Reset per-turn flags for the kingdom whose turn just ended
         var endingKingdomArmies = await unitOfWork.Armies.GetArmiesForKingdomAsync(currentKingdom.Id);
@@ -52,7 +54,7 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, IServiceP
         }
 
         // Domain does the turn advancement
-        var nextKingdom = game.AdvanceTurn();
+        var nextKingdom = game.AdvanceTurn(kingdoms);
 
         await unitOfWork.Games.UpdateAsync(game);
 
@@ -65,7 +67,7 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, IServiceP
             && game.TurnNumber > game.MaxTurnCount.Value)
         {
             var checker = serviceProvider.GetRequiredKeyedService<IWinConditionChecker>(EWinCondition.Score);
-            var allKingdoms = game.Kingdoms!.ToList();
+            var allKingdoms = kingdoms.ToList();
             var allTiles = await unitOfWork.Tiles.GetTilesWithBuildingsForGameAsync(game.Id);
 
             // Load armies with units for each kingdom (needed for score calculation)

@@ -27,7 +27,7 @@ export function TurnIndicator() {
         </span>
       ) : (
         <span className="text-parchment-300 text-sm">
-          Turn {turnNumber} ({currentKingdom?.name ?? 'Waiting'})
+          Turn {turnNumber} ({currentKingdom?.name || currentKingdom?.factionName || 'Waiting'})
         </span>
       )}
     </div>

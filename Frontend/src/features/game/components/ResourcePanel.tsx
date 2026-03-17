@@ -59,14 +59,11 @@ export function ResourcePanel() {
           <div key={type} className="flex items-center gap-1">
             <Icon size={16} className="text-gold-400" />
             <span className="text-parchment-200 text-sm tabular-nums">{count}</span>
-            {hasDelta && (
-              <span
-                className="text-green-400 text-xs ml-0.5 transition-opacity duration-500"
-                style={{ opacity: showDeltas ? 1 : 0 }}
-              >
-                +{delta}
-              </span>
-            )}
+            <span
+              className={`text-green-400 text-xs ml-0.5 transition-opacity duration-500 w-6 ${hasDelta && showDeltas ? 'opacity-100' : 'opacity-0'}`}
+            >
+              {hasDelta ? `+${delta}` : ''}
+            </span>
           </div>
         );
       })}
