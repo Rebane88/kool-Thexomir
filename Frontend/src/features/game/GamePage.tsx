@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import type { Kingdom } from './types/kingdom-types';
 import { useParams } from 'react-router';
 import { useGameStore } from './game-store';
 import { connectToGame, disconnectFromGame } from './game-hub';
@@ -16,6 +17,8 @@ import { HexTooltip } from './components/HexTooltip';
 import { AttackConfirmModal } from './components/AttackConfirmModal';
 import { ResetCameraButton } from './components/ResetCameraButton';
 import { GameHud } from './components/GameHud';
+import { CombatResultModal } from './components/CombatResultModal';
+import { EliminationBanner } from './components/EliminationBanner';
 import type { HexLayoutConfig, MapRenderState } from './canvas/types';
 import type { Army } from './types/military-types';
 
@@ -51,6 +54,13 @@ export function GamePage() {
     return s.tiles.get(selectedTileKey) ?? null;
   });
   const showBuildingPanel = selectedTile !== null && selectedTile.kingdomId === myKingdomId;
+
+  const lastCombatResult = useGameStore((s) => s.lastCombatResult);
+  const dismissCombatResult = useGameStore((s) => s.dismissCombatResult);
+  const myKingdom = useGameStore((s) => s.myKingdomId ? s.kingdoms.get(s.myKingdomId) : undefined);
+  const isEliminated = myKingdom?.isEliminated ?? false;
+
+  const [eliminationBanners, setEliminationBanners] = useState<string[]>([]);
 
   const findMyArmyOnTile = useCallback((tileKey: string) => {
     const state = useGameStore.getState();
@@ -103,15 +113,31 @@ export function GamePage() {
     }
   }, [showBuildingPanel]);
 
+  // Detect newly eliminated kingdoms to show banners
+  const prevKingdomsRef = useRef<Map<string, Kingdom>>(new Map());
+  useEffect(() => {
+    const unsub = useGameStore.subscribe((state) => {
+      const prev = prevKingdomsRef.current;
+      for (const [id, kingdom] of state.kingdoms) {
+        const prevKingdom = prev.get(id);
+        if (kingdom.isEliminated && prevKingdom && !prevKingdom.isEliminated) {
+          setEliminationBanners((b) => [...b, kingdom.name]);
+        }
+      }
+      prevKingdomsRef.current = new Map(state.kingdoms);
+    });
+    return unsub;
+  }, []);
+
   // Auto-highlight army on selected tile
   useEffect(() => {
-    if (!selectedTileKey || !isMyTurn) {
+    if (!selectedTileKey || !isMyTurn || isEliminated) {
       setArmyHighlightTileKey(null);
       return;
     }
     const army = findMyArmyOnTile(selectedTileKey);
     setArmyHighlightTileKey(army ? selectedTileKey : null);
-  }, [selectedTileKey, isMyTurn, findMyArmyOnTile]);
+  }, [selectedTileKey, isMyTurn, isEliminated, findMyArmyOnTile]);
 
   // Clear army highlights when build mode activates
   useEffect(() => {
@@ -359,6 +385,11 @@ export function GamePage() {
         handleResetCamera();
       }
       if (e.key === 'Escape') {
+        const { lastCombatResult: combatResult } = useGameStore.getState();
+        if (combatResult) {
+          useGameStore.getState().dismissCombatResult();
+          return;
+        }
         const { buildModeTypeId } = useGameStore.getState();
         if (buildModeTypeId) {
           useGameStore.getState().setBuildMode(null);
@@ -420,11 +451,33 @@ export function GamePage() {
       />
       {!isLoading && <GameHud />}
       {!isLoading && showBuildingPanel && (
-        <div className={isMyTurn ? '' : 'opacity-50 pointer-events-none'}>
+        <div className={isMyTurn && !isEliminated ? '' : 'opacity-50 pointer-events-none'}>
           <BuildingPanel selectedTileKey={selectedTileKey!} />
         </div>
       )}
       {!isLoading && <ResetCameraButton onReset={handleResetCamera} />}
+      {eliminationBanners.map((name, index) => (
+        <EliminationBanner
+          key={`${name}-${index}`}
+          kingdomName={name}
+          onFaded={() => setEliminationBanners((b) => b.filter((_, i) => i !== index))}
+        />
+      ))}
+      {lastCombatResult && (() => {
+        const state = useGameStore.getState();
+        const attackerKingdom = state.kingdoms.get(lastCombatResult.attackerKingdomId);
+        const defenderKingdom = state.kingdoms.get(lastCombatResult.defenderKingdomId);
+        return (
+          <CombatResultModal
+            open={true}
+            onClose={dismissCombatResult}
+            result={lastCombatResult}
+            myKingdomId={state.myKingdomId ?? ''}
+            attackerKingdomName={attackerKingdom?.name ?? 'Attacker'}
+            defenderKingdomName={defenderKingdom?.name ?? 'Defender'}
+          />
+        );
+      })()}
       {attackTarget && armyHighlightTileKey && (() => {
         const state = useGameStore.getState();
         const myArmy = findMyArmyOnTile(armyHighlightTileKey);
