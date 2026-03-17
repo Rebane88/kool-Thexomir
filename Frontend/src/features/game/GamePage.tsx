@@ -35,11 +35,38 @@ export function GamePage() {
   const isDraggingRef = useRef(false);
   const lastDragPosRef = useRef<{ x: number; y: number } | null>(null);
 
+  const myKingdomId = useGameStore((s) => s.myKingdomId);
+  const isMyTurn = useGameStore(
+    (s) => s.myKingdomId !== null && s.currentTurnKingdomId === s.myKingdomId,
+  );
+  const selectedTile = useGameStore((s) => {
+    if (!selectedTileKey) return null;
+    return s.tiles.get(selectedTileKey) ?? null;
+  });
+  const showBuildingPanel = selectedTile !== null && selectedTile.kingdomId === myKingdomId;
+
   useEffect(() => {
     if (!gameId) return;
     connectToGame(gameId);
     return () => disconnectFromGame();
   }, [gameId]);
+
+  // Fetch building types once on connection
+  useEffect(() => {
+    if (!gameId || connectionStatus !== 'connected') return;
+    const { buildingTypes } = useGameStore.getState();
+    if (buildingTypes.length > 0) return;
+    fetchBuildingTypes(gameId)
+      .then((types) => useGameStore.getState().setBuildingTypes(types))
+      .catch((err) => console.error('Failed to fetch building types:', err));
+  }, [gameId, connectionStatus]);
+
+  // Clear build mode when panel hides
+  useEffect(() => {
+    if (!showBuildingPanel) {
+      useGameStore.getState().setBuildMode(null);
+    }
+  }, [showBuildingPanel]);
 
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
@@ -305,6 +332,11 @@ export function GamePage() {
         style={{ cursor: 'grab' }}
       />
       {!isLoading && <GameHud />}
+      {!isLoading && showBuildingPanel && (
+        <div className={isMyTurn ? '' : 'opacity-50 pointer-events-none'}>
+          <BuildingPanel selectedTileKey={selectedTileKey!} />
+        </div>
+      )}
       {!isLoading && <ResetCameraButton onReset={handleResetCamera} />}
       {hoveredTileKey &&
         tooltipPos &&
