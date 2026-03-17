@@ -45,6 +45,7 @@ export function GamePage() {
       const renderState: MapRenderState = {
         hoveredTileKey: hoveredRef.current,
         selectedTileKey: selectedRef.current,
+        buildModeTypeId: state.buildModeTypeId,
       };
       const cam = cameraRef.current;
 

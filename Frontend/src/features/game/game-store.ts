@@ -3,6 +3,7 @@ import type { Tile } from './types/map-types';
 import type { Kingdom } from './types/kingdom-types';
 import type { Army } from './types/military-types';
 import type { GameStatus, ConnectionStatus } from './types/enums';
+import type { BuildingTypeRef } from './types/building-types';
 import type {
   GameStateSnapshot,
   TurnAdvancedEvent,
@@ -33,11 +34,17 @@ interface GameState {
   gameOver: GameOverEvent | null;
   lastIncomeApplied: Record<string, number> | null;
 
+  // Building reference data
+  buildingTypes: BuildingTypeRef[];
+  buildModeTypeId: string | null;
+
   // Connection state
   connectionStatus: ConnectionStatus;
   activeGameId: string | null;
 
   // Actions
+  setBuildingTypes: (types: BuildingTypeRef[]) => void;
+  setBuildMode: (typeId: string | null) => void;
   loadSnapshot: (snapshot: GameStateSnapshot, userId: string) => void;
   resetState: () => void;
   setConnectionStatus: (status: ConnectionStatus) => void;
@@ -64,6 +71,8 @@ const initialState = {
   mapRadius: 0,
   gameOver: null,
   lastIncomeApplied: null,
+  buildingTypes: [] as BuildingTypeRef[],
+  buildModeTypeId: null as string | null,
   connectionStatus: 'disconnected' as ConnectionStatus,
   activeGameId: null,
 };
@@ -153,10 +162,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       mapRadius: 0,
       gameOver: null,
       lastIncomeApplied: null,
+      buildingTypes: [],
+      buildModeTypeId: null,
       connectionStatus: 'disconnected',
       // activeGameId intentionally preserved — cleared only by setActiveGameId(null)
     });
   },
+
+  setBuildingTypes: (types) => set({ buildingTypes: types }),
+
+  setBuildMode: (typeId) => set({ buildModeTypeId: typeId }),
 
   setConnectionStatus: (status) => set({ connectionStatus: status }),
 

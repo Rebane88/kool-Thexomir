@@ -45,4 +45,5 @@ export const KINGDOM_OVERLAY_ALPHA = 0.3;
 export interface MapRenderState {
   hoveredTileKey: string | null;
   selectedTileKey: string | null;
+  buildModeTypeId: string | null;
 }
