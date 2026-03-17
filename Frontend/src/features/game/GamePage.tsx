@@ -12,6 +12,7 @@ import { ErrorScreen } from './components/ErrorScreen';
 import { ReconnectBanner } from './components/ReconnectBanner';
 import { HexTooltip } from './components/HexTooltip';
 import { ResetCameraButton } from './components/ResetCameraButton';
+import { GameHud } from './components/GameHud';
 import type { HexLayoutConfig, MapRenderState } from './canvas/types';
 
 export function GamePage() {
@@ -260,6 +261,7 @@ export function GamePage() {
         onMouseLeave={handleMouseLeave}
         style={{ cursor: 'grab' }}
       />
+      {!isLoading && <GameHud />}
       {!isLoading && <ResetCameraButton onReset={handleResetCamera} />}
       {hoveredTileKey &&
         tooltipPos &&
