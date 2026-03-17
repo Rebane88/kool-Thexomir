@@ -41,7 +41,7 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
             );
             // Check for active game session
             try {
-              const gameRes = await apiFetch('/api/v1/game/active');
+              const gameRes = await apiFetch('/game/active');
               if (gameRes.ok && gameRes.status !== 204) {
                 const { gameId } = await gameRes.json();
                 useGameStore.getState().setActiveGameId(gameId);
