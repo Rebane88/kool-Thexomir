@@ -8,7 +8,7 @@ import {
   HOVER_COLOR,
   CAPITAL_COLOR,
 } from './types';
-import { axialToPixel, hexCorners } from './hex-math';
+import { axialToPixel, hexCorners, getHexNeighbors } from './hex-math';
 import type { Tile } from '../types/map-types';
 import type { Kingdom } from '../types/kingdom-types';
 import type { Army } from '../types/military-types';
@@ -127,6 +127,8 @@ function drawBadge(
  * 1. Clear canvas
  * 2. Terrain fills with hex borders
  * 3. Kingdom ownership overlays
+ * 2.5. Build mode overlays
+ * 2.6. Movement/attack overlays
  * 4. Indicators (capitals, buildings, armies)
  * 5. Hover highlight
  * 6. Selection highlight
@@ -245,6 +247,31 @@ export function drawGameMap(
         drawHexPath(ctx, data.corners);
         ctx.fillStyle = 'rgba(34, 197, 94, 0.35)';
         ctx.fill();
+      }
+    }
+  }
+
+  // Layer 2.6: Movement/attack overlays
+  if (renderState.armyHighlightTileKey && !renderState.buildModeTypeId) {
+    const armyTile = state.tiles.get(renderState.armyHighlightTileKey);
+    if (armyTile) {
+      const neighbors = getHexNeighbors(armyTile.coordQ, armyTile.coordR);
+      for (const neighbor of neighbors) {
+        const key = `${neighbor.q},${neighbor.r}`;
+        const tile = state.tiles.get(key);
+        if (!tile) continue;
+        const data = tileRenderData.get(key);
+        if (!data) continue;
+
+        const isEnemy = tile.kingdomId !== null
+          && tile.kingdomId !== state.myKingdomId;
+
+        drawHexPath(ctx, data.corners);
+        ctx.strokeStyle = isEnemy
+          ? 'rgba(220, 38, 38, 0.7)'   // red for enemy tiles
+          : 'rgba(34, 197, 94, 0.7)';   // green for friendly/empty
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
       }
     }
   }
