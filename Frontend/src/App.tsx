@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useAuthStore } from '@/features/auth';
+import { useGameStore } from '@/features/game';
+import { apiFetch } from '@/lib/api-client';
 import { API_BASE_URL } from '@/lib/constants';
 import { AppRouter } from '@/routes/router';
 import { Button } from '@/shared/ui';
@@ -37,6 +39,16 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
               { id: data.userId, email: data.email, roles: data.roles },
               data.accessToken,
             );
+            // Check for active game session
+            try {
+              const gameRes = await apiFetch('/api/v1/game/active');
+              if (gameRes.ok && gameRes.status !== 204) {
+                const { gameId } = await gameRes.json();
+                useGameStore.getState().setActiveGameId(gameId);
+              }
+            } catch {
+              // Active game check failure is non-critical
+            }
           }
         } catch {
           // No session to restore — stay logged out
