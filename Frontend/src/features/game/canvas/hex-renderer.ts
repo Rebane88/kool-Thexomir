@@ -13,6 +13,10 @@ import type { Tile } from '../types/map-types';
 import type { Kingdom } from '../types/kingdom-types';
 import type { Army } from '../types/military-types';
 
+export interface DrawOptions {
+  skipClear?: boolean;
+}
+
 interface GameMapState {
   tiles: Map<string, Tile>;
   tileIdToCoord: Map<string, string>;
@@ -133,10 +137,13 @@ export function drawGameMap(
   height: number,
   state: GameMapState,
   renderState: MapRenderState,
+  options?: DrawOptions,
 ): void {
-  // 1. Clear canvas
-  ctx.fillStyle = '#0a0a0f';
-  ctx.fillRect(0, 0, width, height);
+  // 1. Clear canvas (skipped when caller handles clearing before camera transform)
+  if (!options?.skipClear) {
+    ctx.fillStyle = '#0a0a0f';
+    ctx.fillRect(0, 0, width, height);
+  }
 
 
   // 2. Compute layout
