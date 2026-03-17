@@ -1,6 +1,7 @@
 using Application.Contracts;
 using Application.Services.GameInitialization.DTOs;
 using DomainBuilding = Domain.Buildings.Building;
+using DomainArmy = Domain.Military.Army;
 using Domain.Game;
 using Domain.Map;
 using Domain.Resources;
@@ -112,7 +113,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
 
         await unitOfWork.CommitAsync();
 
-        return BuildGameStateDtoFromMemory(game, tiles, kingdoms, allBuildings, allResources);
+        return BuildGameStateDtoFromMemory(game, tiles, kingdoms, allBuildings, allResources, new List<DomainArmy>());
     }
 
     public async Task<GameStateDto> BuildGameStateSnapshotAsync(Guid gameId)
@@ -135,7 +136,14 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
             .SelectMany(t => t.Buildings!)
             .ToList();
 
-        return BuildGameStateDtoFromMemory(game, tiles, kingdoms, allBuildings, allResources);
+        var allArmies = new List<DomainArmy>();
+        foreach (var kingdom in kingdoms)
+        {
+            var armies = await unitOfWork.Armies.GetArmiesWithUnitsForKingdomAsync(kingdom.Id);
+            allArmies.AddRange(armies);
+        }
+
+        return BuildGameStateDtoFromMemory(game, tiles, kingdoms, allBuildings, allResources, allArmies);
     }
 
     private static Dictionary<(int q, int r), Guid> AssignZoneBasedTerrain(
@@ -191,7 +199,8 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
         List<Tile> tiles,
         List<Kingdom> kingdoms,
         List<DomainBuilding> buildings,
-        List<KingdomResource> resources)
+        List<KingdomResource> resources,
+        List<DomainArmy> armies)
     {
         var buildingsByTile = buildings
             .GroupBy(b => b.TileId)
@@ -217,6 +226,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
                 TerrainTypeId = t.TerrainTypeId,
                 TerrainName = t.TerrainType?.Name.Translate() ?? string.Empty,
                 KingdomId = t.KingdomId,
+                IsCapital = t.IsCapital,
                 Buildings = buildingsByTile.TryGetValue(t.Id, out var tileBuildings)
                     ? tileBuildings.Select(b => new BuildingDto
                     {
@@ -241,6 +251,18 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
                         Amount = r.Amount,
                     }).ToList()
                     : [],
+            }).ToList(),
+            Armies = armies.Select(a => new ArmyDto
+            {
+                Id = a.Id,
+                TileId = a.TileId,
+                KingdomId = a.KingdomId,
+                Units = a.Units?.Select(u => new ArmyUnitDto
+                {
+                    UnitTypeId = u.UnitTypeId,
+                    UnitTypeName = u.UnitType?.Name.Translate() ?? string.Empty,
+                    Quantity = u.Quantity,
+                }).ToList() ?? [],
             }).ToList(),
         };
     }

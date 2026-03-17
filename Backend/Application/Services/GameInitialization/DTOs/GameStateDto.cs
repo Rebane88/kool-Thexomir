@@ -10,4 +10,5 @@ public class GameStateDto
     public Guid? CurrentTurnKingdomId { get; set; }
     public List<TileDto> Tiles { get; set; } = [];
     public List<KingdomDto> Kingdoms { get; set; } = [];
+    public List<ArmyDto> Armies { get; set; } = [];
 }
