@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { Link, useMatch } from 'react-router';
 import { useAuthStore } from '@/features/auth';
 import { useGameStore } from '@/features/game';
 import { API_BASE_URL } from '@/lib/constants';
@@ -8,6 +8,7 @@ export function NavBar() {
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const activeGameId = useGameStore((s) => s.activeGameId);
+  const onGamePage = useMatch('/game/:id');
 
   const handleLogout = async () => {
     try {
@@ -33,7 +34,7 @@ export function NavBar() {
       <Link to="/" className="font-heading text-xl font-bold text-gold-500 hover:text-gold-300 transition-colors tracking-wide">
         Realms of Ash
       </Link>
-      {activeGameId && user && (
+      {activeGameId && user && !onGamePage && (
         <>
           <div className="h-5 w-px bg-bronze-700" />
           <div className="flex items-center gap-2">

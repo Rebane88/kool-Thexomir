@@ -9,5 +9,6 @@ export function createGameHubConnection(gameId: string): signalR.HubConnection {
       accessTokenFactory: () => useAuthStore.getState().accessToken ?? '',
     })
     .withAutomaticReconnect()
+    .configureLogging(signalR.LogLevel.Warning)
     .build();
 }
