@@ -1,3 +1,4 @@
+using System.Text.Json;
 using API.Hubs;
 
 namespace API.Setup;
@@ -6,7 +7,11 @@ public static class SignalRExtensions
 {
     public static IServiceCollection AddAppSignalR(this IServiceCollection services)
     {
-        services.AddSignalR();
+        services.AddSignalR()
+            .AddJsonProtocol(options =>
+            {
+                options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            });
         return services;
     }
 
