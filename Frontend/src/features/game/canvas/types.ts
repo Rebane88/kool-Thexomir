@@ -46,4 +46,5 @@ export interface MapRenderState {
   hoveredTileKey: string | null;
   selectedTileKey: string | null;
   buildModeTypeId: string | null;
+  armyHighlightTileKey: string | null;
 }

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Tile } from './types/map-types';
 import type { Kingdom } from './types/kingdom-types';
-import type { Army } from './types/military-types';
+import type { Army, UnitTypeRef } from './types/military-types';
 import type { GameStatus, ConnectionStatus } from './types/enums';
 import type { BuildingTypeRef } from './types/building-types';
 import type {
@@ -38,6 +38,10 @@ interface GameState {
   buildingTypes: BuildingTypeRef[];
   buildModeTypeId: string | null;
 
+  // Military reference data
+  unitTypes: UnitTypeRef[];
+  lastCombatResult: CombatResolvedEvent | null;
+
   // Connection state
   connectionStatus: ConnectionStatus;
   activeGameId: string | null;
@@ -45,6 +49,8 @@ interface GameState {
   // Actions
   setBuildingTypes: (types: BuildingTypeRef[]) => void;
   setBuildMode: (typeId: string | null) => void;
+  setUnitTypes: (types: UnitTypeRef[]) => void;
+  dismissCombatResult: () => void;
   loadSnapshot: (snapshot: GameStateSnapshot, userId: string) => void;
   resetState: () => void;
   setConnectionStatus: (status: ConnectionStatus) => void;
@@ -73,6 +79,8 @@ const initialState = {
   lastIncomeApplied: null,
   buildingTypes: [] as BuildingTypeRef[],
   buildModeTypeId: null as string | null,
+  unitTypes: [] as UnitTypeRef[],
+  lastCombatResult: null as CombatResolvedEvent | null,
   connectionStatus: 'disconnected' as ConnectionStatus,
   activeGameId: null,
 };
@@ -164,6 +172,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastIncomeApplied: null,
       buildingTypes: [],
       buildModeTypeId: null,
+      unitTypes: [],
+      lastCombatResult: null,
       connectionStatus: 'disconnected',
       // activeGameId intentionally preserved — cleared only by setActiveGameId(null)
     });
@@ -172,6 +182,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   setBuildingTypes: (types) => set({ buildingTypes: types }),
 
   setBuildMode: (typeId) => set({ buildModeTypeId: typeId }),
+
+  setUnitTypes: (types) => set({ unitTypes: types }),
+
+  dismissCombatResult: () => set({ lastCombatResult: null }),
 
   setConnectionStatus: (status) => set({ connectionStatus: status }),
 
@@ -300,7 +314,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   handleCombatResolved: (data) => {
-    const { tiles, tileIdToCoord } = get();
+    const { tiles, tileIdToCoord, myKingdomId } = get();
 
     const newTiles = new Map(tiles);
     if (data.tileCaptured && data.winnerKingdomId) {
@@ -313,9 +327,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
 
+    const isInvolved =
+      myKingdomId === data.attackerKingdomId || myKingdomId === data.defenderKingdomId;
+
     set({
       tiles: newTiles,
       gameOver: data.gameOver ?? get().gameOver,
+      lastCombatResult: isInvolved ? data : null,
     });
   },
 

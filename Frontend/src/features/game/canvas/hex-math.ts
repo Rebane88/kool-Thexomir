@@ -70,6 +70,25 @@ export function axialRound(q: number, r: number): AxialCoord {
 }
 
 /**
+ * The 6 axial direction vectors for a hex grid.
+ */
+export const AXIAL_DIRECTIONS: AxialCoord[] = [
+  { q: 1, r: 0 },  { q: 1, r: -1 }, { q: 0, r: -1 },
+  { q: -1, r: 0 }, { q: -1, r: 1 }, { q: 0, r: 1 },
+];
+
+/**
+ * Return the 6 axial neighbors of a hex at (q, r).
+ * Uses || 0 to normalize -0 to 0.
+ */
+export function getHexNeighbors(q: number, r: number): AxialCoord[] {
+  return AXIAL_DIRECTIONS.map(d => ({
+    q: (q + d.q) || 0,
+    r: (r + d.r) || 0,
+  }));
+}
+
+/**
  * Convert pixel position back to axial hex coordinates (pointy-top layout).
  * Inverse of axialToPixel. Uses axialRound for snapping.
  */

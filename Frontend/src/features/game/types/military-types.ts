@@ -17,3 +17,17 @@ export interface Casualty {
   before: number;
   lost: number;
 }
+
+export interface UnitTypeRef {
+  id: string;
+  name: string;
+  baseStrength: number;
+  goldCost: number;
+  foodCost: number;
+  woodCost: number;
+  stoneCost: number;
+  manaCost: number;
+  upkeep: number;
+  description: string | null;
+  producedByBuildingTypeIds: string[];
+}

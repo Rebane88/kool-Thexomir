@@ -75,6 +75,7 @@ export function GamePage() {
         hoveredTileKey: hoveredRef.current,
         selectedTileKey: selectedRef.current,
         buildModeTypeId: state.buildModeTypeId,
+        armyHighlightTileKey: null,
       };
       const cam = cameraRef.current;
 

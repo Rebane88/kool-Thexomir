@@ -393,6 +393,89 @@ describe('delta events', () => {
     expect(useGameStore.getState().gameOver).toEqual(gameOver);
   });
 
+  it('handleCombatResolved sets lastCombatResult when myKingdomId is attacker', () => {
+    const event: CombatResolvedEvent = {
+      battleId: 'battle-1',
+      tileId: 'tile-2',
+      attackerKingdomId: 'k-1',
+      defenderKingdomId: 'k-2',
+      winnerKingdomId: 'k-1',
+      tileCaptured: false,
+      attackerStrength: 100,
+      defenderStrength: 50,
+      attackerCasualties: [],
+      defenderCasualties: [],
+      gameOver: null,
+    };
+    useGameStore.getState().handleCombatResolved(event);
+
+    expect(useGameStore.getState().lastCombatResult).toEqual(event);
+  });
+
+  it('handleCombatResolved sets lastCombatResult when myKingdomId is defender', () => {
+    // Reload snapshot as user-2 (myKingdomId='k-2')
+    useGameStore.getState().resetState();
+    useGameStore.getState().loadSnapshot(createMockSnapshot(), 'user-2');
+
+    const event: CombatResolvedEvent = {
+      battleId: 'battle-2',
+      tileId: 'tile-2',
+      attackerKingdomId: 'k-1',
+      defenderKingdomId: 'k-2',
+      winnerKingdomId: 'k-1',
+      tileCaptured: false,
+      attackerStrength: 100,
+      defenderStrength: 50,
+      attackerCasualties: [],
+      defenderCasualties: [],
+      gameOver: null,
+    };
+    useGameStore.getState().handleCombatResolved(event);
+
+    expect(useGameStore.getState().lastCombatResult).toEqual(event);
+  });
+
+  it('handleCombatResolved does NOT set lastCombatResult for uninvolved player', () => {
+    const event: CombatResolvedEvent = {
+      battleId: 'battle-3',
+      tileId: 'tile-2',
+      attackerKingdomId: 'k-3',
+      defenderKingdomId: 'k-4',
+      winnerKingdomId: 'k-3',
+      tileCaptured: false,
+      attackerStrength: 100,
+      defenderStrength: 50,
+      attackerCasualties: [],
+      defenderCasualties: [],
+      gameOver: null,
+    };
+    useGameStore.getState().handleCombatResolved(event);
+
+    expect(useGameStore.getState().lastCombatResult).toBeNull();
+  });
+
+  it('dismissCombatResult clears lastCombatResult', () => {
+    // First set it via handleCombatResolved
+    const event: CombatResolvedEvent = {
+      battleId: 'battle-4',
+      tileId: 'tile-2',
+      attackerKingdomId: 'k-1',
+      defenderKingdomId: 'k-2',
+      winnerKingdomId: 'k-1',
+      tileCaptured: false,
+      attackerStrength: 100,
+      defenderStrength: 50,
+      attackerCasualties: [],
+      defenderCasualties: [],
+      gameOver: null,
+    };
+    useGameStore.getState().handleCombatResolved(event);
+    expect(useGameStore.getState().lastCombatResult).not.toBeNull();
+
+    useGameStore.getState().dismissCombatResult();
+    expect(useGameStore.getState().lastCombatResult).toBeNull();
+  });
+
   it('handleGameOver sets status and gameOver', () => {
     const event: GameOverEvent = {
       gameId: 'game-1',
@@ -432,5 +515,7 @@ describe('resetState', () => {
     expect(state.winCondition).toBeNull();
     expect(state.mapRadius).toBe(0);
     expect(state.gameOver).toBeNull();
+    expect(state.unitTypes).toEqual([]);
+    expect(state.lastCombatResult).toBeNull();
   });
 });

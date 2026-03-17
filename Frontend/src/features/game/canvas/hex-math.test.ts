@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { axialToPixel, hexCorners, generateAxialCoords, axialRound, pixelToAxial } from './hex-math';
+import { axialToPixel, hexCorners, generateAxialCoords, axialRound, pixelToAxial, getHexNeighbors, AXIAL_DIRECTIONS } from './hex-math';
 import type { HexLayoutConfig } from './types';
 
 describe('axialToPixel', () => {
@@ -105,6 +105,42 @@ describe('axialRound', () => {
     // q=0.1, r=-0.1 => s=0.0 => rq=0, rr=0, rs=0 => all diffs equal
     // When q-diff not largest and r-diff not larger than s-diff, result unchanged
     expect(axialRound(0.1, -0.1)).toEqual({ q: 0, r: 0 });
+  });
+});
+
+describe('getHexNeighbors', () => {
+  it('returns 6 neighbors for origin (0,0)', () => {
+    const neighbors = getHexNeighbors(0, 0);
+    expect(neighbors).toHaveLength(6);
+    expect(neighbors).toEqual([
+      { q: 1, r: 0 },
+      { q: 1, r: -1 },
+      { q: 0, r: -1 },
+      { q: -1, r: 0 },
+      { q: -1, r: 1 },
+      { q: 0, r: 1 },
+    ]);
+  });
+
+  it('returns correct offset neighbors for (2, -1)', () => {
+    const neighbors = getHexNeighbors(2, -1);
+    expect(neighbors).toEqual([
+      { q: 3, r: -1 },
+      { q: 3, r: -2 },
+      { q: 2, r: -2 },
+      { q: 1, r: -1 },
+      { q: 1, r: 0 },
+      { q: 2, r: 0 },
+    ]);
+  });
+
+  it('does not produce negative zero in any coordinate', () => {
+    // Test a case that would produce -0 without normalization: (1, -1) has neighbor at (0, -1+1) = (0, 0)
+    const neighbors = getHexNeighbors(1, -1);
+    for (const coord of neighbors) {
+      if (coord.q === 0) expect(Object.is(coord.q, -0)).toBe(false);
+      if (coord.r === 0) expect(Object.is(coord.r, -0)).toBe(false);
+    }
   });
 });
 
