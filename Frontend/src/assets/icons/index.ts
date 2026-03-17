@@ -7,3 +7,8 @@ export { MenuIcon } from './MenuIcon';
 export { ScrollIcon } from './ScrollIcon';
 export { EyeIcon } from './EyeIcon';
 export { EyeOffIcon } from './EyeOffIcon';
+export { GoldIcon } from './GoldIcon';
+export { FoodIcon } from './FoodIcon';
+export { WoodIcon } from './WoodIcon';
+export { StoneIcon } from './StoneIcon';
+export { ManaIcon } from './ManaIcon';
