@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { axialToPixel, hexCorners, generateAxialCoords } from './hex-math';
+import { axialToPixel, hexCorners, generateAxialCoords, axialRound, pixelToAxial } from './hex-math';
 import type { HexLayoutConfig } from './types';
 
 describe('axialToPixel', () => {
@@ -82,6 +82,54 @@ describe('generateAxialCoords', () => {
     for (const { q, r } of coords) {
       const hexDist = Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r));
       expect(hexDist).toBeLessThanOrEqual(radius);
+    }
+  });
+});
+
+describe('axialRound', () => {
+  it('rounds (0.3, 0.3) to {q:0, r:0}', () => {
+    expect(axialRound(0.3, 0.3)).toEqual({ q: 0, r: 0 });
+  });
+
+  it('rounds (0.9, 0.1) to {q:1, r:0}', () => {
+    expect(axialRound(0.9, 0.1)).toEqual({ q: 1, r: 0 });
+  });
+
+  it('rounds fractional coords where r-diff is largest', () => {
+    // q=0.1, r=0.9 => s = -1.0 => rq=0, rr=1, rs=-1 => rDiff=0.1, qDiff=0.1, sDiff=0
+    // sDiff smallest, rDiff > sDiff => rr = -rq - rs = 0 - (-1) = 1
+    expect(axialRound(0.1, 0.9)).toEqual({ q: 0, r: 1 });
+  });
+
+  it('rounds fractional coords where s-diff is largest', () => {
+    // q=0.1, r=-0.1 => s=0.0 => rq=0, rr=0, rs=0 => all diffs equal
+    // When q-diff not largest and r-diff not larger than s-diff, result unchanged
+    expect(axialRound(0.1, -0.1)).toEqual({ q: 0, r: 0 });
+  });
+});
+
+describe('pixelToAxial', () => {
+  const layout: HexLayoutConfig = {
+    size: 30,
+    origin: { x: 400, y: 300 },
+  };
+
+  it('maps origin pixel to {q:0, r:0}', () => {
+    expect(pixelToAxial({ x: 400, y: 300 }, layout)).toEqual({ q: 0, r: 0 });
+  });
+
+  it('round-trips axialToPixel -> pixelToAxial for {q:3, r:-2}', () => {
+    const pixel = axialToPixel({ q: 3, r: -2 }, layout);
+    expect(pixelToAxial(pixel, layout)).toEqual({ q: 3, r: -2 });
+  });
+
+  it('round-trips for all 169 coords in radius 7', () => {
+    const coords = generateAxialCoords(7);
+    expect(coords).toHaveLength(169);
+    for (const coord of coords) {
+      const pixel = axialToPixel(coord, layout);
+      const result = pixelToAxial(pixel, layout);
+      expect(result).toEqual(coord);
     }
   });
 });

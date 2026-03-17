@@ -48,3 +48,36 @@ export function generateAxialCoords(radius: number): AxialCoord[] {
   }
   return coords;
 }
+
+/**
+ * Round fractional axial coordinates to the nearest hex.
+ * Uses the constraint q + r + s = 0 to pick the best integer triple.
+ */
+export function axialRound(q: number, r: number): AxialCoord {
+  const s = -q - r;
+  let rq = Math.round(q);
+  let rr = Math.round(r);
+  const rs = Math.round(s);
+  const qDiff = Math.abs(rq - q);
+  const rDiff = Math.abs(rr - r);
+  const sDiff = Math.abs(rs - s);
+  if (qDiff > rDiff && qDiff > sDiff) {
+    rq = -rr - rs;
+  } else if (rDiff > sDiff) {
+    rr = -rq - rs;
+  }
+  return { q: rq || 0, r: rr || 0 };
+}
+
+/**
+ * Convert pixel position back to axial hex coordinates (pointy-top layout).
+ * Inverse of axialToPixel. Uses axialRound for snapping.
+ */
+export function pixelToAxial(point: Point2D, layout: HexLayoutConfig): AxialCoord {
+  const { size, origin } = layout;
+  const px = point.x - origin.x;
+  const py = point.y - origin.y;
+  const q = (Math.sqrt(3) / 3 * px - 1 / 3 * py) / size;
+  const r = (2 / 3 * py) / size;
+  return axialRound(q, r);
+}
