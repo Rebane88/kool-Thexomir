@@ -28,10 +28,13 @@ export function useGameCanvas({ draw }: UseGameCanvasOptions): UseGameCanvasResu
     function applyDpiScaling() {
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas!.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
       canvas!.width = rect.width * dpr;
       canvas!.height = rect.height * dpr;
       ctx!.scale(dpr, dpr);
-      dirtyRef.current = true;
+      // Draw immediately to avoid black flash between resize and next RAF tick
+      draw(ctx!, rect.width, rect.height);
+      dirtyRef.current = false;
     }
 
     applyDpiScaling();

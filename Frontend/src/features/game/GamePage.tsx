@@ -116,20 +116,20 @@ export function GamePage() {
     [canvasRef, markDirty],
   );
 
-  if (connectionStatus === 'connecting' || connectionStatus === 'disconnected') {
-    return <LoadingScreen />;
-  }
+  const isLoading = connectionStatus === 'connecting' || connectionStatus === 'disconnected';
+  const isFailed = connectionStatus === 'failed';
 
-  if (connectionStatus === 'failed') {
+  if (isFailed) {
     return <ErrorScreen onRetry={() => gameId && connectToGame(gameId)} />;
   }
 
   return (
-    <div className="relative w-full flex-1 min-h-0 overflow-hidden">
+    <div className="relative flex flex-col w-full flex-1 min-h-0 overflow-hidden">
+      {isLoading && <LoadingScreen />}
       {connectionStatus === 'reconnecting' && <ReconnectBanner />}
       <canvas
         ref={canvasRef}
-        className="block w-full h-full"
+        className={`block w-full h-full ${isLoading ? 'hidden' : ''}`}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
