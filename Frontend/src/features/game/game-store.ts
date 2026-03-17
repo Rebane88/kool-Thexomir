@@ -31,6 +31,7 @@ interface GameState {
   winCondition: string | null;
   mapRadius: number;
   gameOver: GameOverEvent | null;
+  lastIncomeApplied: Record<string, number> | null;
 
   // Connection state
   connectionStatus: ConnectionStatus;
@@ -62,6 +63,7 @@ const initialState = {
   winCondition: null,
   mapRadius: 0,
   gameOver: null,
+  lastIncomeApplied: null,
   connectionStatus: 'disconnected' as ConnectionStatus,
   activeGameId: null,
 };
@@ -150,6 +152,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       winCondition: null,
       mapRadius: 0,
       gameOver: null,
+      lastIncomeApplied: null,
       connectionStatus: 'disconnected',
       // activeGameId intentionally preserved — cleared only by setActiveGameId(null)
     });
@@ -160,10 +163,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   setActiveGameId: (id) => set({ activeGameId: id }),
 
   handleTurnAdvanced: (data) => {
-    const { kingdoms, currentTurnKingdomId } = get();
+    const { kingdoms, currentTurnKingdomId, myKingdomId } = get();
+    // Income applies to the kingdom whose turn just ended (currentTurnKingdomId)
+    const isMyIncome = currentTurnKingdomId !== null && currentTurnKingdomId === myKingdomId;
 
     const newKingdoms = new Map(kingdoms);
-    // Income applies to the kingdom whose turn just ended (the previous currentTurnKingdomId)
     if (currentTurnKingdomId) {
       const kingdom = newKingdoms.get(currentTurnKingdomId);
       if (kingdom) {
@@ -180,6 +184,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       currentTurnKingdomId: data.newKingdomId,
       kingdoms: newKingdoms,
       gameOver: data.gameOver ?? get().gameOver,
+      lastIncomeApplied: isMyIncome ? data.incomeApplied : null,
     });
   },
 
