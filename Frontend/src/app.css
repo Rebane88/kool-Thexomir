@@ -1,1 +1,102 @@
 @import "tailwindcss";
+
+@layer base {
+  @font-face {
+    font-family: 'Cinzel';
+    src: url('/fonts/cinzel-regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Cinzel';
+    src: url('/fonts/cinzel-bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Lora';
+    src: url('/fonts/lora-regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Lora';
+    src: url('/fonts/lora-bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Lora';
+    src: url('/fonts/lora-italic.woff2') format('woff2');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+  }
+
+  /* Global body styling */
+  body {
+    font-family: var(--font-body);
+    background-color: var(--color-ash-950);
+    color: var(--color-parchment-200);
+  }
+
+  /* Noise texture overlay for aged surface feel */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+}
+
+@theme {
+  /* Medieval palette -- ash (backgrounds) */
+  --color-ash-950: #0a0a0f;
+  --color-ash-900: #111118;
+  --color-ash-800: #1a1a24;
+  --color-ash-700: #252535;
+  --color-ash-600: #333348;
+
+  /* Medieval palette -- bronze (borders, accents) */
+  --color-bronze-700: #3d3225;
+  --color-bronze-600: #5a4a35;
+  --color-bronze-500: #7a6545;
+
+  /* Medieval palette -- gold (primary accent) */
+  --color-gold-500: #c9a84c;
+  --color-gold-400: #d4b95e;
+  --color-gold-300: #e0cb78;
+
+  /* Medieval palette -- ember (hover/active glow) */
+  --color-ember-600: #b45309;
+  --color-ember-500: #d97706;
+  --color-ember-400: #f59e0b;
+
+  /* Medieval palette -- blood (danger/error) */
+  --color-blood-700: #6b1f1f;
+  --color-blood-600: #8b2d2d;
+  --color-blood-500: #a83838;
+
+  /* Medieval palette -- parchment (text) */
+  --color-parchment-200: #d4c9a8;
+  --color-parchment-300: #c4b898;
+  --color-parchment-400: #a89878;
+
+  /* Font families */
+  --font-heading: 'Cinzel', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+  --font-body: 'Lora', 'Georgia', 'Times New Roman', serif;
+
+  /* Shadows -- ember glow for interactive elements */
+  --shadow-ember: 0 0 8px rgba(201, 168, 76, 0.3), 0 0 16px rgba(217, 119, 6, 0.15);
+  --shadow-ember-lg: 0 0 12px rgba(201, 168, 76, 0.4), 0 0 24px rgba(217, 119, 6, 0.2);
+
+  /* Shadows -- panels */
+  --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(201, 168, 76, 0.05);
+}
