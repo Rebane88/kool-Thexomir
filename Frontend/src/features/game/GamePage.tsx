@@ -10,7 +10,7 @@ export function GamePage() {
 
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-      ctx.fillStyle = '#111827';
+      ctx.fillStyle = '#0a0a0f';
       ctx.fillRect(0, 0, width, height);
 
       const layout: HexLayoutConfig = {
@@ -26,7 +26,7 @@ export function GamePage() {
   const { canvasRef } = useGameCanvas({ draw });
 
   return (
-    <div className="relative w-full" style={{ height: 'calc(100vh - 48px)' }}>
+    <div className="relative w-full flex-1 min-h-0 overflow-hidden">
       <canvas ref={canvasRef} className="block w-full h-full" />
     </div>
   );

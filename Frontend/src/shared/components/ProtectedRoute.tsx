@@ -8,8 +8,8 @@ export function ProtectedRoute() {
 
   if (isInitializing) {
     return (
-      <div className="min-h-screen bg-gray-900 text-gray-100 flex items-center justify-center">
-        <p className="text-lg">Loading...</p>
+      <div className="flex-1 flex items-center justify-center">
+        <p className="text-lg text-parchment-400">Loading...</p>
       </div>
     );
   }

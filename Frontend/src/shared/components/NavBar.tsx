@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { useAuthStore } from '@/features/auth';
 import { API_BASE_URL } from '@/lib/constants';
+import { LogoutIcon } from '@/assets/icons';
 
 export function NavBar() {
   const user = useAuthStore((s) => s.user);
@@ -26,27 +27,28 @@ export function NavBar() {
   };
 
   return (
-    <nav className="bg-gray-800 border-b border-gray-700 px-6 py-3 flex items-center justify-between">
-      <Link to="/" className="text-xl font-bold text-amber-500 hover:text-amber-400">
+    <nav className="bg-ash-900 border-b border-bronze-700 px-6 py-3 flex items-center justify-between">
+      <Link to="/" className="font-heading text-xl font-bold text-gold-500 hover:text-gold-300 transition-colors tracking-wide">
         Realms of Ash
       </Link>
       <div className="flex items-center gap-4">
         {user ? (
           <>
-            <span className="text-gray-300">{user.email}</span>
+            <span className="text-parchment-400 text-sm">{user.email}</span>
             <button
               onClick={handleLogout}
-              className="text-gray-400 hover:text-gray-200"
+              className="flex items-center gap-1.5 text-parchment-400 hover:text-gold-500 transition-colors"
             >
-              Logout
+              <LogoutIcon size={18} />
+              <span className="text-sm">Logout</span>
             </button>
           </>
         ) : (
           <>
-            <Link to="/login" className="text-gray-300 hover:text-gray-100">
+            <Link to="/login" className="text-parchment-300 hover:text-gold-500 transition-colors text-sm">
               Login
             </Link>
-            <Link to="/register" className="text-gray-300 hover:text-gray-100">
+            <Link to="/register" className="text-parchment-300 hover:text-gold-500 transition-colors text-sm">
               Register
             </Link>
           </>
