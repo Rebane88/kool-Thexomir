@@ -8,6 +8,31 @@ namespace Application.Services.Building;
 
 public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBuildingService
 {
+    public async Task<IEnumerable<BuildingTypeDto>> GetBuildingTypesAsync()
+    {
+        var buildingTypes = await unitOfWork.BuildingTypes.GetAllWithPrerequisiteAsync();
+
+        return buildingTypes.Select(bt => new BuildingTypeDto
+        {
+            Id = bt.Id,
+            Name = bt.Name.Translate() ?? string.Empty,
+            Tier = bt.Tier,
+            Chain = bt.Chain,
+            GoldCost = bt.GoldCost,
+            WoodCost = bt.WoodCost,
+            StoneCost = bt.StoneCost,
+            ManaCost = bt.ManaCost,
+            FoodYield = bt.FoodYield,
+            WoodYield = bt.WoodYield,
+            StoneYield = bt.StoneYield,
+            GoldYield = bt.GoldYield,
+            ManaYield = bt.ManaYield,
+            Description = bt.Description,
+            PrerequisiteBuildingTypeId = bt.PrerequisiteBuildingTypeId,
+            PrerequisiteBuildingName = bt.PrerequisiteBuildingType?.Name.Translate()
+        });
+    }
+
     public async Task<Result<BuildingPlacedDto>> PlaceBuildingAsync(Guid gameId, Guid userId, PlaceBuildingRequest request)
     {
         var guardResult = await gameGuard.ValidateAsync(gameId, userId);

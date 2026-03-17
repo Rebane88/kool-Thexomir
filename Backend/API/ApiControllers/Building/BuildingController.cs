@@ -21,6 +21,14 @@ public class BuildingController(
     IHubContext<GameHub, IGameClient> hubContext,
     IGameLockManager gameLockManager) : ControllerBase
 {
+    [HttpGet("building-types")]
+    [ProducesResponseType(typeof(IEnumerable<BuildingTypeDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetBuildingTypes(Guid gameId)
+    {
+        var types = await buildingService.GetBuildingTypesAsync();
+        return Ok(types);
+    }
+
     [HttpPost("build")]
     [ProducesResponseType(typeof(BuildingPlacedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
