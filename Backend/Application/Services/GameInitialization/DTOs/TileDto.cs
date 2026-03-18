@@ -8,7 +8,7 @@ public class TileDto
     public Guid TerrainTypeId { get; set; }
     public string TerrainName { get; set; } = string.Empty;
     public Guid? KingdomId { get; set; }
-    public bool IsCapital { get; set; }
+    public bool IsCastle { get; set; }
     public List<BuildingDto> Buildings { get; set; } = [];
 }
 

@@ -15,5 +15,5 @@ public class KingdomScoreDto
     public string KingdomName { get; set; } = string.Empty;
     public int Score { get; set; }
     public int TilesOwned { get; set; }
-    public bool IsEliminated { get; set; }
+    public string Status { get; set; } = string.Empty;
 }

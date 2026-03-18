@@ -30,30 +30,24 @@ public class GameController(IUnitOfWork unitOfWork) : ControllerBase
         var kingdoms = (await unitOfWork.Kingdoms.GetKingdomsForGameAsync(gameId)).ToList();
         var tiles = await unitOfWork.Tiles.GetTilesWithBuildingsForGameAsync(gameId);
 
-        // Load armies with units for score calculation
-        foreach (var k in kingdoms)
-        {
-            k.Armies = (await unitOfWork.Armies.GetArmiesWithUnitsForKingdomAsync(k.Id)).ToList();
-        }
-
         var results = new GameResultsDto
         {
             GameId = game.Id,
             Status = game.Status.ToString(),
             WinnerKingdomId = game.WinnerKingdomId,
             WinConditionType = game.WinCondition.ToString(),
-            TotalTurns = game.TurnNumber,
+            TotalTurns = game.RoundNumber,
             FinalScores = kingdoms.Select(k => new KingdomScoreDto
             {
                 KingdomId = k.Id,
                 KingdomName = k.Name,
                 Score = 0, // ScoreChecker removed -- to be redesigned
                 TilesOwned = tiles.Count(t => t.KingdomId == k.Id),
-                IsEliminated = k.IsEliminated
+                Status = k.Status.ToString()
             }).OrderByDescending(s => s.Score).ToList(),
             EliminationOrder = kingdoms
-                .Where(k => k.IsEliminated)
-                .OrderBy(k => k.UpdatedAt)
+                .Where(k => k.Status == EKingdomStatus.Defeated)
+                .OrderBy(k => k.DefeatedAt ?? k.UpdatedAt)
                 .Select(k => k.Id)
                 .ToList()
         };

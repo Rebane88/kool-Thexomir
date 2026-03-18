@@ -22,12 +22,11 @@
         <thead>
             <tr>
                 <th>Name</th>
-                <th>Building Cost Modifier</th>
-                <th>Gold</th>
-                <th>Food</th>
-                <th>Wood</th>
-                <th>Stone</th>
-                <th>Mana</th>
+                <th>Attack Mod</th>
+                <th>HP Mod</th>
+                <th>Building Cost Mod</th>
+                <th>Resource Prod Mod</th>
+                <th>Action Pts</th>
                 <th>Description</th>
                 <th>Actions</th>
             </tr>
@@ -37,12 +36,11 @@
             {
                 <tr>
                     <td>@item.Name.Translate("en")</td>
+                    <td>@item.AttackModifier</td>
+                    <td>@item.HPModifier</td>
                     <td>@item.BuildingCostModifier</td>
-                    <td>@item.StartingGold</td>
-                    <td>@item.StartingFood</td>
-                    <td>@item.StartingWood</td>
-                    <td>@item.StartingStone</td>
-                    <td>@item.StartingMana</td>
+                    <td>@item.ResourceProductionModifier</td>
+                    <td>@item.ActionPointModifier</td>
                     <td>@item.Description</td>
                     <td>
                         <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Edit</a>

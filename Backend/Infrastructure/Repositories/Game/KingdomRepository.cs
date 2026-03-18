@@ -24,7 +24,7 @@ public class KingdomRepository(AppDbContext context)
     public async Task<Guid?> GetActiveGameIdForUserAsync(Guid userId)
     {
         return await Context.Kingdoms
-            .Where(k => k.AppUserId == userId && !k.IsEliminated && k.Game!.Status == EGameStatus.InProgress)
+            .Where(k => k.AppUserId == userId && k.Status != EKingdomStatus.Defeated && k.Game!.Status == EGameStatus.InProgress)
             .Select(k => (Guid?)k.Game!.Id)
             .FirstOrDefaultAsync();
     }

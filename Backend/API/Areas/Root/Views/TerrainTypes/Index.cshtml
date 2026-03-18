@@ -22,9 +22,9 @@
         <thead>
             <tr>
                 <th>Name</th>
-                <th>Defense Bonus</th>
-                <th>Movement Cost</th>
+                <th>Resource Multiplier</th>
                 <th>Resource Bonus Type</th>
+                <th>Map Color</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -33,9 +33,9 @@
             {
                 <tr>
                     <td>@item.Name.Translate("en")</td>
-                    <td>@item.DefenseBonus</td>
-                    <td>@item.MovementCost</td>
+                    <td>@item.ResourceMultiplier</td>
                     <td>@item.ResourceBonusType</td>
+                    <td>@item.MapColor</td>
                     <td>
                         <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
                         <form method="post" asp-action="Delete" asp-route-id="@item.Id" class="d-inline"

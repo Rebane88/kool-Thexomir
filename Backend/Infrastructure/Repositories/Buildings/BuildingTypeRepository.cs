@@ -9,7 +9,7 @@ public class BuildingTypeRepository(AppDbContext context)
     public async Task<IEnumerable<BuildingType>> GetAllWithPrerequisiteAsync()
     {
         return await Context.Set<BuildingType>()
-            .Include(bt => bt.PrerequisiteBuildingType)
+            .Include(bt => bt.UnlockedByBuildingType)
             .OrderBy(bt => bt.Chain)
             .ThenBy(bt => bt.Tier)
             .ToListAsync();

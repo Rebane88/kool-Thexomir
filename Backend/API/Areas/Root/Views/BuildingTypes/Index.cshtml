@@ -25,11 +25,13 @@
                 <th>Tier</th>
                 <th>Chain</th>
                 <th>Gold</th>
+                <th>Food</th>
                 <th>Wood</th>
                 <th>Stone</th>
                 <th>Mana</th>
-                <th>Food Yield</th>
                 <th>Gold Yield</th>
+                <th>Food Yield</th>
+                <th>Army Cap</th>
                 <th>Description</th>
                 <th>Actions</th>
             </tr>
@@ -41,12 +43,14 @@
                     <td>@item.Name.Translate("en")</td>
                     <td>@item.Tier</td>
                     <td>@item.Chain</td>
-                    <td>@item.GoldCost</td>
-                    <td>@item.WoodCost</td>
-                    <td>@item.StoneCost</td>
-                    <td>@item.ManaCost</td>
-                    <td>@item.FoodYield</td>
-                    <td>@item.GoldYield</td>
+                    <td>@item.CostGold</td>
+                    <td>@item.CostFood</td>
+                    <td>@item.CostWood</td>
+                    <td>@item.CostStone</td>
+                    <td>@item.CostMana</td>
+                    <td>@item.BaseYieldGold</td>
+                    <td>@item.BaseYieldFood</td>
+                    <td>@item.ArmyCapacity</td>
                     <td>@item.Description</td>
                     <td>
                         <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Edit</a>

@@ -4,9 +4,8 @@ namespace Domain.Military;
 
 public interface IArmyRepository : IBaseRepository<Army>
 {
-    Task<Army?> GetArmyOnTileForKingdomAsync(Guid tileId, Guid kingdomId);
-    Task<Army?> GetArmyWithUnitsAsync(Guid armyId);
+    Task<Army?> GetArmyAtBuildingForKingdomAsync(Guid buildingId, Guid kingdomId);
+    Task<Army?> GetArmyWithTypeAsync(Guid armyId);
     Task<IEnumerable<Army>> GetArmiesForKingdomAsync(Guid kingdomId);
-    Task<Army?> GetEnemyArmyOnTileAsync(Guid tileId, Guid excludeKingdomId);
-    Task<IEnumerable<Army>> GetArmiesWithUnitsForKingdomAsync(Guid kingdomId);
+    Task<IEnumerable<Army>> GetArmiesWithTypeForKingdomAsync(Guid kingdomId);
 }

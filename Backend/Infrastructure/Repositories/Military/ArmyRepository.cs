@@ -6,12 +6,13 @@ namespace Infrastructure.Repositories.Military;
 public class ArmyRepository(AppDbContext context)
     : BaseRepository<Army>(context), IArmyRepository
 {
-    public async Task<Army?> GetArmyOnTileForKingdomAsync(Guid tileId, Guid kingdomId)
+    public async Task<Army?> GetArmyAtBuildingForKingdomAsync(Guid buildingId, Guid kingdomId)
         => await context.Armies
-            .FirstOrDefaultAsync(a => a.TileId == tileId && a.KingdomId == kingdomId);
+            .FirstOrDefaultAsync(a => a.BuildingId == buildingId && a.KingdomId == kingdomId);
 
-    public async Task<Army?> GetArmyWithUnitsAsync(Guid armyId)
+    public async Task<Army?> GetArmyWithTypeAsync(Guid armyId)
         => await context.Armies
+            .Include(a => a.ArmyType)
             .FirstOrDefaultAsync(a => a.Id == armyId);
 
     public async Task<IEnumerable<Army>> GetArmiesForKingdomAsync(Guid kingdomId)
@@ -19,12 +20,9 @@ public class ArmyRepository(AppDbContext context)
             .Where(a => a.KingdomId == kingdomId)
             .ToListAsync();
 
-    public async Task<Army?> GetEnemyArmyOnTileAsync(Guid tileId, Guid excludeKingdomId)
+    public async Task<IEnumerable<Army>> GetArmiesWithTypeForKingdomAsync(Guid kingdomId)
         => await context.Armies
-            .FirstOrDefaultAsync(a => a.TileId == tileId && a.KingdomId != excludeKingdomId);
-
-    public async Task<IEnumerable<Army>> GetArmiesWithUnitsForKingdomAsync(Guid kingdomId)
-        => await context.Armies
+            .Include(a => a.ArmyType)
             .Where(a => a.KingdomId == kingdomId)
             .ToListAsync();
 }

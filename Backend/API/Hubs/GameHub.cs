@@ -94,7 +94,7 @@ public class GameHub(IGameInitializationService gameInitializationService, IUnit
                                     KingdomName = k.Name,
                                     Score = 0,
                                     TilesOwned = 0,
-                                    IsEliminated = k.IsEliminated,
+                                    Status = k.Status.ToString(),
                                 }).ToList() ?? [],
                             EliminationOrder = [],
                         };

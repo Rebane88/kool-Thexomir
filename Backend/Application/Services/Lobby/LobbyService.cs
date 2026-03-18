@@ -27,7 +27,7 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
             WinCondition = request.WinCondition,
             LobbyCode = code,
             HostUserId = userId,
-            MaxTurnCount = request.MaxTurnCount
+            MaxRounds = request.MaxTurnCount ?? 100
         };
         await unitOfWork.Games.AddAsync(game);
 
@@ -197,7 +197,7 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
         if (kingdoms.Count < 2)
             return Result<bool>.Fail("At least 2 players are required to start.");
 
-        if (kingdoms.Any(k => k.FactionTypeId == null))
+        if (kingdoms.Any(k => k.FactionTypeId == Guid.Empty))
             return Result<bool>.Fail("All players must select a faction before starting.");
 
         game.Status = EGameStatus.InProgress;
@@ -261,8 +261,8 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
             .ToList();
 
         var takenFactionIds = kingdoms
-            .Where(k => k.FactionTypeId.HasValue)
-            .Select(k => k.FactionTypeId!.Value)
+            .Where(k => k.FactionTypeId != Guid.Empty)
+            .Select(k => k.FactionTypeId)
             .ToHashSet();
 
         var factions = allFactions

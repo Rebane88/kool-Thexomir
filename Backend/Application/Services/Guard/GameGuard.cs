@@ -19,7 +19,7 @@ public class GameGuard(IUnitOfWork unitOfWork) : IGameGuard
         if (kingdom is null)
             return Result<GameGuardContext>.Fail("You are not in this game.");
 
-        if (kingdom.IsEliminated)
+        if (kingdom.Status == EKingdomStatus.Defeated)
             return Result<GameGuardContext>.Fail("Your kingdom has been eliminated.");
 
         if (game.CurrentTurnKingdomId != kingdom.Id)
