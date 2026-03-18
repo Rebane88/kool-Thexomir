@@ -341,6 +341,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       status: 'Completed',
       gameOver: data,
+      lastCombatResult: null,
     });
   },
 }));
