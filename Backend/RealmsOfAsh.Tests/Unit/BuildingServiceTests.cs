@@ -132,7 +132,7 @@ public class BuildingServiceTests
     {
         var game = CreateGame();
         var kingdom = CreateKingdom();
-        _gameGuardMock.Setup(g => g.ValidateAsync(GameId, UserId))
+        _gameGuardMock.Setup(g => g.ValidateActionAsync(GameId, UserId))
             .ReturnsAsync(Result<GameGuardContext>.Ok(new GameGuardContext(game, kingdom)));
     }
 
@@ -164,7 +164,7 @@ public class BuildingServiceTests
     [Fact]
     public async Task PlaceBuilding_FailsWhenGameGuardFails()
     {
-        _gameGuardMock.Setup(g => g.ValidateAsync(GameId, UserId))
+        _gameGuardMock.Setup(g => g.ValidateActionAsync(GameId, UserId))
             .ReturnsAsync(Result<GameGuardContext>.Fail("It is not your turn."));
 
         var result = await _sut.PlaceBuildingAsync(GameId, UserId, CreateRequest());
@@ -451,7 +451,7 @@ public class BuildingServiceTests
     [Fact]
     public async Task PlaceBuilding_DoesNotCommitOnFailure()
     {
-        _gameGuardMock.Setup(g => g.ValidateAsync(GameId, UserId))
+        _gameGuardMock.Setup(g => g.ValidateActionAsync(GameId, UserId))
             .ReturnsAsync(Result<GameGuardContext>.Fail("It is not your turn."));
 
         await _sut.PlaceBuildingAsync(GameId, UserId, CreateRequest());
