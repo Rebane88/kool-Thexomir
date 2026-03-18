@@ -15,18 +15,18 @@ public class TerrainTypesController : ReferenceDataBaseController<TerrainType>
 
     protected override void PopulateEntity(TerrainType entity, IFormCollection form)
     {
-        entity.DefenseBonus = decimal.TryParse(form["DefenseBonus"].ToString(), out var db) ? db : 0m;
-        entity.MovementCost = int.TryParse(form["MovementCost"].ToString(), out var mc) ? mc : 1;
+        entity.ResourceMultiplier = decimal.TryParse(form["ResourceMultiplier"].ToString(), out var rm) ? rm : 1.10m;
         entity.ResourceBonusType = Enum.TryParse<ETerrainResourceBonus>(
             form["ResourceBonusType"].ToString(), out var rbt) ? rbt : ETerrainResourceBonus.None;
+        entity.MapColor = form["MapColor"].ToString() is { Length: > 0 } mc ? mc : string.Empty;
     }
 
     protected override object ToViewModel(TerrainType entity) => new
     {
         entity.Id,
         NameEn = entity.Name.Translate("en") ?? string.Empty,
-        entity.DefenseBonus,
-        entity.MovementCost,
-        entity.ResourceBonusType
+        entity.ResourceMultiplier,
+        entity.ResourceBonusType,
+        entity.MapColor
     };
 }

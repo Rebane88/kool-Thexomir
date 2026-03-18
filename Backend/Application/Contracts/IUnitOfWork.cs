@@ -26,7 +26,9 @@ public interface IUnitOfWork : IDisposable
 
     // Military
     IArmyRepository Armies { get; }
+    IArmyTypeRepository ArmyTypes { get; }
     IBattleRepository Battles { get; }
+    IBattleRoundRepository BattleRounds { get; }
 
     // Resources
     IKingdomResourceRepository KingdomResources { get; }

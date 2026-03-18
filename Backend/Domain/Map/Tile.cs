@@ -13,7 +13,7 @@ public class Tile : BaseEntity
     public Guid GameId { get; set; } // direct FK for (GameId, CoordQ, CoordR) uniqueness constraint
     public Guid TerrainTypeId { get; set; }
     public Guid? KingdomId { get; set; } // null = unclaimed
-    public bool IsCapital { get; set; }
+    public bool IsCastle { get; set; }
 
     // Navigation
     public Domain.Game.Game? Game { get; set; }

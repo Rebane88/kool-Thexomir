@@ -35,7 +35,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
 
     // Military
     public DbSet<Army> Armies { get; set; }
+    public DbSet<ArmyType> ArmyTypes { get; set; }
     public DbSet<Battle> Battles { get; set; }
+    public DbSet<BattleRound> BattleRounds { get; set; }
 
     // Resources
     public DbSet<KingdomResource> KingdomResources { get; set; }
@@ -59,6 +61,30 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .Property(g => g.WinCondition)
             .HasConversion<string>();
 
+        builder.Entity<Game>()
+            .Property(g => g.CurrentPhase)
+            .HasConversion<string>();
+
+        builder.Entity<Kingdom>()
+            .Property(k => k.Status)
+            .HasConversion<string>();
+
+        builder.Entity<TurnLog>()
+            .Property(tl => tl.EventType)
+            .HasConversion<string>();
+
+        builder.Entity<Battle>()
+            .Property(b => b.Outcome)
+            .HasConversion<string>();
+
+        builder.Entity<ArmyType>()
+            .Property(at => at.SituationalBonusCondition)
+            .HasConversion<string>();
+
+        builder.Entity<FactionType>()
+            .Property(ft => ft.StartingBonusResource)
+            .HasConversion<string>();
+
         builder.Entity<KingdomResource>()
             .Property(kr => kr.ResourceType)
             .HasConversion<string>();
@@ -77,7 +103,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .IsUnique();
 
         builder.Entity<Tile>()
-            .Property(t => t.IsCapital)
+            .Property(t => t.IsCastle)
             .HasDefaultValue(false);
 
         builder.Entity<Game>()
@@ -122,24 +148,78 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
 
         // FK configuration for tricky relationships
 
-        // Battle: two FKs to Army
+        // Battle: multiple FKs to Kingdom
         builder.Entity<Battle>()
-            .HasOne(b => b.AttackerArmy)
+            .HasOne(b => b.AttackerKingdom)
             .WithMany()
-            .HasForeignKey(b => b.AttackerArmyId)
+            .HasForeignKey(b => b.AttackerKingdomId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Entity<Battle>()
-            .HasOne(b => b.DefenderArmy)
+            .HasOne(b => b.DefenderKingdom)
             .WithMany()
-            .HasForeignKey(b => b.DefenderArmyId)
+            .HasForeignKey(b => b.DefenderKingdomId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Battle: multiple FKs to Tile
+        builder.Entity<Battle>()
+            .HasOne(b => b.AttackerTile)
+            .WithMany()
+            .HasForeignKey(b => b.AttackerTileId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Battle>()
+            .HasOne(b => b.DefenderTile)
+            .WithMany()
+            .HasForeignKey(b => b.DefenderTileId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Battle>()
+            .HasOne(b => b.TileCaptured)
+            .WithMany()
+            .HasForeignKey(b => b.TileCapturedId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Battle>()
+            .HasOne(b => b.TileCapturedFromKingdom)
+            .WithMany()
+            .HasForeignKey(b => b.TileCapturedFromKingdomId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // BattleRound: multiple FKs to Army
+        builder.Entity<BattleRound>()
+            .HasOne(br => br.AttackerArmy)
+            .WithMany()
+            .HasForeignKey(br => br.AttackerArmyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<BattleRound>()
+            .HasOne(br => br.DefenderArmy)
+            .WithMany()
+            .HasForeignKey(br => br.DefenderArmyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<BattleRound>()
+            .HasOne(br => br.ArmyDestroyed)
+            .WithMany()
+            .HasForeignKey(br => br.ArmyDestroyedId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<BattleRound>()
+            .Property(br => br.InitiativeWinner)
+            .HasConversion<string>();
+
+        // BattleRound: unique compound index
+        builder.Entity<BattleRound>()
+            .HasIndex(br => new { br.BattleId, br.RoundNumber })
+            .IsUnique();
 
         // BuildingType: self-reference (upgrade chain)
         builder.Entity<BuildingType>()
-            .HasOne(bt => bt.PrerequisiteBuildingType)
+            .HasOne(bt => bt.UnlockedByBuildingType)
             .WithMany()
-            .HasForeignKey(bt => bt.PrerequisiteBuildingTypeId)
+            .HasForeignKey(bt => bt.UnlockedByBuildingTypeId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
@@ -155,6 +235,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .HasForeignKey(k => k.AppUserId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // TurnLog: query by game + round
+        builder.Entity<TurnLog>()
+            .HasIndex(tl => new { tl.GameId, tl.RoundNumber });
+
+        // TurnLog: query by game + kingdom
+        builder.Entity<TurnLog>()
+            .HasIndex(tl => new { tl.GameId, tl.KingdomId });
+
+        // Army: query by building (capacity check)
+        builder.Entity<Army>()
+            .HasIndex(a => a.BuildingId);
+
+        // Army: query by kingdom
+        builder.Entity<Army>()
+            .HasIndex(a => a.KingdomId);
 
         // Disable cascade delete globally
         foreach (var relationship in builder.Model
