@@ -1,5 +1,7 @@
+using System.ComponentModel.DataAnnotations;
 using Domain.Game;
 using Domain.Map;
+using Domain.Military;
 using Domain.Resources;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +13,7 @@ namespace RealmsOfAsh.Tests.Unit;
 /// <summary>
 /// INFRA-08: Uniqueness constraints are configured via HasIndex().IsUnique() in the EF model.
 /// Verified via EF Core model metadata.
+/// Also validates domain model data annotations via reflection.
 /// </summary>
 [Collection("Database tests")]
 public class UniquenessConstraintTests(DatabaseFixture fixture)
@@ -57,5 +60,32 @@ public class UniquenessConstraintTests(DatabaseFixture fixture)
         using var ctx = BuildContext();
         HasUniqueIndex(ctx, typeof(Game), "LobbyCode")
             .ShouldBeTrue("Expected unique index on Game(LobbyCode)");
+    }
+
+    [Fact]
+    public void BattleRound_has_unique_index_on_BattleId_and_RoundNumber()
+    {
+        using var ctx = BuildContext();
+        HasUniqueIndex(ctx, typeof(BattleRound), "BattleId", "RoundNumber")
+            .ShouldBeTrue("Expected unique index on BattleRound(BattleId, RoundNumber)");
+    }
+
+    /// <summary>
+    /// ENTM-10: MaxPlayers must have [Range(2, 4)] attribute to enforce 2-4 player constraint.
+    /// Verified via reflection on the Game entity.
+    /// </summary>
+    [Fact]
+    public void Game_MaxPlayers_has_Range_2_to_4_attribute()
+    {
+        var prop = typeof(Game).GetProperty("MaxPlayers");
+        prop.ShouldNotBeNull("Game should have a MaxPlayers property");
+
+        var rangeAttr = prop!.GetCustomAttributes(typeof(RangeAttribute), false)
+            .Cast<RangeAttribute>()
+            .FirstOrDefault();
+
+        rangeAttr.ShouldNotBeNull("MaxPlayers should have a [Range] attribute");
+        rangeAttr!.Minimum.ShouldBe(2);
+        rangeAttr.Maximum.ShouldBe(4);
     }
 }

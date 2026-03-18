@@ -64,7 +64,7 @@ public class LobbyServiceTests
         Id = id ?? Guid.NewGuid(),
         GameId = gameId,
         AppUserId = userId,
-        FactionTypeId = factionTypeId,
+        FactionTypeId = factionTypeId ?? Guid.Empty,
         Name = string.Empty,
         CreatedAt = createdAt ?? DateTime.UtcNow
     };

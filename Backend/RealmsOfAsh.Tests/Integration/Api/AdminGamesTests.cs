@@ -125,7 +125,7 @@ public class AdminGamesTests : IntegrationTestBase
             LobbyCode = lobbyCode,
             Status = status,
             MaxPlayers = 4,
-            TurnNumber = 0,
+            RoundNumber = 0,
             MapWidth = 10,
             MapHeight = 10
         };

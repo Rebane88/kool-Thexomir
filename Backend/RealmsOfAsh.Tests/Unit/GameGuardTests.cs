@@ -37,7 +37,7 @@ public class GameGuardTests
         Id = KingdomId,
         GameId = GameId,
         AppUserId = UserId,
-        IsEliminated = false,
+        Status = EKingdomStatus.Active,
     };
 
     [Fact]
@@ -81,7 +81,7 @@ public class GameGuardTests
     {
         _gamesMock.Setup(g => g.GetByIdWithLockAsync(GameId)).ReturnsAsync(CreateValidGame());
         var kingdom = CreateValidKingdom();
-        kingdom.IsEliminated = true;
+        kingdom.Status = EKingdomStatus.Defeated;
         _kingdomsMock.Setup(k => k.GetKingdomByUserAndGameAsync(UserId, GameId)).ReturnsAsync(kingdom);
 
         var result = await _sut.ValidateAsync(GameId, UserId);

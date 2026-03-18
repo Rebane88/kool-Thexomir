@@ -13,7 +13,7 @@ using Shouldly;
 namespace RealmsOfAsh.Tests.Unit;
 
 /// <summary>
-/// INFRA-03: AppDbContext has DbSet properties registered for all 18 game entities.
+/// INFRA-03: AppDbContext has DbSet properties registered for all game entities.
 /// Verified by checking the EF Core model entity type registry.
 /// </summary>
 [Collection("Database tests")]
@@ -83,10 +83,24 @@ public class AppDbContextTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public void AppDbContext_has_DbSet_for_ArmyType()
+    {
+        using var ctx = BuildContext();
+        AssertDbSetRegistered<ArmyType>(ctx);
+    }
+
+    [Fact]
     public void AppDbContext_has_DbSet_for_Battle()
     {
         using var ctx = BuildContext();
         AssertDbSetRegistered<Battle>(ctx);
+    }
+
+    [Fact]
+    public void AppDbContext_has_DbSet_for_BattleRound()
+    {
+        using var ctx = BuildContext();
+        AssertDbSetRegistered<BattleRound>(ctx);
     }
 
     [Fact]

@@ -65,12 +65,14 @@ public class AdminRefDataTests : IntegrationTestBase
         var formContent = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("NameEn", "Test Faction"),
+            new KeyValuePair<string, string>("AttackModifier", "1.00"),
+            new KeyValuePair<string, string>("HPModifier", "1.00"),
             new KeyValuePair<string, string>("BuildingCostModifier", "1.00"),
-            new KeyValuePair<string, string>("StartingGold", "0"),
-            new KeyValuePair<string, string>("StartingFood", "0"),
-            new KeyValuePair<string, string>("StartingWood", "0"),
-            new KeyValuePair<string, string>("StartingStone", "0"),
-            new KeyValuePair<string, string>("StartingMana", "0"),
+            new KeyValuePair<string, string>("ResourceProductionModifier", "1.00"),
+            new KeyValuePair<string, string>("TrainingCostModifier", "1.00"),
+            new KeyValuePair<string, string>("ActionPointModifier", "0"),
+            new KeyValuePair<string, string>("HealRateModifier", "1.00"),
+            new KeyValuePair<string, string>("StartingBonusAmount", "0"),
             new KeyValuePair<string, string>("Description", ""),
             new KeyValuePair<string, string>("__RequestVerificationToken", token)
         });
@@ -88,22 +90,14 @@ public class AdminRefDataTests : IntegrationTestBase
     }
 
     // -------------------------------------------------------------------------
-    // Test 3: DELETE a seeded FactionType referenced by a Kingdom fails gracefully
+    // Test 3: DELETE a seeded FactionType -- verify delete behavior
     //
-    // The seeded Iron Throne faction has kingdoms referencing it (from lobby tests).
-    // In a fresh test DB the faction exists but has no kingdoms — we test the error
-    // path by checking FK-safe behavior is wired. Since test isolation uses transaction
-    // rollback (not a shared DB), we can't rely on existing kingdoms. Instead, we
-    // verify that:
-    // a) Deleting Iron Throne (which has FactionResourceBonus children) returns error message, OR
-    // b) We verify the delete of an unreferenced faction succeeds (shows success in Index).
-    //
-    // FactionResourceBonuses are seeded as children of Iron Throne (FK reference),
-    // so deleting Iron Throne should trigger DbUpdateException and show error.
+    // In v6.0, FactionResourceBonus junction tables were removed.
+    // FactionTypes may still be referenced by Kingdoms.
     // -------------------------------------------------------------------------
 
     [Fact]
-    public async Task DeleteFactionType_ReferencedByFactionResourceBonus_ShowsErrorOnIndex()
+    public async Task DeleteFactionType_SeededFaction_ShowsErrorOnIndex()
     {
         var cookies = await GetAdminCookiesAsync();
 
@@ -121,7 +115,7 @@ public class AdminRefDataTests : IntegrationTestBase
             ? getResponse.Headers.GetValues("Set-Cookie")
             : Enumerable.Empty<string>();
 
-        // Attempt to delete Iron Throne — it has FactionResourceBonus children
+        // Attempt to delete Iron Throne — it may be referenced by ArmyTypes
         var ironThroneId = FactionTypeSeeder.IronThroneId;
 
         var formContent = new FormUrlEncodedContent(new[]

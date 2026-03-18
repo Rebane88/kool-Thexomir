@@ -1,5 +1,6 @@
 using Domain.Buildings;
 using Domain.Map;
+using Domain.Military;
 using Domain.Resources;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -27,13 +28,11 @@ public class EntityRelationshipTests(DatabaseFixture fixture)
     public void Tile_has_GameId_FK()
     {
         using var ctx = BuildContext();
-        var model = ctx.Model;
-        var tileType = model.FindEntityType(typeof(Tile));
+        var tileType = ctx.Model.FindEntityType(typeof(Tile));
         tileType.ShouldNotBeNull();
 
         var gameFk = tileType!.GetForeignKeys()
             .FirstOrDefault(fk => fk.Properties.Any(p => p.Name == "GameId"));
-
         gameFk.ShouldNotBeNull();
     }
 
@@ -41,13 +40,11 @@ public class EntityRelationshipTests(DatabaseFixture fixture)
     public void Tile_has_TerrainTypeId_FK()
     {
         using var ctx = BuildContext();
-        var model = ctx.Model;
-        var tileType = model.FindEntityType(typeof(Tile));
+        var tileType = ctx.Model.FindEntityType(typeof(Tile));
         tileType.ShouldNotBeNull();
 
         var fk = tileType!.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == "TerrainTypeId"));
-
         fk.ShouldNotBeNull();
     }
 
@@ -55,13 +52,11 @@ public class EntityRelationshipTests(DatabaseFixture fixture)
     public void Kingdom_has_GameId_FK()
     {
         using var ctx = BuildContext();
-        var model = ctx.Model;
-        var kingdomType = model.FindEntityType(typeof(Domain.Game.Kingdom));
+        var kingdomType = ctx.Model.FindEntityType(typeof(Domain.Game.Kingdom));
         kingdomType.ShouldNotBeNull();
 
         var fk = kingdomType!.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == "GameId"));
-
         fk.ShouldNotBeNull();
     }
 
@@ -69,13 +64,11 @@ public class EntityRelationshipTests(DatabaseFixture fixture)
     public void Building_has_TileId_FK()
     {
         using var ctx = BuildContext();
-        var model = ctx.Model;
-        var buildingType = model.FindEntityType(typeof(Building));
+        var buildingType = ctx.Model.FindEntityType(typeof(Building));
         buildingType.ShouldNotBeNull();
 
         var fk = buildingType!.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == "TileId"));
-
         fk.ShouldNotBeNull();
     }
 
@@ -83,13 +76,97 @@ public class EntityRelationshipTests(DatabaseFixture fixture)
     public void KingdomResource_has_KingdomId_FK()
     {
         using var ctx = BuildContext();
-        var model = ctx.Model;
-        var entityType = model.FindEntityType(typeof(KingdomResource));
+        var entityType = ctx.Model.FindEntityType(typeof(KingdomResource));
         entityType.ShouldNotBeNull();
 
         var fk = entityType!.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == "KingdomId"));
+        fk.ShouldNotBeNull();
+    }
 
+    // --- New v6.0 entity relationship tests ---
+
+    [Fact]
+    public void Army_has_ArmyTypeId_FK()
+    {
+        using var ctx = BuildContext();
+        var armyType = ctx.Model.FindEntityType(typeof(Army));
+        armyType.ShouldNotBeNull();
+
+        var fk = armyType!.GetForeignKeys()
+            .FirstOrDefault(f => f.Properties.Any(p => p.Name == "ArmyTypeId"));
+        fk.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void Army_has_BuildingId_FK()
+    {
+        using var ctx = BuildContext();
+        var armyType = ctx.Model.FindEntityType(typeof(Army));
+        armyType.ShouldNotBeNull();
+
+        var fk = armyType!.GetForeignKeys()
+            .FirstOrDefault(f => f.Properties.Any(p => p.Name == "BuildingId"));
+        fk.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void BattleRound_has_BattleId_FK()
+    {
+        using var ctx = BuildContext();
+        var brType = ctx.Model.FindEntityType(typeof(BattleRound));
+        brType.ShouldNotBeNull();
+
+        var fk = brType!.GetForeignKeys()
+            .FirstOrDefault(f => f.Properties.Any(p => p.Name == "BattleId"));
+        fk.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void BattleRound_has_AttackerArmyId_FK()
+    {
+        using var ctx = BuildContext();
+        var brType = ctx.Model.FindEntityType(typeof(BattleRound));
+        brType.ShouldNotBeNull();
+
+        var fk = brType!.GetForeignKeys()
+            .FirstOrDefault(f => f.Properties.Any(p => p.Name == "AttackerArmyId"));
+        fk.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void BattleRound_has_DefenderArmyId_FK()
+    {
+        using var ctx = BuildContext();
+        var brType = ctx.Model.FindEntityType(typeof(BattleRound));
+        brType.ShouldNotBeNull();
+
+        var fk = brType!.GetForeignKeys()
+            .FirstOrDefault(f => f.Properties.Any(p => p.Name == "DefenderArmyId"));
+        fk.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void Battle_has_AttackerTileId_FK()
+    {
+        using var ctx = BuildContext();
+        var battleType = ctx.Model.FindEntityType(typeof(Battle));
+        battleType.ShouldNotBeNull();
+
+        var fk = battleType!.GetForeignKeys()
+            .FirstOrDefault(f => f.Properties.Any(p => p.Name == "AttackerTileId"));
+        fk.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void Battle_has_DefenderTileId_FK()
+    {
+        using var ctx = BuildContext();
+        var battleType = ctx.Model.FindEntityType(typeof(Battle));
+        battleType.ShouldNotBeNull();
+
+        var fk = battleType!.GetForeignKeys()
+            .FirstOrDefault(f => f.Properties.Any(p => p.Name == "DefenderTileId"));
         fk.ShouldNotBeNull();
     }
 }
