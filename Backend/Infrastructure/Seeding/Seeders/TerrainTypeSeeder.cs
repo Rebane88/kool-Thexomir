@@ -8,6 +8,12 @@ public class TerrainTypeSeeder : ISeeder
 {
     public int Order => 1;
 
+    public static readonly Guid PlainsId = new("AAAAAAAA-0001-0000-0000-000000000001");
+    public static readonly Guid ForestId = new("AAAAAAAA-0001-0000-0000-000000000002");
+    public static readonly Guid MountainId = new("AAAAAAAA-0001-0000-0000-000000000003");
+    public static readonly Guid DesertId = new("AAAAAAAA-0001-0000-0000-000000000004");
+    public static readonly Guid MagicGroveId = new("AAAAAAAA-0001-0000-0000-000000000005");
+
     public void Seed(object context)
     {
         var db = (AppDbContext)context;
@@ -18,53 +24,48 @@ public class TerrainTypeSeeder : ISeeder
         db.TerrainTypes.AddRange(
             new TerrainType
             {
-                Id = new Guid("AAAAAAAA-0001-0000-0000-000000000001"),
+                Id = PlainsId,
                 Name = new LangStr("Plains"),
-                DefenseBonus = 0.0m,
-                MovementCost = 1,
+                ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Food,
-                CreatedAt = now,
-                UpdatedAt = now
+                MapColor = "#90EE90",
+                CreatedAt = now, UpdatedAt = now
             },
             new TerrainType
             {
-                Id = new Guid("AAAAAAAA-0001-0000-0000-000000000002"),
+                Id = ForestId,
                 Name = new LangStr("Forest"),
-                DefenseBonus = 0.20m,
-                MovementCost = 2,
+                ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Wood,
-                CreatedAt = now,
-                UpdatedAt = now
+                MapColor = "#228B22",
+                CreatedAt = now, UpdatedAt = now
             },
             new TerrainType
             {
-                Id = new Guid("AAAAAAAA-0001-0000-0000-000000000003"),
+                Id = MountainId,
                 Name = new LangStr("Mountain"),
-                DefenseBonus = 0.40m,
-                MovementCost = 3,
+                ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Stone,
-                CreatedAt = now,
-                UpdatedAt = now
+                MapColor = "#808080",
+                CreatedAt = now, UpdatedAt = now
             },
             new TerrainType
             {
-                Id = new Guid("AAAAAAAA-0001-0000-0000-000000000004"),
-                Name = new LangStr("River"),
-                DefenseBonus = 0.10m,
-                MovementCost = 2,
+                Id = DesertId,
+                Name = new LangStr("Desert"),
+                ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Gold,
-                CreatedAt = now,
-                UpdatedAt = now
+                MapColor = "#C2B280",
+                CreatedAt = now, UpdatedAt = now
             },
             new TerrainType
             {
-                Id = new Guid("AAAAAAAA-0001-0000-0000-000000000005"),
+                Id = MagicGroveId,
                 Name = new LangStr("Magic Grove"),
-                DefenseBonus = 0.10m,
-                MovementCost = 1,
+                ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Mana,
-                CreatedAt = now,
-                UpdatedAt = now
+                MapColor = "#9B59B6",
+                CreatedAt = now, UpdatedAt = now
             }
         );
 

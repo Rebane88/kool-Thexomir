@@ -12,9 +12,10 @@ public static class AppDataInit
     {
         var seeders = new ISeeder[]
         {
-            new TerrainTypeSeeder(),
-            new BuildingTypeSeeder(),
-            new FactionTypeSeeder()
+            new TerrainTypeSeeder(),   // Order 1
+            new BuildingTypeSeeder(),  // Order 3
+            new ArmyTypeSeeder(),      // Order 4
+            new FactionTypeSeeder(),   // Order 5
         };
 
         foreach (var seeder in seeders.OrderBy(s => s.Order))
