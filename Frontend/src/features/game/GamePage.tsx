@@ -20,6 +20,7 @@ import { GameHud } from './components/GameHud';
 import { Scoreboard } from './components/Scoreboard';
 import { CombatResultModal } from './components/CombatResultModal';
 import { EliminationBanner } from './components/EliminationBanner';
+import { GameOverOverlay } from './components/GameOverOverlay';
 import type { HexLayoutConfig, MapRenderState } from './canvas/types';
 import type { Army } from './types/military-types';
 
@@ -546,6 +547,7 @@ export function GamePage() {
             <HexTooltip tile={tile} kingdom={kingdom} armies={armies} position={tooltipPos} />
           );
         })()}
+      <GameOverOverlay />
     </div>
   );
 }
