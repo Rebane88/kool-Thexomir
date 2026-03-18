@@ -8,10 +8,10 @@ import { GamePage } from '@/features/game';
 
 function LayoutWithNavBar() {
   return (
-    <>
+    <div className="flex flex-col h-dvh overflow-hidden">
       <NavBar />
       <Outlet />
-    </>
+    </div>
   );
 }
 

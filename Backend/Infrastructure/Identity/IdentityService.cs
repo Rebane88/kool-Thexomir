@@ -135,7 +135,7 @@ public class IdentityService(
     public async Task<Result<RefreshTokenInfo>> ValidateRefreshTokenAsync(string refreshToken)
     {
         var now = DateTime.UtcNow;
-        var graceExpiry = now.AddMinutes(-1);
+        var graceExpiry = now.AddMinutes(-5);
 
         var token = await context.RefreshTokens
             .Include(t => t.User)
@@ -160,7 +160,7 @@ public class IdentityService(
             return Result<RefreshTokenInfo>.Fail("Refresh token not found.");
 
         token.PreviousRefreshToken = token.RefreshToken;
-        token.PreviousExpiration = DateTime.UtcNow.AddMinutes(1);
+        token.PreviousExpiration = DateTime.UtcNow.AddMinutes(5);
         token.RefreshToken = Guid.NewGuid().ToString();
         token.Expiration = DateTime.UtcNow.AddDays(7);
 
