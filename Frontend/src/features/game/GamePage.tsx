@@ -17,6 +17,7 @@ import { HexTooltip } from './components/HexTooltip';
 import { AttackConfirmModal } from './components/AttackConfirmModal';
 import { ResetCameraButton } from './components/ResetCameraButton';
 import { GameHud } from './components/GameHud';
+import { Scoreboard } from './components/Scoreboard';
 import { CombatResultModal } from './components/CombatResultModal';
 import { EliminationBanner } from './components/EliminationBanner';
 import type { HexLayoutConfig, MapRenderState } from './canvas/types';
@@ -60,6 +61,7 @@ export function GamePage() {
   const myKingdom = useGameStore((s) => s.myKingdomId ? s.kingdoms.get(s.myKingdomId) : undefined);
   const isEliminated = myKingdom?.isEliminated ?? false;
 
+  const [scoreboardOpen, setScoreboardOpen] = useState(false);
   const [eliminationBanners, setEliminationBanners] = useState<string[]>([]);
 
   const findMyArmyOnTile = useCallback((tileKey: string) => {
@@ -380,6 +382,10 @@ export function GamePage() {
   // Keyboard shortcuts: Home (reset camera), Escape (exit build mode)
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        setScoreboardOpen((o) => !o);
+      }
       if (e.key === 'Home') {
         e.preventDefault();
         handleResetCamera();
@@ -423,6 +429,12 @@ export function GamePage() {
     [markDirty],
   );
 
+  // Auto-close scoreboard when game over fires
+  const gameOver = useGameStore((s) => s.gameOver);
+  useEffect(() => {
+    if (gameOver) setScoreboardOpen(false);
+  }, [gameOver]);
+
   const isLoading = connectionStatus === 'connecting' || connectionStatus === 'disconnected';
   const isFailed = connectionStatus === 'failed';
 
@@ -449,7 +461,8 @@ export function GamePage() {
         onContextMenu={handleContextMenu}
         style={{ cursor: 'grab' }}
       />
-      {!isLoading && <GameHud />}
+      {!isLoading && <GameHud onScoreboardToggle={() => setScoreboardOpen((o) => !o)} />}
+      {!isLoading && <Scoreboard open={scoreboardOpen} onClose={() => setScoreboardOpen(false)} />}
       {!isLoading && showBuildingPanel && (
         <div className={isMyTurn && !isEliminated ? '' : 'opacity-50 pointer-events-none'}>
           <BuildingPanel selectedTileKey={selectedTileKey!} />
