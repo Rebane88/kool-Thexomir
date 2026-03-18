@@ -4,8 +4,12 @@ namespace Application.Services.Turn.DTOs;
 
 public class TurnAdvancedDto
 {
-    public Guid NewKingdomId { get; set; }
+    public Guid? NextKingdomId { get; set; }
     public int RoundNumber { get; set; }
-    public Dictionary<string, int> IncomeApplied { get; set; } = new();
+    public string CurrentPhase { get; set; } = string.Empty;
+    public int? ActionPoints { get; set; }
+    public DateTime? TurnDeadline { get; set; }
+    public Dictionary<string, int>? IncomeApplied { get; set; }
+    public bool PhaseChanged { get; set; }
     public GameOverDto? GameOver { get; set; }
 }

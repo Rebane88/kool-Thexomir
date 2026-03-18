@@ -27,4 +27,25 @@ public class GameGuard(IUnitOfWork unitOfWork) : IGameGuard
 
         return Result<GameGuardContext>.Ok(new GameGuardContext(game, kingdom));
     }
+
+    public async Task<Result<GameGuardContext>> ValidateActionAsync(Guid gameId, Guid userId)
+    {
+        var result = await ValidateAsync(gameId, userId);
+        if (!result.IsSuccess) return result;
+
+        var game = result.Value!.Game;
+
+        if (TurnRules.IsTurnExpired(game.TurnDeadline))
+            return Result<GameGuardContext>.Fail("Your turn has expired.");
+
+        if (game.CurrentPhase != EGamePhase.Action)
+            return Result<GameGuardContext>.Fail("Actions can only be performed during Action Phase.");
+
+        if (game.RemainingActionPoints is null || game.RemainingActionPoints <= 0)
+            return Result<GameGuardContext>.Fail("No action points remaining.");
+
+        game.RemainingActionPoints--;
+
+        return result;
+    }
 }

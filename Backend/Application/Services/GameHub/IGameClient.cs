@@ -23,6 +23,11 @@ public interface IGameClient
     Task TurnAdvanced(TurnAdvancedDto turnAdvanced);
     Task BuildingPlaced(BuildingPlacedDto buildingPlaced);
 
+    // Turn lifecycle events
+    Task PhaseChanged(PhaseChangedDto phaseChanged);
+    Task TurnStarted(TurnStartedDto turnStarted);
+    Task RoundStarted(RoundStartedDto roundStarted);
+
     // Phase 13 events
     Task GameOver(GameOverDto gameOver);
 }

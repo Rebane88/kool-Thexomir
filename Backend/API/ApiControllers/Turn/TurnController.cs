@@ -34,6 +34,17 @@ public class TurnController(
         await hubContext.Clients.Group($"game:{gameId}")
             .TurnAdvanced(result.Value!);
 
+        if (result.Value!.PhaseChanged)
+        {
+            await hubContext.Clients.Group($"game:{gameId}")
+                .PhaseChanged(new Application.Services.Turn.DTOs.PhaseChangedDto
+                {
+                    Phase = result.Value!.CurrentPhase,
+                    PreviousPhase = "Action",
+                    RoundNumber = result.Value!.RoundNumber
+                });
+        }
+
         if (result.Value!.GameOver is not null)
             await hubContext.Clients.Group($"game:{gameId}").GameOver(result.Value!.GameOver);
 

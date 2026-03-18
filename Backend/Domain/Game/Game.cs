@@ -28,6 +28,7 @@ public class Game : BaseEntity
     public string SlotOutcomeWeights { get; set; } = "[5,25,30,25,15]";
     public int? TurnTimeLimit { get; set; }
     public DateTime? TurnDeadline { get; set; }
+    public int? RemainingActionPoints { get; set; }
     public Guid? WinnerKingdomId { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? FinishedAt { get; set; }

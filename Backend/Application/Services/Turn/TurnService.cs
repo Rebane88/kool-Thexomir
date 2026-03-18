@@ -1,13 +1,245 @@
 using Application.Contracts;
 using Application.Services.Turn.DTOs;
 using Base.Contracts;
+using Domain.Buildings;
+using Domain.Game;
+using Domain.Map;
+using Domain.Resources;
 
 namespace Application.Services.Turn;
 
 public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : ITurnService
 {
-    public Task<Result<TurnAdvancedDto>> EndTurnAsync(Guid gameId, Guid userId)
+    public async Task<Result<TurnAdvancedDto>> EndTurnAsync(Guid gameId, Guid userId)
     {
-        throw new NotImplementedException("Pending v6.0 rewrite");
+        // 1. Validate game/kingdom access (not ValidateActionAsync -- ending turn is free)
+        var guardResult = await gameGuard.ValidateAsync(gameId, userId);
+        if (!guardResult.IsSuccess)
+            return Result<TurnAdvancedDto>.Fail(guardResult.Error!);
+
+        var game = guardResult.Value!.Game;
+        var kingdom = guardResult.Value!.Kingdom;
+
+        // 2. Validate end-turn rules
+        var validationError = TurnRules.ValidateEndTurn(game.CurrentPhase, game.CurrentTurnKingdomId, kingdom.Id);
+        if (validationError is not null)
+            return Result<TurnAdvancedDto>.Fail(validationError);
+
+        // 3. Check expired turn (log it but still process -- the turn is ending anyway)
+        var wasExpired = TurnRules.IsTurnExpired(game.TurnDeadline);
+
+        // 4. Log TurnEnded
+        await AddTurnLogAsync(gameId, kingdom.Id, game.RoundNumber, EEventType.TurnEnded,
+            wasExpired ? "Turn ended (expired)" : "Turn ended");
+
+        // 5. Get all kingdoms for this game
+        var kingdoms = await unitOfWork.Kingdoms.GetKingdomsForGameAsync(gameId);
+
+        // 6. Find next active kingdom
+        var nextKingdom = TurnRules.GetNextActiveKingdom(kingdoms, kingdom.TurnOrder);
+
+        TurnAdvancedDto result;
+
+        if (nextKingdom is not null)
+        {
+            // Load faction type for AP calculation
+            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(nextKingdom.FactionTypeId);
+            var actionPoints = TurnRules.CalculateActionPoints(game.BaseActionPoints, factionType!.ActionPointModifier);
+
+            game.CurrentTurnKingdomId = nextKingdom.Id;
+            game.RemainingActionPoints = actionPoints;
+            game.TurnDeadline = game.TurnTimeLimit.HasValue
+                ? DateTime.UtcNow.AddSeconds(game.TurnTimeLimit.Value)
+                : null;
+
+            await AddTurnLogAsync(gameId, nextKingdom.Id, game.RoundNumber, EEventType.TurnStarted,
+                $"Turn started for {nextKingdom.Name}");
+            await AddTurnLogAsync(gameId, nextKingdom.Id, game.RoundNumber, EEventType.ActionPointsReceived,
+                $"Received {actionPoints} action points");
+
+            result = new TurnAdvancedDto
+            {
+                NextKingdomId = nextKingdom.Id,
+                RoundNumber = game.RoundNumber,
+                CurrentPhase = game.CurrentPhase.ToString(),
+                ActionPoints = actionPoints,
+                TurnDeadline = game.TurnDeadline,
+                PhaseChanged = false
+            };
+        }
+        else
+        {
+            // All players done -- advance through phases
+            result = await AdvanceToNextPhaseAsync(game, kingdoms);
+        }
+
+        await unitOfWork.CommitAsync();
+
+        return Result<TurnAdvancedDto>.Ok(result);
+    }
+
+    private async Task<TurnAdvancedDto> AdvanceToNextPhaseAsync(Game game, List<Kingdom> kingdoms)
+    {
+        var previousPhase = game.CurrentPhase;
+        Dictionary<string, int>? incomeApplied = null;
+
+        // Clear turn state during non-Action phases
+        game.CurrentTurnKingdomId = null;
+        game.RemainingActionPoints = null;
+        game.TurnDeadline = null;
+
+        // --- Battle Phase ---
+        game.CurrentPhase = EGamePhase.Battle;
+        await AddTurnLogAsync(game.Id, null, game.RoundNumber, EEventType.PhaseChanged,
+            $"Phase changed: {previousPhase} -> {game.CurrentPhase}");
+
+        // Skip battle for now (combat is Phase 26) -- transition directly to Income
+
+        // --- Income Phase ---
+        game.CurrentPhase = EGamePhase.Income;
+        await AddTurnLogAsync(game.Id, null, game.RoundNumber, EEventType.PhaseChanged,
+            $"Phase changed: Battle -> {game.CurrentPhase}");
+
+        incomeApplied = await ApplyIncomeAsync(game, kingdoms);
+
+        // --- RoundEnd Phase ---
+        game.CurrentPhase = EGamePhase.RoundEnd;
+        await AddTurnLogAsync(game.Id, null, game.RoundNumber, EEventType.PhaseChanged,
+            $"Phase changed: Income -> {game.CurrentPhase}");
+
+        await AddTurnLogAsync(game.Id, null, game.RoundNumber, EEventType.RoundEnded,
+            $"Round {game.RoundNumber} ended");
+
+        // Increment round
+        game.RoundNumber++;
+
+        // Check MaxRounds for draw
+        WinCondition.DTOs.GameOverDto? gameOver = null;
+        if (game.RoundNumber > game.MaxRounds)
+        {
+            game.Status = EGameStatus.Completed;
+            game.FinishedAt = DateTime.UtcNow;
+            gameOver = new WinCondition.DTOs.GameOverDto
+            {
+                GameId = game.Id,
+                WinnerKingdomId = null,
+                WinConditionType = "MaxRoundsReached"
+            };
+        }
+
+        // --- Back to Action Phase ---
+        game.CurrentPhase = EGamePhase.Action;
+        await AddTurnLogAsync(game.Id, null, game.RoundNumber, EEventType.PhaseChanged,
+            $"Phase changed: RoundEnd -> {game.CurrentPhase}");
+
+        await AddTurnLogAsync(game.Id, null, game.RoundNumber, EEventType.RoundStarted,
+            $"Round {game.RoundNumber} started");
+
+        // Find first active kingdom for new round
+        var firstKingdom = kingdoms
+            .Where(k => k.Status == EKingdomStatus.Active)
+            .OrderBy(k => k.TurnOrder)
+            .FirstOrDefault();
+
+        int? actionPoints = null;
+
+        if (firstKingdom is not null && gameOver is null)
+        {
+            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(firstKingdom.FactionTypeId);
+            actionPoints = TurnRules.CalculateActionPoints(game.BaseActionPoints, factionType!.ActionPointModifier);
+
+            game.CurrentTurnKingdomId = firstKingdom.Id;
+            game.RemainingActionPoints = actionPoints;
+            game.TurnDeadline = game.TurnTimeLimit.HasValue
+                ? DateTime.UtcNow.AddSeconds(game.TurnTimeLimit.Value)
+                : null;
+
+            await AddTurnLogAsync(game.Id, firstKingdom.Id, game.RoundNumber, EEventType.TurnStarted,
+                $"Turn started for {firstKingdom.Name}");
+            await AddTurnLogAsync(game.Id, firstKingdom.Id, game.RoundNumber, EEventType.ActionPointsReceived,
+                $"Received {actionPoints} action points");
+        }
+
+        return new TurnAdvancedDto
+        {
+            NextKingdomId = firstKingdom?.Id,
+            RoundNumber = game.RoundNumber,
+            CurrentPhase = game.CurrentPhase.ToString(),
+            ActionPoints = actionPoints,
+            TurnDeadline = game.TurnDeadline,
+            IncomeApplied = incomeApplied,
+            PhaseChanged = true,
+            GameOver = gameOver
+        };
+    }
+
+    private async Task<Dictionary<string, int>> ApplyIncomeAsync(Game game, List<Kingdom> kingdoms)
+    {
+        var totalIncome = new Dictionary<string, int>();
+        var activeKingdoms = kingdoms.Where(k => k.Status == EKingdomStatus.Active).ToList();
+
+        foreach (var kingdom in activeKingdoms)
+        {
+            // Load tiles with buildings and terrain for this kingdom
+            var tiles = await unitOfWork.Tiles.GetTilesWithBuildingsAndTerrainForKingdomAsync(kingdom.Id);
+
+            // Build the (BuildingType, TerrainType) pairs for IncomeCalculator
+            var buildingTerrainPairs = new List<(BuildingType, TerrainType)>();
+            foreach (var tile in tiles)
+            {
+                if (tile.Buildings is null || tile.TerrainType is null) continue;
+                foreach (var building in tile.Buildings)
+                {
+                    if (building.BuildingType is null) continue;
+                    buildingTerrainPairs.Add((building.BuildingType, tile.TerrainType));
+                }
+            }
+
+            if (buildingTerrainPairs.Count == 0) continue;
+
+            // Load faction type for modifier
+            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId);
+            var income = IncomeCalculator.CalculateKingdomIncome(buildingTerrainPairs, factionType!.ResourceProductionModifier);
+
+            if (income.Count == 0) continue;
+
+            // Load mutable resources and apply income
+            var resources = await unitOfWork.KingdomResources.GetMutableResourcesForKingdomAsync(kingdom.Id);
+            foreach (var (resourceType, amount) in income)
+            {
+                var resource = resources.FirstOrDefault(r => r.ResourceType == resourceType);
+                if (resource is not null)
+                {
+                    resource.Amount += amount;
+                }
+
+                // Accumulate for DTO
+                var key = resourceType.ToString();
+                totalIncome.TryGetValue(key, out var current);
+                totalIncome[key] = current + amount;
+            }
+
+            await AddTurnLogAsync(game.Id, kingdom.Id, game.RoundNumber, EEventType.IncomeReceived,
+                $"Income received: {string.Join(", ", income.Select(kv => $"{kv.Key}: +{kv.Value}"))}");
+        }
+
+        return totalIncome;
+    }
+
+    private async Task AddTurnLogAsync(Guid gameId, Guid? kingdomId, int roundNumber, EEventType eventType, string description)
+    {
+        var turnLog = new TurnLog
+        {
+            Id = Guid.NewGuid(),
+            GameId = gameId,
+            KingdomId = kingdomId,
+            RoundNumber = roundNumber,
+            EventType = eventType,
+            Description = description,
+            OccurredAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        await unitOfWork.TurnLogs.AddAsync(turnLog);
     }
 }
