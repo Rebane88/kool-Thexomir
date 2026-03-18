@@ -12,24 +12,28 @@ public class BuildingType : BaseEntity, IHasName
     public string Chain { get; set; } = string.Empty;
 
     // Costs
-    public int GoldCost { get; set; }
-    public int WoodCost { get; set; }
-    public int StoneCost { get; set; }
-    public int ManaCost { get; set; }
+    public int CostGold { get; set; }
+    public int CostFood { get; set; }
+    public int CostWood { get; set; }
+    public int CostStone { get; set; }
+    public int CostMana { get; set; }
 
     // Yields
-    public int FoodYield { get; set; }
-    public int WoodYield { get; set; }
-    public int StoneYield { get; set; }
-    public int GoldYield { get; set; }
-    public int ManaYield { get; set; }
+    public int BaseYieldGold { get; set; }
+    public int BaseYieldFood { get; set; }
+    public int BaseYieldWood { get; set; }
+    public int BaseYieldStone { get; set; }
+    public int BaseYieldMana { get; set; }
+
+    // Military
+    public int ArmyCapacity { get; set; }
 
     public string? Description { get; set; }
     public string? IconUrl { get; set; }
 
     // Self-referencing FK for upgrade chain
-    public Guid? PrerequisiteBuildingTypeId { get; set; }
-    public BuildingType? PrerequisiteBuildingType { get; set; }
+    public Guid? UnlockedByBuildingTypeId { get; set; }
+    public BuildingType? UnlockedByBuildingType { get; set; }
 
     // Navigation
     public ICollection<Building>? Buildings { get; set; }

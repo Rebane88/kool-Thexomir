@@ -8,7 +8,7 @@ public class EliminationChecker : IWinConditionChecker
     {
         if (game.WinCondition != EWinCondition.Elimination) return null;
 
-        var active = kingdoms.Where(k => !k.IsEliminated).ToList();
+        var active = kingdoms.Where(k => k.Status != EKingdomStatus.Defeated).ToList();
         if (active.Count > 1) return null;
 
         var winner = active.Count == 1 ? active[0].Id : (Guid?)null;
