@@ -8,4 +8,6 @@ public class BuildingPlacedDto
     public string BuildingName { get; set; } = string.Empty;
     public Guid KingdomId { get; set; }
     public Dictionary<string, int> ResourcesAfter { get; set; } = new();
+    public List<Guid> ClaimedTileIds { get; set; } = new();
+    public bool IsUpgrade { get; set; }
 }
