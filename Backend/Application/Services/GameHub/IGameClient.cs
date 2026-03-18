@@ -1,6 +1,7 @@
 using Application.Services.Building.DTOs;
 using Application.Services.GameInitialization.DTOs;
 using Application.Services.Lobby.DTOs;
+using Application.Services.SlotMachine.DTOs;
 using Application.Services.Turn.DTOs;
 using Application.Services.WinCondition.DTOs;
 
@@ -27,6 +28,9 @@ public interface IGameClient
     Task PhaseChanged(PhaseChangedDto phaseChanged);
     Task TurnStarted(TurnStartedDto turnStarted);
     Task RoundStarted(RoundStartedDto roundStarted);
+
+    // Slot machine events
+    Task SlotMachineSpun(SpinResultDto spinResult);
 
     // Phase 13 events
     Task GameOver(GameOverDto gameOver);

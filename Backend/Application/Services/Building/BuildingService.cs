@@ -40,7 +40,7 @@ public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBu
         Guid gameId, Guid userId, PlaceBuildingRequest request)
     {
         // 1. Validate game/kingdom access
-        var guardResult = await gameGuard.ValidateAsync(gameId, userId);
+        var guardResult = await gameGuard.ValidateActionAsync(gameId, userId);
         if (!guardResult.IsSuccess)
             return Result<BuildingPlacedDto>.Fail(guardResult.Error!);
 
