@@ -35,19 +35,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
 
     // Military
     public DbSet<Army> Armies { get; set; }
-    public DbSet<Unit> Units { get; set; }
-    public DbSet<UnitType> UnitTypes { get; set; }
-    public DbSet<UnitTypeMatchup> UnitTypeMatchups { get; set; }
     public DbSet<Battle> Battles { get; set; }
-    public DbSet<BuildingUnitType> BuildingUnitTypes { get; set; }
 
     // Resources
     public DbSet<KingdomResource> KingdomResources { get; set; }
 
     // Factions
     public DbSet<FactionType> FactionTypes { get; set; }
-    public DbSet<FactionResourceBonus> FactionResourceBonuses { get; set; }
-    public DbSet<FactionUnitBonus> FactionUnitBonuses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -73,23 +67,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .Property(t => t.ResourceBonusType)
             .HasConversion<string>();
 
-        builder.Entity<FactionResourceBonus>()
-            .Property(b => b.ResourceType)
-            .HasConversion<string>();
-
         // Uniqueness constraints (INFRA-08)
-        builder.Entity<UnitTypeMatchup>()
-            .HasIndex(m => new { m.AttackerTypeId, m.DefenderTypeId })
-            .IsUnique();
-
-        builder.Entity<FactionResourceBonus>()
-            .HasIndex(b => new { b.FactionTypeId, b.ResourceType })
-            .IsUnique();
-
-        builder.Entity<FactionUnitBonus>()
-            .HasIndex(b => new { b.FactionTypeId, b.UnitTypeId })
-            .IsUnique();
-
         builder.Entity<KingdomResource>()
             .HasIndex(kr => new { kr.KingdomId, kr.ResourceType })
             .IsUnique();
@@ -144,27 +122,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
 
         // FK configuration for tricky relationships
 
-        // UnitTypeMatchup: two FKs to UnitType — EF Core can't auto-resolve
-        builder.Entity<UnitTypeMatchup>()
-            .HasOne(m => m.AttackerType)
-            .WithMany(u => u.AttackerMatchups)
-            .HasForeignKey(m => m.AttackerTypeId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.Entity<UnitTypeMatchup>()
-            .HasOne(m => m.DefenderType)
-            .WithMany(u => u.DefenderMatchups)
-            .HasForeignKey(m => m.DefenderTypeId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        // FactionUnitBonus: nullable FK to UnitType
-        builder.Entity<FactionUnitBonus>()
-            .HasOne(b => b.UnitType)
-            .WithMany()
-            .HasForeignKey(b => b.UnitTypeId)
-            .IsRequired(false)
-            .OnDelete(DeleteBehavior.Restrict);
-
         // Battle: two FKs to Army
         builder.Entity<Battle>()
             .HasOne(b => b.AttackerArmy)
@@ -177,14 +134,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .WithMany()
             .HasForeignKey(b => b.DefenderArmyId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        // BuildingUnitType: junction table for building->unit type mapping
-        builder.Entity<BuildingUnitType>(entity =>
-        {
-            entity.HasIndex(e => new { e.BuildingTypeId, e.UnitTypeId }).IsUnique();
-            entity.HasOne(e => e.BuildingType).WithMany().HasForeignKey(e => e.BuildingTypeId);
-            entity.HasOne(e => e.UnitType).WithMany().HasForeignKey(e => e.UnitTypeId);
-        });
 
         // BuildingType: self-reference (upgrade chain)
         builder.Entity<BuildingType>()

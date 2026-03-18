@@ -13,12 +13,8 @@ public static class AppDataInit
         var seeders = new ISeeder[]
         {
             new TerrainTypeSeeder(),
-            new UnitTypeSeeder(),
             new BuildingTypeSeeder(),
-            new UnitTypeMatchupSeeder(),
-            new FactionTypeSeeder(),
-            new FactionResourceBonusSeeder(),
-            new FactionUnitBonusSeeder()
+            new FactionTypeSeeder()
         };
 
         foreach (var seeder in seeders.OrderBy(s => s.Order))

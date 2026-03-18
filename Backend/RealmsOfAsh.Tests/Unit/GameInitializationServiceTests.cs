@@ -73,7 +73,7 @@ public class GameInitializationServiceTests
             Id = GameId,
             Status = EGameStatus.InProgress,
             MaxPlayers = 4,
-            WinCondition = EWinCondition.Domination,
+            WinCondition = EWinCondition.Elimination,
             LobbyCode = "ABCDEF",
             HostUserId = UserId1,
         };
@@ -228,7 +228,7 @@ public class GameInitializationServiceTests
         result.Tiles.Count.ShouldBe(61);
         result.Kingdoms.Count.ShouldBe(2);
         result.Status.ShouldBe(EGameStatus.InProgress.ToString());
-        result.WinCondition.ShouldBe(EWinCondition.Domination.ToString());
+        result.WinCondition.ShouldBe(EWinCondition.Elimination.ToString());
 
         // Each kingdom should have 5 resources in DTO
         result.Kingdoms.ShouldAllBe(k => k.Resources.Count == 5);

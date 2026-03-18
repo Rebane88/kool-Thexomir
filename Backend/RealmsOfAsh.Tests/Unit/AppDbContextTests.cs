@@ -9,7 +9,6 @@ using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using RealmsOfAsh.Tests.Fixtures;
 using Shouldly;
-using MilitaryUnit = Domain.Military.Unit;
 
 namespace RealmsOfAsh.Tests.Unit;
 
@@ -84,27 +83,6 @@ public class AppDbContextTests(DatabaseFixture fixture)
     }
 
     [Fact]
-    public void AppDbContext_has_DbSet_for_Unit()
-    {
-        using var ctx = BuildContext();
-        AssertDbSetRegistered<MilitaryUnit>(ctx);
-    }
-
-    [Fact]
-    public void AppDbContext_has_DbSet_for_UnitType()
-    {
-        using var ctx = BuildContext();
-        AssertDbSetRegistered<UnitType>(ctx);
-    }
-
-    [Fact]
-    public void AppDbContext_has_DbSet_for_UnitTypeMatchup()
-    {
-        using var ctx = BuildContext();
-        AssertDbSetRegistered<UnitTypeMatchup>(ctx);
-    }
-
-    [Fact]
     public void AppDbContext_has_DbSet_for_Battle()
     {
         using var ctx = BuildContext();
@@ -137,20 +115,6 @@ public class AppDbContextTests(DatabaseFixture fixture)
     {
         using var ctx = BuildContext();
         AssertDbSetRegistered<FactionType>(ctx);
-    }
-
-    [Fact]
-    public void AppDbContext_has_DbSet_for_FactionResourceBonus()
-    {
-        using var ctx = BuildContext();
-        AssertDbSetRegistered<FactionResourceBonus>(ctx);
-    }
-
-    [Fact]
-    public void AppDbContext_has_DbSet_for_FactionUnitBonus()
-    {
-        using var ctx = BuildContext();
-        AssertDbSetRegistered<FactionUnitBonus>(ctx);
     }
 
     [Fact]

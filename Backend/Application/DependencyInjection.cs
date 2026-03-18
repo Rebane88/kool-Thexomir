@@ -4,7 +4,6 @@ using Application.Services.GameInitialization;
 using Application.Services.Guard;
 using Application.Services.Lobby;
 using Application.Services.Building;
-using Application.Services.Military;
 using Application.Services.Turn;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,7 +19,6 @@ public static class DependencyInjection
         services.AddScoped<IGameGuard, GameGuard>();
         services.AddScoped<ITurnService, TurnService>();
         services.AddScoped<IBuildingService, BuildingService>();
-        services.AddScoped<IMilitaryService, MilitaryService>();
         return services;
     }
 }

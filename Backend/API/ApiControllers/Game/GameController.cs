@@ -47,7 +47,7 @@ public class GameController(IUnitOfWork unitOfWork) : ControllerBase
             {
                 KingdomId = k.Id,
                 KingdomName = k.Name,
-                Score = ScoreChecker.CalculateScore(k, tiles),
+                Score = 0, // ScoreChecker removed -- to be redesigned
                 TilesOwned = tiles.Count(t => t.KingdomId == k.Id),
                 IsEliminated = k.IsEliminated
             }).OrderByDescending(s => s.Score).ToList(),

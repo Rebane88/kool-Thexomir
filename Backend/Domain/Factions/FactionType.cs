@@ -20,7 +20,5 @@ public class FactionType : BaseEntity, IHasName
     public string? Description { get; set; }
 
     // Navigation
-    public ICollection<FactionResourceBonus>? ResourceBonuses { get; set; }
-    public ICollection<FactionUnitBonus>? UnitBonuses { get; set; }
     public ICollection<Domain.Game.Kingdom>? Kingdoms { get; set; }
 }

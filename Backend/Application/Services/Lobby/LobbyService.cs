@@ -18,15 +18,6 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
         if (request.MaxPlayers < 2 || request.MaxPlayers > 8)
             return Result<CreateLobbyResponse>.Fail("MaxPlayers must be between 2 and 8.");
 
-        if (request.WinCondition == EWinCondition.Domination)
-            return Result<CreateLobbyResponse>.Fail("Domination win condition is not yet available.");
-
-        if (request.WinCondition == EWinCondition.Score)
-        {
-            if (!request.MaxTurnCount.HasValue || request.MaxTurnCount.Value <= 0)
-                return Result<CreateLobbyResponse>.Fail("MaxTurnCount is required and must be greater than 0 for Score mode.");
-        }
-
         var code = await GenerateUniqueLobbyCodeAsync();
 
         var game = new Game

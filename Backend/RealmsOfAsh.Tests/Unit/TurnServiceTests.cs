@@ -3,12 +3,10 @@ using Application.Services.Turn;
 using Application.Services.Turn.DTOs;
 using Base.Contracts;
 using Domain.Buildings;
-using Domain.Factions;
 using Domain.Game;
 using Domain.Map;
 using Domain.Military;
 using Domain.Resources;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Shouldly;
 
@@ -17,18 +15,16 @@ namespace RealmsOfAsh.Tests.Unit;
 /// <summary>
 /// TurnService unit tests -- fully mocked, no database dependency.
 /// Verifies round-robin turn advancement, income calculation with
-/// terrain and faction modifiers, and turn logging.
+/// terrain modifiers, and turn logging.
 /// </summary>
 public class TurnServiceTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IGameGuard> _gameGuardMock = new();
-    private readonly IServiceProvider _serviceProvider;
     private readonly Mock<IGameRepository> _gamesMock = new();
     private readonly Mock<IKingdomRepository> _kingdomsMock = new();
     private readonly Mock<ITileRepository> _tilesMock = new();
     private readonly Mock<IKingdomResourceRepository> _kingdomResourcesMock = new();
-    private readonly Mock<IFactionResourceBonusRepository> _factionResourceBonusesMock = new();
     private readonly Mock<ITurnLogRepository> _turnLogsMock = new();
     private readonly Mock<IArmyRepository> _armiesMock = new();
     private readonly Mock<IBuildingRepository> _buildingsMock = new();
@@ -47,16 +43,10 @@ public class TurnServiceTests
 
     public TurnServiceTests()
     {
-        var services = new ServiceCollection();
-        services.AddKeyedScoped<IWinConditionChecker, ScoreChecker>(EWinCondition.Score);
-        services.AddKeyedScoped<IWinConditionChecker, EliminationChecker>(EWinCondition.Elimination);
-        _serviceProvider = services.BuildServiceProvider();
-
         _unitOfWorkMock.Setup(u => u.Games).Returns(_gamesMock.Object);
         _unitOfWorkMock.Setup(u => u.Kingdoms).Returns(_kingdomsMock.Object);
         _unitOfWorkMock.Setup(u => u.Tiles).Returns(_tilesMock.Object);
         _unitOfWorkMock.Setup(u => u.KingdomResources).Returns(_kingdomResourcesMock.Object);
-        _unitOfWorkMock.Setup(u => u.FactionResourceBonuses).Returns(_factionResourceBonusesMock.Object);
         _unitOfWorkMock.Setup(u => u.TurnLogs).Returns(_turnLogsMock.Object);
         _unitOfWorkMock.Setup(u => u.Armies).Returns(_armiesMock.Object);
         _unitOfWorkMock.Setup(u => u.Buildings).Returns(_buildingsMock.Object);
@@ -75,7 +65,7 @@ public class TurnServiceTests
         _kingdomResourcesMock.Setup(r => r.UpdateAsync(It.IsAny<KingdomResource>()))
             .ReturnsAsync((KingdomResource r) => r);
 
-        _sut = new TurnService(_unitOfWorkMock.Object, _gameGuardMock.Object, _serviceProvider);
+        _sut = new TurnService(_unitOfWorkMock.Object, _gameGuardMock.Object);
     }
 
     private Game CreateGame(Guid currentTurnKingdomId, int turnNumber = 1) => new()
@@ -117,8 +107,6 @@ public class TurnServiceTests
     private void SetupEmptyIncome(Guid kingdomId)
     {
         _tilesMock.Setup(t => t.GetTilesWithBuildingsAndTerrainForKingdomAsync(kingdomId))
-            .ReturnsAsync([]);
-        _factionResourceBonusesMock.Setup(f => f.GetBonusesForFactionAsync(FactionId))
             .ReturnsAsync([]);
         _kingdomResourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(kingdomId))
             .ReturnsAsync(CreateDefaultResources(kingdomId));
@@ -244,8 +232,6 @@ public class TurnServiceTests
         };
         _tilesMock.Setup(t => t.GetTilesWithBuildingsAndTerrainForKingdomAsync(Kingdom2Id))
             .ReturnsAsync(tiles);
-        _factionResourceBonusesMock.Setup(f => f.GetBonusesForFactionAsync(FactionId))
-            .ReturnsAsync([new FactionResourceBonus { ResourceType = EResourceType.Gold, Multiplier = 1.0m }]);
 
         var resources = CreateDefaultResources(Kingdom2Id, initialGold: 10);
         _kingdomResourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom2Id))
@@ -254,7 +240,7 @@ public class TurnServiceTests
         var result = await _sut.EndTurnAsync(GameId, UserId);
 
         result.IsSuccess.ShouldBeTrue();
-        // floor(5 * 1.0 * 1.0) = 5 Gold added
+        // floor(5 * 1.0 * 1.0) = 5 Gold added (no faction bonus = 1.0 default)
         resources.Single(r => r.ResourceType == EResourceType.Gold).Amount.ShouldBe(15);
         result.Value!.IncomeApplied["Gold"].ShouldBe(5);
     }
@@ -293,8 +279,6 @@ public class TurnServiceTests
         };
         _tilesMock.Setup(t => t.GetTilesWithBuildingsAndTerrainForKingdomAsync(Kingdom2Id))
             .ReturnsAsync(tiles);
-        _factionResourceBonusesMock.Setup(f => f.GetBonusesForFactionAsync(FactionId))
-            .ReturnsAsync([]); // no faction bonus = 1.0
 
         var resources = CreateDefaultResources(Kingdom2Id);
         _kingdomResourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom2Id))
@@ -303,62 +287,13 @@ public class TurnServiceTests
         var result = await _sut.EndTurnAsync(GameId, UserId);
 
         result.IsSuccess.ShouldBeTrue();
-        // floor(10 * 1.25 * 1.0) = 12 Food
+        // floor(10 * 1.25 * 1.0) = 12 Food (no faction bonus)
         resources.Single(r => r.ResourceType == EResourceType.Food).Amount.ShouldBe(12);
         result.Value!.IncomeApplied["Food"].ShouldBe(12);
     }
 
     // -------------------------------------------------------------------------
-    // Test 7: Faction multiplier applied
-    // -------------------------------------------------------------------------
-
-    [Fact]
-    public async Task EndTurn_FactionMultiplierApplied()
-    {
-        var kingdoms = CreateThreeKingdoms();
-        var game = CreateGame(Kingdom1Id);
-        SetupGuardSuccess(game, kingdoms[0]);
-        _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
-
-        // Building with GoldYield=5, no terrain match, faction multiplier 1.3 for Gold
-        var tiles = new List<Tile>
-        {
-            new()
-            {
-                Id = Guid.NewGuid(),
-                KingdomId = Kingdom2Id,
-                TerrainType = new TerrainType
-                {
-                    ResourceBonusType = ETerrainResourceBonus.None, // no match
-                },
-                Buildings =
-                [
-                    new Building
-                    {
-                        BuildingType = new BuildingType { GoldYield = 5 },
-                    },
-                ],
-            },
-        };
-        _tilesMock.Setup(t => t.GetTilesWithBuildingsAndTerrainForKingdomAsync(Kingdom2Id))
-            .ReturnsAsync(tiles);
-        _factionResourceBonusesMock.Setup(f => f.GetBonusesForFactionAsync(FactionId))
-            .ReturnsAsync([new FactionResourceBonus { ResourceType = EResourceType.Gold, Multiplier = 1.3m }]);
-
-        var resources = CreateDefaultResources(Kingdom2Id);
-        _kingdomResourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom2Id))
-            .ReturnsAsync(resources);
-
-        var result = await _sut.EndTurnAsync(GameId, UserId);
-
-        result.IsSuccess.ShouldBeTrue();
-        // floor(5 * 1.0 * 1.3) = floor(6.5) = 6 Gold
-        resources.Single(r => r.ResourceType == EResourceType.Gold).Amount.ShouldBe(6);
-        result.Value!.IncomeApplied["Gold"].ShouldBe(6);
-    }
-
-    // -------------------------------------------------------------------------
-    // Test 8: Floor per building
+    // Test 7: Floor per building (no faction bonus)
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -369,7 +304,7 @@ public class TurnServiceTests
         SetupGuardSuccess(game, kingdoms[0]);
         _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
 
-        // Building with WoodYield=3, terrain match (Wood, 1.25x), faction multiplier 1.1
+        // Building with WoodYield=3, terrain match (Wood, 1.25x), no faction multiplier
         var tiles = new List<Tile>
         {
             new()
@@ -391,8 +326,6 @@ public class TurnServiceTests
         };
         _tilesMock.Setup(t => t.GetTilesWithBuildingsAndTerrainForKingdomAsync(Kingdom2Id))
             .ReturnsAsync(tiles);
-        _factionResourceBonusesMock.Setup(f => f.GetBonusesForFactionAsync(FactionId))
-            .ReturnsAsync([new FactionResourceBonus { ResourceType = EResourceType.Wood, Multiplier = 1.1m }]);
 
         var resources = CreateDefaultResources(Kingdom2Id);
         _kingdomResourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom2Id))
@@ -401,13 +334,13 @@ public class TurnServiceTests
         var result = await _sut.EndTurnAsync(GameId, UserId);
 
         result.IsSuccess.ShouldBeTrue();
-        // floor(3 * 1.25 * 1.1) = floor(4.125) = 4 Wood
-        resources.Single(r => r.ResourceType == EResourceType.Wood).Amount.ShouldBe(4);
-        result.Value!.IncomeApplied["Wood"].ShouldBe(4);
+        // floor(3 * 1.25 * 1.0) = floor(3.75) = 3 Wood (no faction bonus)
+        resources.Single(r => r.ResourceType == EResourceType.Wood).Amount.ShouldBe(3);
+        result.Value!.IncomeApplied["Wood"].ShouldBe(3);
     }
 
     // -------------------------------------------------------------------------
-    // Test 9: Logs turn action
+    // Test 8: Logs turn action
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -426,84 +359,5 @@ public class TurnServiceTests
         _addedTurnLogs[0].TurnNumber.ShouldBe(3);
         _addedTurnLogs[0].KingdomId.ShouldBe(Kingdom1Id);
         _addedTurnLogs[0].GameId.ShouldBe(GameId);
-    }
-
-    // -------------------------------------------------------------------------
-    // Phase 13: Score win condition tests
-    // -------------------------------------------------------------------------
-
-    private Mock<IArmyRepository> SetupArmiesMock()
-    {
-        var armiesMock = new Mock<IArmyRepository>();
-        _unitOfWorkMock.Setup(u => u.Armies).Returns(armiesMock.Object);
-        armiesMock.Setup(a => a.GetArmiesForKingdomAsync(It.IsAny<Guid>()))
-            .ReturnsAsync(Enumerable.Empty<Army>());
-        armiesMock.Setup(a => a.GetArmiesWithUnitsForKingdomAsync(It.IsAny<Guid>()))
-            .ReturnsAsync(new List<Army>());
-        return armiesMock;
-    }
-
-    [Fact]
-    public async Task EndTurnAsync_WhenTurnExceedsMaxTurnCount_EndsGame()
-    {
-        // Arrange: 2-kingdom game, Score mode, MaxTurnCount=2
-        // Kingdom3 ends its turn, TurnNumber wraps to 3 (> 2), game ends
-        var kingdoms = CreateThreeKingdoms();
-        var game = new Game
-        {
-            Id = GameId,
-            Status = EGameStatus.InProgress,
-            TurnNumber = 2,          // wrapping from last kingdom will make it 3
-            CurrentTurnKingdomId = Kingdom3Id,
-            WinCondition = EWinCondition.Score,
-            MaxTurnCount = 2
-        };
-        SetupGuardSuccess(game, kingdoms[2]);
-        _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
-
-        var armiesMock = SetupArmiesMock();
-
-        // All tiles (empty) for score calculation
-        _tilesMock.Setup(t => t.GetTilesWithBuildingsForGameAsync(GameId))
-            .ReturnsAsync(new List<Tile>());
-
-        // Real IServiceProvider resolves ScoreChecker via keyed registration
-
-        // Act
-        var result = await _sut.EndTurnAsync(GameId, UserId);
-
-        // Assert: TurnNumber wraps from Kingdom3 back to Kingdom1, incrementing to 3
-        result.IsSuccess.ShouldBeTrue();
-        result.Value.ShouldNotBeNull();
-        result.Value.GameOver.ShouldNotBeNull();
-        result.Value.IncomeApplied.ShouldBeEmpty(); // no income when game ends
-    }
-
-    [Fact]
-    public async Task EndTurnAsync_WhenTurnDoesNotExceedMax_ContinuesNormally()
-    {
-        // Arrange: Score mode, MaxTurnCount=5, TurnNumber stays at 1 after advance
-        var kingdoms = CreateThreeKingdoms();
-        var game = new Game
-        {
-            Id = GameId,
-            Status = EGameStatus.InProgress,
-            TurnNumber = 1,
-            CurrentTurnKingdomId = Kingdom1Id,
-            WinCondition = EWinCondition.Score,
-            MaxTurnCount = 5
-        };
-        SetupGuardSuccess(game, kingdoms[0]);
-        _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
-        SetupEmptyIncome(Kingdom2Id);
-
-        // Act
-        var result = await _sut.EndTurnAsync(GameId, UserId);
-
-        // Assert: TurnNumber stays at 1 (no wrap)
-        result.IsSuccess.ShouldBeTrue();
-        result.Value.ShouldNotBeNull();
-        result.Value.GameOver.ShouldBeNull();
-        result.Value.NewKingdomId.ShouldBe(Kingdom2Id);
     }
 }

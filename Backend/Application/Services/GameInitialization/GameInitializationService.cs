@@ -257,12 +257,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
                 Id = a.Id,
                 TileId = a.TileId,
                 KingdomId = a.KingdomId,
-                Units = a.Units?.Select(u => new ArmyUnitDto
-                {
-                    UnitTypeId = u.UnitTypeId,
-                    UnitTypeName = u.UnitType?.Name.Translate() ?? string.Empty,
-                    Quantity = u.Quantity,
-                }).ToList() ?? [],
+                Units = [],
             }).ToList(),
         };
     }

@@ -1,7 +1,5 @@
-using Domain.Factions;
 using Domain.Game;
 using Domain.Map;
-using Domain.Military;
 using Domain.Resources;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -35,30 +33,6 @@ public class UniquenessConstraintTests(DatabaseFixture fixture)
         return entityType.GetIndexes().Any(idx =>
             idx.IsUnique &&
             idx.Properties.Select(p => p.Name).ToHashSet().SetEquals(nameSet));
-    }
-
-    [Fact]
-    public void UnitTypeMatchup_has_unique_index_on_AttackerTypeId_and_DefenderTypeId()
-    {
-        using var ctx = BuildContext();
-        HasUniqueIndex(ctx, typeof(UnitTypeMatchup), "AttackerTypeId", "DefenderTypeId")
-            .ShouldBeTrue("Expected unique index on UnitTypeMatchup(AttackerTypeId, DefenderTypeId)");
-    }
-
-    [Fact]
-    public void FactionResourceBonus_has_unique_index_on_FactionTypeId_and_ResourceType()
-    {
-        using var ctx = BuildContext();
-        HasUniqueIndex(ctx, typeof(FactionResourceBonus), "FactionTypeId", "ResourceType")
-            .ShouldBeTrue("Expected unique index on FactionResourceBonus(FactionTypeId, ResourceType)");
-    }
-
-    [Fact]
-    public void FactionUnitBonus_has_unique_index_on_FactionTypeId_and_UnitTypeId()
-    {
-        using var ctx = BuildContext();
-        HasUniqueIndex(ctx, typeof(FactionUnitBonus), "FactionTypeId", "UnitTypeId")
-            .ShouldBeTrue("Expected unique index on FactionUnitBonus(FactionTypeId, UnitTypeId)");
     }
 
     [Fact]

@@ -115,26 +115,19 @@ public static class DependencyInjection
 
         // Repositories - Military
         services.AddScoped<IArmyRepository, ArmyRepository>();
-        services.AddScoped<IUnitRepository, UnitRepository>();
-        services.AddScoped<IUnitTypeRepository, UnitTypeRepository>();
-        services.AddScoped<IUnitTypeMatchupRepository, UnitTypeMatchupRepository>();
         services.AddScoped<IBattleRepository, BattleRepository>();
-        services.AddScoped<IBuildingUnitTypeRepository, BuildingUnitTypeRepository>();
 
         // Repositories - Resources
         services.AddScoped<IKingdomResourceRepository, KingdomResourceRepository>();
 
         // Repositories - Factions
         services.AddScoped<IFactionTypeRepository, FactionTypeRepository>();
-        services.AddScoped<IFactionResourceBonusRepository, FactionResourceBonusRepository>();
-        services.AddScoped<IFactionUnitBonusRepository, FactionUnitBonusRepository>();
 
         // Concurrency
         services.AddSingleton<IGameLockManager, GameLockManager>();
 
         // Win condition checkers (keyed by EWinCondition enum)
         services.AddKeyedScoped<IWinConditionChecker, EliminationChecker>(EWinCondition.Elimination);
-        services.AddKeyedScoped<IWinConditionChecker, ScoreChecker>(EWinCondition.Score);
 
         return services;
     }

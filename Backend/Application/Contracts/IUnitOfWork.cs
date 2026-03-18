@@ -26,19 +26,13 @@ public interface IUnitOfWork : IDisposable
 
     // Military
     IArmyRepository Armies { get; }
-    IUnitRepository Units { get; }
-    IUnitTypeRepository UnitTypes { get; }
-    IUnitTypeMatchupRepository UnitTypeMatchups { get; }
     IBattleRepository Battles { get; }
-    IBuildingUnitTypeRepository BuildingUnitTypes { get; }
 
     // Resources
     IKingdomResourceRepository KingdomResources { get; }
 
     // Factions
     IFactionTypeRepository FactionTypes { get; }
-    IFactionResourceBonusRepository FactionResourceBonuses { get; }
-    IFactionUnitBonusRepository FactionUnitBonuses { get; }
 
     Task<int> CommitAsync(CancellationToken ct = default);
     Task RollbackAsync(CancellationToken ct = default);

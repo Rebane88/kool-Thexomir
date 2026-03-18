@@ -1,7 +1,5 @@
 using Domain.Buildings;
-using Domain.Factions;
 using Domain.Map;
-using Domain.Military;
 using Domain.Resources;
 using Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -77,37 +75,6 @@ public class EntityRelationshipTests(DatabaseFixture fixture)
 
         var fk = buildingType!.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == "TileId"));
-
-        fk.ShouldNotBeNull();
-    }
-
-    [Fact]
-    public void UnitTypeMatchup_has_AttackerTypeId_and_DefenderTypeId_FKs()
-    {
-        using var ctx = BuildContext();
-        var model = ctx.Model;
-        var matchupType = model.FindEntityType(typeof(UnitTypeMatchup));
-        matchupType.ShouldNotBeNull();
-
-        var allFkProps = matchupType!.GetForeignKeys()
-            .SelectMany(fk => fk.Properties)
-            .Select(p => p.Name)
-            .ToHashSet();
-
-        allFkProps.ShouldContain("AttackerTypeId");
-        allFkProps.ShouldContain("DefenderTypeId");
-    }
-
-    [Fact]
-    public void FactionResourceBonus_has_FactionTypeId_FK()
-    {
-        using var ctx = BuildContext();
-        var model = ctx.Model;
-        var entityType = model.FindEntityType(typeof(FactionResourceBonus));
-        entityType.ShouldNotBeNull();
-
-        var fk = entityType!.GetForeignKeys()
-            .FirstOrDefault(f => f.Properties.Any(p => p.Name == "FactionTypeId"));
 
         fk.ShouldNotBeNull();
     }

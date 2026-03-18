@@ -52,7 +52,7 @@ public class LobbyServiceTests
         Id = GameId,
         Status = status,
         MaxPlayers = maxPlayers,
-        WinCondition = EWinCondition.Domination,
+        WinCondition = EWinCondition.Elimination,
         LobbyCode = "ABCDEF",
         HostUserId = UserId1,
         Kingdoms = new List<Kingdom>()
@@ -556,70 +556,4 @@ public class LobbyServiceTests
         result.Error.ShouldNotBeNullOrEmpty();
     }
 
-    // -------------------------------------------------------------------------
-    // Phase 13: Win condition validation tests
-    // -------------------------------------------------------------------------
-
-    [Fact]
-    public async Task CreateLobbyAsync_DominationWinCondition_ReturnsFail()
-    {
-        var result = await _sut.CreateLobbyAsync(UserId1, new CreateLobbyRequest
-        {
-            MaxPlayers = 4,
-            WinCondition = EWinCondition.Domination
-        });
-
-        result.IsSuccess.ShouldBeFalse();
-        result.Error!.ShouldContain("not yet available");
-    }
-
-    [Fact]
-    public async Task CreateLobbyAsync_ScoreWithoutMaxTurnCount_ReturnsFail()
-    {
-        var result = await _sut.CreateLobbyAsync(UserId1, new CreateLobbyRequest
-        {
-            MaxPlayers = 4,
-            WinCondition = EWinCondition.Score,
-            MaxTurnCount = null
-        });
-
-        result.IsSuccess.ShouldBeFalse();
-        result.Error!.ShouldContain("MaxTurnCount");
-    }
-
-    [Fact]
-    public async Task CreateLobbyAsync_ScoreWithZeroMaxTurnCount_ReturnsFail()
-    {
-        var result = await _sut.CreateLobbyAsync(UserId1, new CreateLobbyRequest
-        {
-            MaxPlayers = 4,
-            WinCondition = EWinCondition.Score,
-            MaxTurnCount = 0
-        });
-
-        result.IsSuccess.ShouldBeFalse();
-        result.Error!.ShouldContain("MaxTurnCount");
-    }
-
-    [Fact]
-    public async Task CreateLobbyAsync_ScoreWithValidMaxTurnCount_Succeeds()
-    {
-        _gamesMock.Setup(g => g.ExistsByLobbyCodeAsync(It.IsAny<string>())).ReturnsAsync(false);
-        Game? addedGame = null;
-        _gamesMock.Setup(g => g.AddAsync(It.IsAny<Game>()))
-            .ReturnsAsync((Game g) => { addedGame = g; return g; });
-        _kingdomsMock.Setup(k => k.AddAsync(It.IsAny<Kingdom>())).ReturnsAsync((Kingdom k) => k);
-
-        var result = await _sut.CreateLobbyAsync(UserId1, new CreateLobbyRequest
-        {
-            MaxPlayers = 4,
-            WinCondition = EWinCondition.Score,
-            MaxTurnCount = 10
-        });
-
-        result.IsSuccess.ShouldBeTrue();
-        addedGame.ShouldNotBeNull();
-        addedGame!.MaxTurnCount.ShouldBe(10);
-        addedGame.WinCondition.ShouldBe(EWinCondition.Score);
-    }
 }

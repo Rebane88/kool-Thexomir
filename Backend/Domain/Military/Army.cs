@@ -13,6 +13,4 @@ public class Army : BaseEntity
     // Navigation
     public Tile? Tile { get; set; }
     public Kingdom? Kingdom { get; set; }
-
-    public ICollection<Unit>? Units { get; set; }
 }
