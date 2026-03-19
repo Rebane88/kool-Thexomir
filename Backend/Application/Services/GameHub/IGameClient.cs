@@ -1,5 +1,6 @@
 using Application.Services.Army.DTOs;
 using Application.Services.Building.DTOs;
+using Application.Services.Combat.DTOs;
 using Application.Services.GameInitialization.DTOs;
 using Application.Services.Lobby.DTOs;
 using Application.Services.SlotMachine.DTOs;
@@ -35,6 +36,10 @@ public interface IGameClient
 
     // Army events
     Task ArmyTrained(ArmyTrainedDto armyTrained);
+
+    // Combat events
+    Task AttackDeclared(DeclareAttackResponse attackDeclared);
+    Task BattleResolved(BattleResultDto battleResult);
 
     // Phase 13 events
     Task GameOver(GameOverDto gameOver);
