@@ -4,6 +4,7 @@ import type { UnitTypeRef } from '../types/military-types';
 import { GoldIcon, FoodIcon, WoodIcon, StoneIcon, ManaIcon } from '@/assets/icons';
 import { Button } from '@/shared/ui/Button';
 import { QuantityStepper } from './QuantityStepper';
+import { ApCostBadge, useCanAffordAp } from './ApCostBadge';
 
 interface IconProps extends SVGProps<SVGSVGElement> {
   size?: number;
@@ -41,10 +42,12 @@ export function UnitRow({
   onTrain,
 }: UnitRowProps) {
   const [quantity, setQuantity] = useState(1);
+  const canAffordAp = useCanAffordAp(1);
+  const disabled = !canAfford || !canAffordAp;
 
   const rowClasses = [
     'px-3 py-2 rounded border transition-colors',
-    canAfford
+    !disabled
       ? 'border-transparent hover:bg-ash-700'
       : 'opacity-50 pointer-events-none border-transparent',
   ].join(' ');
@@ -52,7 +55,10 @@ export function UnitRow({
   return (
     <div className={rowClasses}>
       <div className="flex items-center justify-between">
-        <span className="text-parchment-100 font-medium text-sm">{unitType.name}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-parchment-100 font-medium text-sm">{unitType.name}</span>
+          <ApCostBadge cost={1} />
+        </div>
         <span className="text-ember-300 text-xs">{unitType.baseStrength} str</span>
       </div>
 
@@ -74,7 +80,7 @@ export function UnitRow({
         })}
       </div>
 
-      {canAfford && (
+      {!disabled && (
         <div className="mt-2 space-y-1.5">
           <QuantityStepper
             value={quantity}

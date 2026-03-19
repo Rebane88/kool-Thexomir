@@ -1,6 +1,7 @@
 import type { ComponentType, SVGProps } from 'react';
 import type { BuildingTypeRef } from '../types/building-types';
 import { GoldIcon, FoodIcon, WoodIcon, StoneIcon, ManaIcon } from '@/assets/icons';
+import { ApCostBadge, useCanAffordAp } from './ApCostBadge';
 
 interface IconProps extends SVGProps<SVGSVGElement> {
   size?: number;
@@ -46,7 +47,8 @@ export function BuildingRow({
   isActive,
   onSelect,
 }: BuildingRowProps) {
-  const disabled = !canAfford || !hasPrerequisite;
+  const canAffordAp = useCanAffordAp(1);
+  const disabled = !canAfford || !hasPrerequisite || !canAffordAp;
 
   const rowClasses = [
     'px-3 py-2 rounded border transition-colors',
@@ -60,7 +62,10 @@ export function BuildingRow({
   return (
     <div className={rowClasses} onClick={() => onSelect(buildingType.id)}>
       <div className="flex items-center justify-between">
-        <span className="text-parchment-100 font-medium text-sm">{buildingType.name}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-parchment-100 font-medium text-sm">{buildingType.name}</span>
+          <ApCostBadge cost={1} />
+        </div>
         <div className="flex items-center gap-1.5">
           {YIELD_RESOURCE_MAP.map(({ key, resource }) => {
             const value = buildingType[key] as number;

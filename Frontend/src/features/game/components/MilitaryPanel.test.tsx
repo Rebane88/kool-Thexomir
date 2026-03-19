@@ -73,6 +73,8 @@ function setupStore(opts: {
     tiles,
     kingdoms,
     gameId: opts.gameId ?? 'game-1',
+    actionPoints: 3,
+    maxActionPoints: 3,
   });
 }
 
