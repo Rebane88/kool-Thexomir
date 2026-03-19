@@ -2,13 +2,20 @@ import * as signalR from '@microsoft/signalr';
 import { createGameHubConnection } from '@/lib/signalr-client';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { useGameStore } from './game-store';
+import { useAnimationStore } from './animation-store';
 import type {
   GameStateSnapshot,
   TurnAdvancedEvent,
   BuildingPlacedEvent,
-  TroopsTrainedEvent,
-  ArmyMovedEvent,
-  CombatResolvedEvent,
+  PhaseChangedEvent,
+  TurnStartedEvent,
+  RoundStartedEvent,
+  SlotMachineSpunEvent,
+  ArmyTrainedEvent,
+  AttackDeclaredEvent,
+  ArmiesSelectedEvent,
+  LineupSetEvent,
+  BattleResolvedEvent,
   GameOverEvent,
 } from './types';
 
@@ -31,7 +38,7 @@ export async function connectToGame(gameId: string): Promise<void> {
 
   connection = createGameHubConnection(gameId);
 
-  // Register event handlers using getState() (never hooks)
+  // --- Game state ---
   connection.on('GameStateSnapshot', (snapshot: GameStateSnapshot) => {
     const userId = useAuthStore.getState().user?.id;
     if (userId) {
@@ -40,28 +47,72 @@ export async function connectToGame(gameId: string): Promise<void> {
     useGameStore.getState().setConnectionStatus('connected');
   });
 
+  // --- Turn lifecycle ---
   connection.on('TurnAdvanced', (data: TurnAdvancedEvent) => {
     useGameStore.getState().handleTurnAdvanced(data);
   });
 
+  connection.on('PhaseChanged', (data: PhaseChangedEvent) => {
+    useGameStore.getState().handlePhaseChanged(data);
+  });
+
+  connection.on('TurnStarted', (data: TurnStartedEvent) => {
+    useGameStore.getState().handleTurnStarted(data);
+  });
+
+  connection.on('RoundStarted', (data: RoundStartedEvent) => {
+    useGameStore.getState().handleRoundStarted(data);
+  });
+
+  // --- Building ---
   connection.on('BuildingPlaced', (data: BuildingPlacedEvent) => {
     useGameStore.getState().handleBuildingPlaced(data);
   });
 
-  connection.on('TroopsTrained', (data: TroopsTrainedEvent) => {
-    useGameStore.getState().handleTroopsTrained(data);
+  // --- Slot machine ---
+  connection.on('SlotMachineSpun', (data: SlotMachineSpunEvent) => {
+    useGameStore.getState().handleSlotMachineSpun(data);
+    useAnimationStore.getState().setSlotResult({
+      outcome: data.outcome,
+      actionPointsAfter: data.actionPointsAfter,
+    });
   });
 
-  connection.on('ArmyMoved', (data: ArmyMovedEvent) => {
-    useGameStore.getState().handleArmyMoved(data);
+  // --- Army ---
+  connection.on('ArmyTrained', (data: ArmyTrainedEvent) => {
+    useGameStore.getState().handleArmyTrained(data);
   });
 
-  connection.on('CombatResolved', (data: CombatResolvedEvent) => {
-    useGameStore.getState().handleCombatResolved(data);
+  // --- Combat flow ---
+  connection.on('AttackDeclared', (data: AttackDeclaredEvent) => {
+    useGameStore.getState().handleAttackDeclared(data);
   });
 
+  connection.on('ArmiesSelected', (data: ArmiesSelectedEvent) => {
+    useGameStore.getState().handleArmiesSelected(data);
+  });
+
+  connection.on('LineupSet', (data: LineupSetEvent) => {
+    useGameStore.getState().handleLineupSet(data);
+  });
+
+  connection.on('BattleResolved', (data: BattleResolvedEvent) => {
+    useGameStore.getState().handleBattleResolved(data);
+    useAnimationStore.getState().startCombatPlayback(data.rounds);
+  });
+
+  // --- Game over ---
   connection.on('GameOver', (data: GameOverEvent) => {
     useGameStore.getState().handleGameOver(data);
+  });
+
+  // --- Presence (no-op handlers for SYNC-03 compliance) ---
+  connection.on('PlayerJoinedGame', (_userId: string) => {
+    // Presence indicator -- no game state impact
+  });
+
+  connection.on('PlayerLeftGame', (_userId: string) => {
+    // Presence indicator -- no game state impact
   });
 
   // Connection lifecycle
