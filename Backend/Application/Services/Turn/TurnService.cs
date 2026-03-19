@@ -4,6 +4,7 @@ using Base.Contracts;
 using Domain.Buildings;
 using Domain.Game;
 using Domain.Map;
+using Domain.Military;
 using Domain.Resources;
 
 namespace Application.Services.Turn;
@@ -221,6 +222,69 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : ITurnSe
 
             await AddTurnLogAsync(game.Id, kingdom.Id, game.RoundNumber, EEventType.IncomeReceived,
                 $"Income received: {string.Join(", ", income.Select(kv => $"{kv.Key}: +{kv.Value}"))}");
+        }
+
+        // --- Heal armies ---
+        foreach (var kingdom in activeKingdoms)
+        {
+            var armies = (await unitOfWork.Armies.GetArmiesWithTypeForKingdomAsync(kingdom.Id)).ToList();
+            if (armies.Count == 0) continue;
+
+            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId);
+            var healedCount = 0;
+
+            foreach (var army in armies.Where(a => a.CurrentHP < a.MaxHP))
+            {
+                var newHP = ArmyRules.CalculateHealing(
+                    army.CurrentHP, army.MaxHP, game.HealPercent, factionType!.HealRateModifier);
+                if (newHP > army.CurrentHP)
+                {
+                    army.CurrentHP = newHP;
+                    army.UpdatedAt = DateTime.UtcNow;
+                    await unitOfWork.Armies.UpdateAsync(army);
+                    healedCount++;
+                }
+            }
+
+            if (healedCount > 0)
+            {
+                await AddTurnLogAsync(game.Id, kingdom.Id, game.RoundNumber, EEventType.ArmyHealed,
+                    $"{healedCount} army/armies healed");
+            }
+        }
+
+        // --- Deduct upkeep and disband ---
+        foreach (var kingdom in activeKingdoms)
+        {
+            var armies = (await unitOfWork.Armies.GetArmiesWithTypeForKingdomAsync(kingdom.Id)).ToList();
+            if (armies.Count == 0) continue;
+
+            var armiesWithType = armies.Select(a => (a, a.ArmyType!)).ToList();
+            var resources = await unitOfWork.KingdomResources.GetMutableResourcesForKingdomAsync(kingdom.Id);
+
+            // Check if we need to disband
+            var toDisband = ArmyRules.GetArmiesToDisband(armiesWithType, resources);
+
+            foreach (var army in toDisband)
+            {
+                await unitOfWork.Armies.DeleteAsync(army.Id);
+                await AddTurnLogAsync(game.Id, kingdom.Id, game.RoundNumber, EEventType.ArmyDisbanded,
+                    $"Army disbanded due to insufficient upkeep");
+            }
+
+            // Deduct upkeep for remaining armies
+            var remaining = armiesWithType.Where(a => !toDisband.Contains(a.a)).ToList();
+            if (remaining.Count > 0)
+            {
+                var upkeepCosts = ArmyRules.CalculateTotalUpkeep(remaining);
+                var deductError = BuildingRules.DeductResourceCost(resources, upkeepCosts);
+                // deductError should be null since we disbanded enough armies
+                if (deductError is null)
+                {
+                    await AddTurnLogAsync(game.Id, kingdom.Id, game.RoundNumber, EEventType.UpkeepPaid,
+                        $"Upkeep paid for {remaining.Count} army/armies");
+                }
+            }
         }
 
         return totalIncome;
