@@ -3,6 +3,7 @@ import type { BattleStep } from '../types/enums';
 import { BattleSelectStep } from './BattleSelectStep';
 import { BattleRevealStep } from './BattleRevealStep';
 import { BattleLineupStep } from './BattleLineupStep';
+import { BattleResolveStep } from './BattleResolveStep';
 
 const STEPS: BattleStep[] = ['SelectArmies', 'RevealArmies', 'SetLineup', 'Resolve'];
 
@@ -74,11 +75,7 @@ export function BattleOverlay() {
             {activeBattle === 'SelectArmies' && <BattleSelectStep />}
             {activeBattle === 'RevealArmies' && <BattleRevealStep />}
             {activeBattle === 'SetLineup' && <BattleLineupStep />}
-            {activeBattle === 'Resolve' && (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-parchment-400 text-sm animate-pulse">Resolving...</p>
-              </div>
-            )}
+            {activeBattle === 'Resolve' && <BattleResolveStep />}
           </>
         )}
       </div>

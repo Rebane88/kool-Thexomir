@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useAnimationStore } from './animation-store';
 import type { Tile } from './types/map-types';
 import type { Kingdom } from './types/kingdom-types';
 import type { Army, ArmyTypeRef, DeclaredAttack } from './types/military-types';
@@ -49,6 +50,8 @@ interface GameState {
   declaredAttacks: DeclaredAttack[];
   activeBattle: BattleStep | null;
   lastBattleResult: BattleResolvedEvent | null;
+  showBattleSummary: boolean;
+  resolvedBattleIds: Set<string>;
 
   // Bilateral readiness tracking for multi-kingdom battle steps
   battleReadiness: Map<string, { attackerReady: boolean; defenderReady: boolean }>;
@@ -81,6 +84,7 @@ interface GameState {
   setBuildMode: (typeId: string | null) => void;
   setArmyTypes: (types: ArmyTypeRef[]) => void;
   dismissBattleResult: () => void;
+  acknowledgeBattleSummary: () => void;
   loadSnapshot: (snapshot: GameStateSnapshot, userId: string) => void;
   resetState: () => void;
   setConnectionStatus: (status: ConnectionStatus) => void;
@@ -137,6 +141,8 @@ const initialState = {
   declaredAttacks: [] as DeclaredAttack[],
   activeBattle: null as BattleStep | null,
   lastBattleResult: null as BattleResolvedEvent | null,
+  showBattleSummary: false,
+  resolvedBattleIds: new Set<string>(),
   battleReadiness: new Map<string, { attackerReady: boolean; defenderReady: boolean }>(),
   lineupReadiness: new Map<string, { attackerReady: boolean; defenderReady: boolean }>(),
   declareAttackMode: 'idle' as 'idle' | 'selectRiskedTile',
@@ -262,6 +268,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       declaredAttacks: [],
       activeBattle: null,
       lastBattleResult: null,
+      showBattleSummary: false,
+      resolvedBattleIds: new Set<string>(),
       battleReadiness: new Map(),
       lineupReadiness: new Map(),
       declareAttackMode: 'idle' as const,
@@ -286,6 +294,33 @@ export const useGameStore = create<GameState>((set, get) => ({
   setArmyTypes: (types) => set({ armyTypes: types }),
 
   dismissBattleResult: () => set({ lastBattleResult: null }),
+
+  acknowledgeBattleSummary: () => {
+    const { declaredAttacks } = get();
+    // Clear animation store combat playback
+    useAnimationStore.getState().clearCombatPlayback();
+
+    // If all battles resolved (declaredAttacks already filtered by handleBattleResolved)
+    if (declaredAttacks.length === 0) {
+      // All battles done — clear battle flow entirely
+      set({
+        lastBattleResult: null,
+        showBattleSummary: false,
+        activeBattle: null,
+        battleSelections: new Map(),
+        battleReveals: new Map(),
+        battleLineups: new Map(),
+        battleReadiness: new Map(),
+        lineupReadiness: new Map(),
+      });
+    } else {
+      // More battles remain — stay in Resolve step
+      set({
+        lastBattleResult: null,
+        showBattleSummary: false,
+      });
+    }
+  },
 
   setConnectionStatus: (status) => set({ connectionStatus: status }),
 
@@ -367,6 +402,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     battleReadiness: new Map(),
     lineupReadiness: new Map(),
     activeBattle: null,
+    showBattleSummary: false,
+    resolvedBattleIds: new Set<string>(),
   }),
 
   handleTurnAdvanced: (data) => {
@@ -396,6 +433,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       declaredAttacks: [],
       battleReadiness: new Map(),
       lineupReadiness: new Map(),
+      showBattleSummary: false,
+      resolvedBattleIds: new Set<string>(),
       declareAttackMode: 'idle' as const,
       declareAttackTargetTileId: null,
       declareAttackTargetTileKey: null,
@@ -591,7 +630,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   handleBattleResolved: (data) => {
-    const { tiles, tileIdToCoord, armies, declaredAttacks } = get();
+    const { tiles, tileIdToCoord, armies, declaredAttacks, resolvedBattleIds } = get();
     const newTiles = new Map(tiles);
 
     // Capture tile if applicable
@@ -618,22 +657,18 @@ export const useGameStore = create<GameState>((set, get) => ({
       (da) => da.attackId !== data.battleId,
     );
 
-    // Only clear activeBattle when ALL battles are resolved
-    const allResolved = newDeclaredAttacks.length === 0;
+    // Track this battle as resolved
+    const newResolvedBattleIds = new Set([...resolvedBattleIds, data.battleId]);
 
     set({
       tiles: newTiles,
       armies: newArmies,
       lastBattleResult: data,
-      activeBattle: allResolved ? null : get().activeBattle,
+      showBattleSummary: true,
+      resolvedBattleIds: newResolvedBattleIds,
+      // Keep activeBattle at 'Resolve' so overlay stays open for more battles or summary
+      activeBattle: get().activeBattle,
       declaredAttacks: newDeclaredAttacks,
-      ...(allResolved ? {
-        battleSelections: new Map(),
-        battleReveals: new Map(),
-        battleLineups: new Map(),
-        battleReadiness: new Map(),
-        lineupReadiness: new Map(),
-      } : {}),
     });
   },
 
