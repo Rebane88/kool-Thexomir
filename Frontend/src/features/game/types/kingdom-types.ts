@@ -2,8 +2,8 @@ export interface Kingdom {
   id: string;
   name: string;
   userId: string | null;
-  factionTypeId: string | null;
+  factionTypeId: string;
   factionName: string | null;
-  isEliminated: boolean;
+  status: string;
   resources: Record<string, number>;
 }

@@ -1,33 +1,40 @@
 export interface Army {
   id: string;
-  tileId: string;
+  buildingId: string;
   kingdomId: string;
-  units: ArmyUnit[];
+  armyTypeId: string;
+  currentHP: number;
+  maxHP: number;
 }
 
-export interface ArmyUnit {
-  unitTypeId: string;
-  unitTypeName: string;
-  quantity: number;
-}
-
-export interface Casualty {
-  unitTypeId: string;
-  unitTypeName: string;
-  before: number;
-  lost: number;
-}
-
-export interface UnitTypeRef {
+export interface ArmyTypeRef {
   id: string;
   name: string;
-  baseStrength: number;
-  goldCost: number;
-  foodCost: number;
-  woodCost: number;
-  stoneCost: number;
-  manaCost: number;
-  upkeep: number;
-  description: string | null;
-  producedByBuildingTypeIds: string[];
+  attack: number;
+  hp: number;
+  initiative: number;
+  damageRangeMin: number;
+  damageRangeMax: number;
+  chipDamageRangeMin: number;
+  chipDamageRangeMax: number;
+  situationalBonusStat: string | null;
+  situationalBonusValue: number | null;
+  situationalBonusCondition: string | null;
+  trainingCostGold: number;
+  trainingCostFood: number;
+  trainingCostStone: number;
+  trainingCostMana: number;
+  upkeepGold: number;
+  upkeepFood: number;
+  upkeepMana: number;
+  requiredBuildingTypeId: string;
+  requiredBuildingName: string | null;
+}
+
+export interface DeclaredAttack {
+  attackId: string;
+  targetTileId: string;
+  riskedTileId: string;
+  attackerKingdomId: string;
+  defenderKingdomId: string;
 }

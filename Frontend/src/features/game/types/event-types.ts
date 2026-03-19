@@ -1,12 +1,13 @@
 import type { Building } from './map-types';
 
-// Snapshot (received on connect / reconnect)
+// --- Snapshot ---
 export interface GameStateSnapshot {
   gameId: string;
   status: string;
-  turnNumber: number;
+  roundNumber: number;
   winCondition: string;
-  mapRadius: number;
+  mapWidth: number;
+  mapHeight: number;
   currentTurnKingdomId: string | null;
   tiles: SnapshotTile[];
   kingdoms: SnapshotKingdom[];
@@ -20,7 +21,7 @@ export interface SnapshotTile {
   terrainTypeId: string;
   terrainName: string;
   kingdomId: string | null;
-  isCapital: boolean;
+  isCastle: boolean;
   buildings: Building[];
 }
 
@@ -28,27 +29,53 @@ export interface SnapshotKingdom {
   id: string;
   name: string;
   userId: string | null;
-  factionTypeId: string | null;
+  factionTypeId: string;
   factionName: string | null;
-  isEliminated: boolean;
+  status: string;
   resources: { resourceType: string; amount: number }[];
 }
 
 export interface SnapshotArmy {
   id: string;
-  tileId: string;
+  buildingId: string;
   kingdomId: string;
-  units: { unitTypeId: string; unitTypeName: string; quantity: number }[];
+  armyTypeId: string;
+  currentHP: number;
+  maxHP: number;
 }
 
-// Delta events
+// --- Turn events ---
 export interface TurnAdvancedEvent {
-  newKingdomId: string;
-  turnNumber: number;
-  incomeApplied: Record<string, number>;
+  nextKingdomId: string | null;
+  roundNumber: number;
+  currentPhase: string;
+  actionPoints: number | null;
+  turnDeadline: string | null;
+  incomeApplied: Record<string, number> | null;
+  battleResults: BattleResolvedEvent[] | null;
+  phaseChanged: boolean;
   gameOver: GameOverEvent | null;
 }
 
+export interface PhaseChangedEvent {
+  phase: string;
+  previousPhase: string;
+  roundNumber: number;
+}
+
+export interface TurnStartedEvent {
+  kingdomId: string;
+  kingdomName: string;
+  actionPoints: number;
+  turnDeadline: string | null;
+  roundNumber: number;
+}
+
+export interface RoundStartedEvent {
+  roundNumber: number;
+}
+
+// --- Building events ---
 export interface BuildingPlacedEvent {
   buildingId: string;
   tileId: string;
@@ -56,47 +83,106 @@ export interface BuildingPlacedEvent {
   buildingName: string;
   kingdomId: string;
   resourcesAfter: Record<string, number>;
+  claimedTileIds: string[];
+  isUpgrade: boolean;
 }
 
-export interface TroopsTrainedEvent {
+// --- Slot machine events ---
+export interface SlotMachineSpunEvent {
+  outcome: number;
+  actionPointsAfter: number;
+  goldAfter: number;
+  goldSpent: number;
+}
+
+// --- Army events ---
+export interface ArmyTrainedEvent {
   armyId: string;
-  tileId: string;
-  unitTypeId: string;
-  unitTypeName: string;
-  quantityTrained: number;
-  totalQuantity: number;
+  buildingId: string;
+  armyTypeId: string;
+  armyTypeName: string;
   kingdomId: string;
+  currentHP: number;
+  maxHP: number;
   resourcesAfter: Record<string, number>;
 }
 
-export interface ArmyMovedEvent {
-  armyId: string;
-  fromTileId: string;
-  toTileId: string;
-  kingdomId: string;
-  tileClaimed: boolean;
-  armyMerged: boolean;
-  mergedIntoArmyId: string | null;
-}
-
-export interface CombatResolvedEvent {
-  battleId: string;
-  tileId: string;
+// --- Combat events ---
+export interface AttackDeclaredEvent {
+  attackId: string;
+  targetTileId: string;
+  riskedTileId: string;
   attackerKingdomId: string;
   defenderKingdomId: string;
-  winnerKingdomId: string | null;
-  tileCaptured: boolean;
-  attackerStrength: number;
-  defenderStrength: number;
-  attackerCasualties: { unitTypeId: string; unitTypeName: string; before: number; lost: number }[];
-  defenderCasualties: { unitTypeId: string; unitTypeName: string; before: number; lost: number }[];
-  gameOver: GameOverEvent | null;
+}
+
+export interface ArmiesSelectedEvent {
+  declaredAttackId: string;
+  kingdomId: string;
+  armiesSelected: number;
+  maxArmies: number;
+}
+
+export interface LineupSetEvent {
+  declaredAttackId: string;
+  kingdomId: string;
+  armiesSelected: number;
+  maxArmies: number;
+}
+
+export interface BattleResolvedEvent {
+  battleId: string;
+  attackerKingdomId: string;
+  defenderKingdomId: string;
+  outcome: string;
+  tileCapturedId: string;
+  tileCapturedFromKingdomId: string;
+  rounds: BattleRoundResult[];
+}
+
+export interface BattleRoundResult {
+  roundNumber: number;
+  attackerArmyId: string;
+  defenderArmyId: string;
+  initiativeWinner: string;
+  attackerInitiativeChance: number;
+  defenderInitiativeChance: number;
+  damageDealt: number;
+  chipDamageDealt: number;
+  attackerArmyHPAfter: number;
+  defenderArmyHPAfter: number;
+  armyDestroyedId: string | null;
+}
+
+export interface ArmyReveal {
+  declaredAttackId: string;
+  attackerKingdomId: string;
+  defenderKingdomId: string;
+  attackerArmies: RevealedArmy[];
+  defenderArmies: RevealedArmy[];
+}
+
+export interface RevealedArmy {
+  armyId: string;
+  armyTypeId: string;
+  armyTypeName: string;
+  currentHP: number;
+  maxHP: number;
+  attack: number;
+  initiative: number;
 }
 
 export interface GameOverEvent {
   gameId: string;
   winnerKingdomId: string | null;
   winConditionType: string;
-  finalStandings: { kingdomId: string; kingdomName: string; tilesOwned: number; status: string }[];
+  finalStandings: KingdomResult[];
   eliminationOrder: string[];
+}
+
+export interface KingdomResult {
+  kingdomId: string;
+  kingdomName: string;
+  tilesOwned: number;
+  status: string;
 }
