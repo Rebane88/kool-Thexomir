@@ -37,4 +37,5 @@ export interface MapRenderState {
   buildModeTypeId: string | null;
   armyHighlightTileKey: string | null;
   assetsReady: boolean;
+  declareAttackGlowTileKeys: Set<string> | null;
 }

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type { Kingdom } from './types/kingdom-types';
 import { useParams } from 'react-router';
 import { useGameStore } from './game-store';
@@ -6,10 +6,10 @@ import { connectToGame, disconnectFromGame } from './game-hub';
 import { useGameCanvas } from './canvas/useGameCanvas';
 import { textureCache } from './canvas/texture-cache';
 import { drawGameMap } from './canvas/hex-renderer';
-import { pixelToAxial } from './canvas/hex-math';
+import { pixelToAxial, axialToPixel, getHexNeighbors } from './canvas/hex-math';
 import { screenToWorld, computeZoom, DEFAULT_CAMERA } from './canvas/camera';
 import type { CameraState } from './canvas/camera';
-import { placeBuilding, fetchBuildingTypes, fetchArmyTypes } from './game-api';
+import { placeBuilding, fetchBuildingTypes, fetchArmyTypes, declareAttack } from './game-api';
 import { BuildingPanel } from './components/BuildingPanel';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ErrorScreen } from './components/ErrorScreen';
@@ -23,6 +23,8 @@ import { EliminationBanner } from './components/EliminationBanner';
 import { GameOverOverlay } from './components/GameOverOverlay';
 import { SlotMachineOverlay } from './components/SlotMachineOverlay';
 import { ArmyRosterDrawer } from './components/ArmyRosterDrawer';
+import { DeclareAttackPrompt } from './components/DeclareAttackPrompt';
+import { BattleOverlay } from './components/BattleOverlay';
 import type { HexLayoutConfig, MapRenderState } from './canvas/types';
 
 export function GamePage() {
@@ -43,6 +45,8 @@ export function GamePage() {
   hoveredRef.current = hoveredTileKey;
   selectedRef.current = selectedTileKey;
 
+  const declareAttackGlowRef = useRef<Set<string> | null>(null);
+
   const cameraRef = useRef<CameraState>({ ...DEFAULT_CAMERA });
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
@@ -61,8 +65,33 @@ export function GamePage() {
   const myKingdom = useGameStore((s) => s.myKingdomId ? s.kingdoms.get(s.myKingdomId) : undefined);
   const isEliminated = myKingdom?.status === 'Defeated';
 
+  const declareAttackMode = useGameStore((s) => s.declareAttackMode);
+  const declareAttackTargetTileKey = useGameStore((s) => s.declareAttackTargetTileKey);
+  const declareAttackDefenderKingdomId = useGameStore((s) => s.declareAttackDefenderKingdomId);
+
   const [standingsOpen, setStandingsOpen] = useState(false);
   const [eliminationBanners, setEliminationBanners] = useState<string[]>([]);
+
+  // Compute glowing tile keys when in declare-attack risked tile selection mode
+  const declareAttackGlowTileKeys = useMemo<Set<string> | null>(() => {
+    if (declareAttackMode !== 'selectRiskedTile' || !declareAttackTargetTileKey) return null;
+    const state = useGameStore.getState();
+    const targetTile = state.tiles.get(declareAttackTargetTileKey);
+    if (!targetTile) return null;
+    const neighbors = getHexNeighbors(targetTile.coordQ, targetTile.coordR);
+    const glowKeys = new Set<string>();
+    for (const n of neighbors) {
+      const key = `${n.q},${n.r}`;
+      const tile = state.tiles.get(key);
+      if (tile?.kingdomId === state.myKingdomId) {
+        glowKeys.add(key);
+      }
+    }
+    return glowKeys;
+  }, [declareAttackMode, declareAttackTargetTileKey]);
+
+  // Keep glow ref in sync with memo value (allows draw callback to access without recreation)
+  declareAttackGlowRef.current = declareAttackGlowTileKeys;
 
   useEffect(() => {
     if (!gameId) return;
@@ -122,6 +151,7 @@ export function GamePage() {
         buildModeTypeId: state.buildModeTypeId,
         armyHighlightTileKey: null,
         assetsReady: assetsReadyRef.current,
+        declareAttackGlowTileKeys: declareAttackGlowRef.current,
       };
       const cam = cameraRef.current;
 
@@ -275,6 +305,50 @@ export function GamePage() {
       const state = useGameStore.getState();
       const tile = state.tiles.get(key);
 
+      // DECLARE ATTACK INTERCEPT: handle attack flow
+      if (state.declareAttackMode === 'selectRiskedTile' && tile) {
+        // Check tile is owned by me AND is adjacent to the target tile
+        if (tile.kingdomId === state.myKingdomId && state.declareAttackTargetTileKey) {
+          const targetTile = state.tiles.get(state.declareAttackTargetTileKey);
+          if (targetTile) {
+            const neighbors = getHexNeighbors(targetTile.coordQ, targetTile.coordR);
+            const isAdjacent = neighbors.some((n) => `${n.q},${n.r}` === key);
+            if (isAdjacent && state.gameId) {
+              declareAttack(state.gameId, {
+                targetTileId: state.declareAttackTargetTileId!,
+                riskedTileId: tile.id,
+              }).catch((err) => console.error('Failed to declare attack:', err));
+              useGameStore.getState().completeDeclareAttack();
+              markDirty();
+              return;
+            }
+          }
+        }
+        // Clicking anything else while in select-risked-tile mode: ignore
+        return;
+      }
+
+      // DECLARE ATTACK ENTRY: click enemy hex adjacent to owned territory during Action Phase
+      if (
+        state.declareAttackMode === 'idle' &&
+        state.currentPhase === 'Action' &&
+        (state.actionPoints ?? 0) >= 1 &&
+        tile &&
+        tile.kingdomId !== null &&
+        tile.kingdomId !== state.myKingdomId
+      ) {
+        const neighbors = getHexNeighbors(tile.coordQ, tile.coordR);
+        const hasAdjacentOwned = neighbors.some((n) => {
+          const nTile = state.tiles.get(`${n.q},${n.r}`);
+          return nTile?.kingdomId === state.myKingdomId;
+        });
+        if (hasAdjacentOwned) {
+          useGameStore.getState().setDeclareAttackTarget(tile.id, key, tile.kingdomId!);
+          markDirty();
+          return;
+        }
+      }
+
       // BUILD MODE INTERCEPT: handle placement instead of selection
       if (state.buildModeTypeId && tile) {
         if (tile.kingdomId === state.myKingdomId && tile.buildings.length === 0) {
@@ -350,9 +424,14 @@ export function GamePage() {
         handleResetCamera();
       }
       if (e.key === 'Escape') {
-        const { buildModeTypeId } = useGameStore.getState();
-        if (buildModeTypeId) {
-          useGameStore.getState().setBuildMode(null);
+        const storeState = useGameStore.getState();
+        if (storeState.declareAttackMode !== 'idle') {
+          storeState.cancelDeclareAttack();
+          markDirty();
+          return;
+        }
+        if (storeState.buildModeTypeId) {
+          storeState.setBuildMode(null);
           markDirty();
         }
       }
@@ -409,7 +488,31 @@ export function GamePage() {
       {!isLoading && <GameHud onStandingsToggle={() => setStandingsOpen((o) => !o)} />}
       {!isLoading && <Standings open={standingsOpen} onClose={() => setStandingsOpen(false)} />}
       {!isLoading && <SlotMachineOverlay />}
+      {!isLoading && <BattleOverlay />}
       {!isLoading && <ArmyRosterDrawer />}
+      {!isLoading && declareAttackMode === 'selectRiskedTile' && declareAttackTargetTileKey && (() => {
+        const state = useGameStore.getState();
+        const targetTile = state.tiles.get(declareAttackTargetTileKey);
+        const defenderKingdom = declareAttackDefenderKingdomId
+          ? state.kingdoms.get(declareAttackDefenderKingdomId)
+          : null;
+        if (!targetTile) return null;
+        const canvas = canvasRef.current;
+        if (!canvas) return null;
+        const rect = canvas.getBoundingClientRect();
+        const layout = { size: 30, origin: { x: rect.width / 2, y: rect.height / 2 } };
+        const worldPos = axialToPixel({ q: targetTile.coordQ, r: targetTile.coordR }, layout);
+        const cam = cameraRef.current;
+        const screenX = worldPos.x * cam.zoom + cam.offsetX;
+        const screenY = worldPos.y * cam.zoom + cam.offsetY;
+        return (
+          <DeclareAttackPrompt
+            defenderKingdomName={defenderKingdom?.name ?? 'Enemy'}
+            onCancel={() => useGameStore.getState().cancelDeclareAttack()}
+            position={{ x: rect.left + screenX, y: rect.top + screenY }}
+          />
+        );
+      })()}
       {!isLoading && showBuildingPanel && (
         <div className={isMyTurn && !isEliminated ? '' : 'opacity-50 pointer-events-none'}>
           <BuildingPanel selectedTileKey={selectedTileKey!} />

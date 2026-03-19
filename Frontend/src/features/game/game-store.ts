@@ -18,6 +18,7 @@ import type {
   LineupSetEvent,
   BattleResolvedEvent,
   GameOverEvent,
+  ArmyReveal,
 } from './types/event-types';
 
 interface GameState {
@@ -53,6 +54,17 @@ interface GameState {
   battleReadiness: Map<string, { attackerReady: boolean; defenderReady: boolean }>;
   lineupReadiness: Map<string, { attackerReady: boolean; defenderReady: boolean }>;
 
+  // Declare-attack flow state
+  declareAttackMode: 'idle' | 'selectRiskedTile';
+  declareAttackTargetTileId: string | null;
+  declareAttackTargetTileKey: string | null;
+  declareAttackDefenderKingdomId: string | null;
+
+  // Battle flow local state
+  battleSelections: Map<string, string[]>; // Map<attackId, armyId[]>
+  battleReveals: Map<string, ArmyReveal>; // Map<attackId, reveal data>
+  battleLineups: Map<string, string[]>; // Map<attackId, armyId[] in order>
+
   // Building reference data
   buildingTypes: BuildingTypeRef[];
   buildModeTypeId: string | null;
@@ -73,6 +85,19 @@ interface GameState {
   resetState: () => void;
   setConnectionStatus: (status: ConnectionStatus) => void;
   setActiveGameId: (id: string | null) => void;
+
+  // Declare-attack actions
+  setDeclareAttackTarget: (tileId: string, tileKey: string, defenderKingdomId: string) => void;
+  cancelDeclareAttack: () => void;
+  completeDeclareAttack: () => void;
+
+  // Battle flow actions
+  toggleArmySelection: (attackId: string, armyId: string) => void;
+  clearBattleSelections: () => void;
+  setBattleReveal: (attackId: string, reveal: ArmyReveal) => void;
+  setBattleLineup: (attackId: string, armyIds: string[]) => void;
+  moveLineupArmy: (attackId: string, armyId: string, direction: 'up' | 'down') => void;
+  clearBattleFlow: () => void;
 
   // v6.0 event handlers
   handleTurnAdvanced: (data: TurnAdvancedEvent) => void;
@@ -114,6 +139,13 @@ const initialState = {
   lastBattleResult: null as BattleResolvedEvent | null,
   battleReadiness: new Map<string, { attackerReady: boolean; defenderReady: boolean }>(),
   lineupReadiness: new Map<string, { attackerReady: boolean; defenderReady: boolean }>(),
+  declareAttackMode: 'idle' as 'idle' | 'selectRiskedTile',
+  declareAttackTargetTileId: null as string | null,
+  declareAttackTargetTileKey: null as string | null,
+  declareAttackDefenderKingdomId: null as string | null,
+  battleSelections: new Map<string, string[]>(),
+  battleReveals: new Map<string, ArmyReveal>(),
+  battleLineups: new Map<string, string[]>(),
   buildingTypes: [] as BuildingTypeRef[],
   buildModeTypeId: null as string | null,
   armyTypes: [] as ArmyTypeRef[],
@@ -198,6 +230,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       activeBattle: null,
       battleReadiness: new Map(),
       lineupReadiness: new Map(),
+      declareAttackMode: 'idle' as const,
+      declareAttackTargetTileId: null,
+      declareAttackTargetTileKey: null,
+      declareAttackDefenderKingdomId: null,
+      battleSelections: new Map(),
+      battleReveals: new Map(),
+      battleLineups: new Map(),
     });
   },
 
@@ -225,6 +264,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastBattleResult: null,
       battleReadiness: new Map(),
       lineupReadiness: new Map(),
+      declareAttackMode: 'idle' as const,
+      declareAttackTargetTileId: null,
+      declareAttackTargetTileKey: null,
+      declareAttackDefenderKingdomId: null,
+      battleSelections: new Map(),
+      battleReveals: new Map(),
+      battleLineups: new Map(),
       buildingTypes: [],
       buildModeTypeId: null,
       armyTypes: [],
@@ -244,6 +290,84 @@ export const useGameStore = create<GameState>((set, get) => ({
   setConnectionStatus: (status) => set({ connectionStatus: status }),
 
   setActiveGameId: (id) => set({ activeGameId: id }),
+
+  setDeclareAttackTarget: (tileId, tileKey, defenderKingdomId) => set({
+    declareAttackMode: 'selectRiskedTile',
+    declareAttackTargetTileId: tileId,
+    declareAttackTargetTileKey: tileKey,
+    declareAttackDefenderKingdomId: defenderKingdomId,
+  }),
+
+  cancelDeclareAttack: () => set({
+    declareAttackMode: 'idle',
+    declareAttackTargetTileId: null,
+    declareAttackTargetTileKey: null,
+    declareAttackDefenderKingdomId: null,
+  }),
+
+  completeDeclareAttack: () => set({
+    declareAttackMode: 'idle',
+    declareAttackTargetTileId: null,
+    declareAttackTargetTileKey: null,
+    declareAttackDefenderKingdomId: null,
+  }),
+
+  toggleArmySelection: (attackId, armyId) => {
+    const { battleSelections } = get();
+    const current = battleSelections.get(attackId) ?? [];
+    const newSelections = new Map(battleSelections);
+    if (current.includes(armyId)) {
+      // Remove from this battle
+      newSelections.set(attackId, current.filter((id) => id !== armyId));
+    } else {
+      // Check army is not assigned to another battle
+      const isAssignedElsewhere = [...battleSelections.entries()].some(
+        ([bid, ids]) => bid !== attackId && ids.includes(armyId)
+      );
+      if (!isAssignedElsewhere) {
+        newSelections.set(attackId, [...current, armyId]);
+      }
+    }
+    set({ battleSelections: newSelections });
+  },
+
+  clearBattleSelections: () => set({ battleSelections: new Map() }),
+
+  setBattleReveal: (attackId, reveal) => {
+    const newReveals = new Map(get().battleReveals);
+    newReveals.set(attackId, reveal);
+    set({ battleReveals: newReveals });
+  },
+
+  setBattleLineup: (attackId, armyIds) => {
+    const newLineups = new Map(get().battleLineups);
+    newLineups.set(attackId, armyIds);
+    set({ battleLineups: newLineups });
+  },
+
+  moveLineupArmy: (attackId, armyId, direction) => {
+    const { battleLineups } = get();
+    const lineup = [...(battleLineups.get(attackId) ?? [])];
+    const index = lineup.indexOf(armyId);
+    if (index === -1) return;
+    if (direction === 'up' && index > 0) {
+      [lineup[index - 1], lineup[index]] = [lineup[index], lineup[index - 1]];
+    } else if (direction === 'down' && index < lineup.length - 1) {
+      [lineup[index], lineup[index + 1]] = [lineup[index + 1], lineup[index]];
+    }
+    const newLineups = new Map(battleLineups);
+    newLineups.set(attackId, lineup);
+    set({ battleLineups: newLineups });
+  },
+
+  clearBattleFlow: () => set({
+    battleSelections: new Map(),
+    battleReveals: new Map(),
+    battleLineups: new Map(),
+    battleReadiness: new Map(),
+    lineupReadiness: new Map(),
+    activeBattle: null,
+  }),
 
   handleTurnAdvanced: (data) => {
     const { kingdoms, currentTurnKingdomId, myKingdomId } = get();
@@ -272,6 +396,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       declaredAttacks: [],
       battleReadiness: new Map(),
       lineupReadiness: new Map(),
+      declareAttackMode: 'idle' as const,
+      declareAttackTargetTileId: null,
+      declareAttackTargetTileKey: null,
+      declareAttackDefenderKingdomId: null,
+      battleSelections: new Map(),
+      battleReveals: new Map(),
+      battleLineups: new Map(),
     });
   },
 
@@ -325,11 +456,19 @@ export const useGameStore = create<GameState>((set, get) => ({
   handlePhaseChanged: (data) => {
     const updates: Partial<ReturnType<typeof get>> = {
       currentPhase: data.phase as GamePhase,
+      // Clear declare-attack mode whenever phase changes
+      declareAttackMode: 'idle' as const,
+      declareAttackTargetTileId: null,
+      declareAttackTargetTileKey: null,
+      declareAttackDefenderKingdomId: null,
     };
     if (data.phase === 'Battle') {
       updates.activeBattle = 'SelectArmies';
       updates.battleReadiness = new Map();
       updates.lineupReadiness = new Map();
+      updates.battleSelections = new Map();
+      updates.battleReveals = new Map();
+      updates.battleLineups = new Map();
     }
     set(updates);
   },
@@ -488,6 +627,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastBattleResult: data,
       activeBattle: allResolved ? null : get().activeBattle,
       declaredAttacks: newDeclaredAttacks,
+      ...(allResolved ? {
+        battleSelections: new Map(),
+        battleReveals: new Map(),
+        battleLineups: new Map(),
+        battleReadiness: new Map(),
+        lineupReadiness: new Map(),
+      } : {}),
     });
   },
 

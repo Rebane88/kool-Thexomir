@@ -218,6 +218,22 @@ export function drawGameMap(
     }
   }
 
+  // Layer 2.55: Declare-attack risked tile glow (green overlay on eligible owned tiles)
+  if (renderState.declareAttackGlowTileKeys && renderState.declareAttackGlowTileKeys.size > 0) {
+    for (const [key] of state.tiles) {
+      if (!renderState.declareAttackGlowTileKeys.has(key)) continue;
+      const data = tileRenderData.get(key);
+      if (!data) continue;
+      drawHexPath(ctx, data.corners);
+      ctx.fillStyle = 'rgba(74, 222, 128, 0.3)';
+      ctx.fill();
+      drawHexPath(ctx, data.corners);
+      ctx.strokeStyle = '#4ade80';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+
   // Layer 2.6: Movement/attack overlays
   if (renderState.armyHighlightTileKey && !renderState.buildModeTypeId) {
     const armyTile = state.tiles.get(renderState.armyHighlightTileKey);

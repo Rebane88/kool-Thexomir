@@ -129,7 +129,7 @@ function buildState(opts: {
   };
 }
 
-const noRender: MapRenderState = { hoveredTileKey: null, selectedTileKey: null, buildModeTypeId: null, armyHighlightTileKey: null, assetsReady: true };
+const noRender: MapRenderState = { hoveredTileKey: null, selectedTileKey: null, buildModeTypeId: null, armyHighlightTileKey: null, assetsReady: true, declareAttackGlowTileKeys: null };
 
 describe('getKingdomColor', () => {
   it('returns indexed color for kingdoms by insertion order', () => {
@@ -206,7 +206,7 @@ describe('drawGameMap', () => {
   it('draws thick gold 3px border for selected tile', () => {
     const tile = makeTile({ coordQ: 0, coordR: 0 });
     const state = buildState({ tiles: [tile] });
-    const renderState: MapRenderState = { hoveredTileKey: null, selectedTileKey: '0,0', buildModeTypeId: null, armyHighlightTileKey: null, assetsReady: true };
+    const renderState: MapRenderState = { hoveredTileKey: null, selectedTileKey: '0,0', buildModeTypeId: null, armyHighlightTileKey: null, assetsReady: true, declareAttackGlowTileKeys: null };
     drawGameMap(ctx, 800, 600, state, renderState);
     expect(ctx._tracker.lineWidthHistory).toContain(3);
     expect(ctx._tracker.strokeStyleHistory).toContain(SELECTION_COLOR);
@@ -215,7 +215,7 @@ describe('drawGameMap', () => {
   it('draws faint gold border for hovered tile', () => {
     const tile = makeTile({ coordQ: 0, coordR: 0 });
     const state = buildState({ tiles: [tile] });
-    const renderState: MapRenderState = { hoveredTileKey: '0,0', selectedTileKey: null, buildModeTypeId: null, armyHighlightTileKey: null, assetsReady: true };
+    const renderState: MapRenderState = { hoveredTileKey: '0,0', selectedTileKey: null, buildModeTypeId: null, armyHighlightTileKey: null, assetsReady: true, declareAttackGlowTileKeys: null };
     drawGameMap(ctx, 800, 600, state, renderState);
     expect(ctx._tracker.strokeStyleHistory).toContain(HOVER_COLOR);
   });
