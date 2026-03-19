@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+  <path d="M9 20V8l3-6 3 6v12H9zm2-2h2V9l-1-2-1 2v9z"/>
+  <polygon points="12,1 13,3.5 11,3.5"/>
+  <rect x="10" y="14" width="4" height="2"/>
+  <rect x="10" y="10" width="4" height="2"/>
+  <path d="M7 20v-4l2-1v5H7zm8 0v-5l2 1v4h-2z"/>
+</svg>

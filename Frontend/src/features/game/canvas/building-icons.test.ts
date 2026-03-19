@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { BUILDING_ICON_IMPORTS, ICON_RENDER_SIZE } from './building-icons';
 
 describe('BUILDING_ICON_IMPORTS', () => {
-  it('contains all 20 building types (19 buildings + Castle)', () => {
-    expect(Object.keys(BUILDING_ICON_IMPORTS)).toHaveLength(20);
+  it('contains all 19 building types (18 buildings + Castle)', () => {
+    expect(Object.keys(BUILDING_ICON_IMPORTS)).toHaveLength(19);
   });
 
   it('has entries for all backend building names', () => {
