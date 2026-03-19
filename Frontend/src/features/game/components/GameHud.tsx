@@ -6,10 +6,10 @@ import { WinConditionLabel } from './WinConditionLabel';
 import { EndTurnButton } from './EndTurnButton';
 
 interface GameHudProps {
-  onScoreboardToggle: () => void;
+  onStandingsToggle: () => void;
 }
 
-export function GameHud({ onScoreboardToggle }: GameHudProps) {
+export function GameHud({ onStandingsToggle }: GameHudProps) {
   const isMyTurn = useGameStore(
     (s) => s.myKingdomId !== null && s.currentTurnKingdomId === s.myKingdomId,
   );
@@ -25,11 +25,11 @@ export function GameHud({ onScoreboardToggle }: GameHudProps) {
       </div>
       <div className="flex items-center gap-2">
         <button
-          onClick={onScoreboardToggle}
+          onClick={onStandingsToggle}
           className="text-parchment-400 hover:text-gold-400 text-xs px-2 py-1 border border-bronze-700 rounded transition-colors"
-          title="Toggle Scoreboard (Tab)"
+          title="Toggle Standings (Tab)"
         >
-          Scores
+          Standings
         </button>
         <div className={isMyTurn ? '' : 'opacity-50 pointer-events-none'}>
           <EndTurnButton />

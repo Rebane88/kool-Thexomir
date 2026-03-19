@@ -205,7 +205,7 @@ describe('delta events', () => {
       gameId: 'game-1',
       winnerKingdomId: 'k-1',
       winConditionType: 'Domination',
-      finalScores: [],
+      finalStandings: [],
       eliminationOrder: [],
     };
     const event: TurnAdvancedEvent = {
@@ -372,7 +372,7 @@ describe('delta events', () => {
       gameId: 'game-1',
       winnerKingdomId: 'k-1',
       winConditionType: 'Domination',
-      finalScores: [],
+      finalStandings: [],
       eliminationOrder: [],
     };
     const event: CombatResolvedEvent = {
@@ -481,8 +481,8 @@ describe('delta events', () => {
       gameId: 'game-1',
       winnerKingdomId: 'k-1',
       winConditionType: 'Domination',
-      finalScores: [
-        { kingdomId: 'k-1', kingdomName: 'Kingdom Alpha', score: 100, tilesOwned: 5, isEliminated: false },
+      finalStandings: [
+        { kingdomId: 'k-1', kingdomName: 'Kingdom Alpha', tilesOwned: 5, status: 'Active' },
       ],
       eliminationOrder: ['k-2'],
     };

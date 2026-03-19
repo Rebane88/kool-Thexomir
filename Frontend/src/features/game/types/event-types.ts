@@ -97,6 +97,6 @@ export interface GameOverEvent {
   gameId: string;
   winnerKingdomId: string | null;
   winConditionType: string;
-  finalScores: { kingdomId: string; kingdomName: string; score: number; tilesOwned: number; isEliminated: boolean }[];
+  finalStandings: { kingdomId: string; kingdomName: string; tilesOwned: number; status: string }[];
   eliminationOrder: string[];
 }

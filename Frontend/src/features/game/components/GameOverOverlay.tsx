@@ -14,9 +14,9 @@ export function GameOverOverlay() {
   if (!gameOver) return null;
 
   const isWinner = gameOver.winnerKingdomId === myKingdomId;
-  const winnerScore = gameOver.finalScores.find(
+  const winnerName = gameOver.finalStandings.find(
     (s) => s.kingdomId === gameOver.winnerKingdomId,
-  );
+  )?.kingdomName ?? 'Unknown';
   const titleColor = isWinner
     ? 'text-gold-400'
     : gameOver.winnerKingdomId
@@ -38,7 +38,7 @@ export function GameOverOverlay() {
 
         <p className="text-center text-parchment-400 text-sm mb-6">
           {gameOver.winnerKingdomId
-            ? `${winnerScore?.kingdomName ?? 'Unknown'} wins by ${gameOver.winConditionType}`
+            ? `${winnerName} wins by ${gameOver.winConditionType}`
             : `Game ended - ${gameOver.winConditionType}`}
         </p>
 
@@ -46,9 +46,13 @@ export function GameOverOverlay() {
           <h2 className="font-heading text-gold-400 text-sm font-semibold">
             Final Standings
           </h2>
-          {gameOver.finalScores
+          {gameOver.finalStandings
             .slice()
-            .sort((a, b) => b.score - a.score)
+            .sort((a, b) => {
+              if (a.kingdomId === gameOver.winnerKingdomId) return -1;
+              if (b.kingdomId === gameOver.winnerKingdomId) return 1;
+              return b.tilesOwned - a.tilesOwned;
+            })
             .map((entry, index) => {
               const color = getKingdomColor(kingdoms, entry.kingdomId);
               const isMe = entry.kingdomId === myKingdomId;
@@ -57,7 +61,7 @@ export function GameOverOverlay() {
               return (
                 <div
                   key={entry.kingdomId}
-                  className={`flex items-center gap-3 px-3 py-2 rounded ${isMe ? 'bg-bronze-800/50 border border-bronze-600' : ''} ${entry.isEliminated ? 'opacity-50' : ''}`}
+                  className={`flex items-center gap-3 px-3 py-2 rounded ${isMe ? 'bg-bronze-800/50 border border-bronze-600' : ''} ${entry.status === 'Defeated' ? 'opacity-50' : ''}`}
                 >
                   <span className="text-parchment-500 text-sm w-4">
                     {index + 1}.
@@ -76,13 +80,10 @@ export function GameOverOverlay() {
                       </span>
                     )}
                   </span>
-                  <span className="text-parchment-300 text-sm">
-                    {entry.score} pts
-                  </span>
                   <span className="text-parchment-500 text-xs">
                     {entry.tilesOwned} tiles
                   </span>
-                  {entry.isEliminated && (
+                  {entry.status === 'Defeated' && (
                     <Badge variant="danger">Eliminated</Badge>
                   )}
                 </div>
