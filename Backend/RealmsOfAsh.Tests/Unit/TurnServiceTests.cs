@@ -7,6 +7,7 @@ using Domain.Buildings;
 using Domain.Factions;
 using Domain.Game;
 using Domain.Map;
+using Domain.Military;
 using Domain.Resources;
 using Moq;
 using Shouldly;
@@ -26,6 +27,7 @@ public class TurnServiceTests
     private readonly Mock<IBuildingRepository> _buildingsMock = new();
     private readonly Mock<IKingdomResourceRepository> _resourcesMock = new();
     private readonly Mock<IBuildingTypeRepository> _buildingTypesMock = new();
+    private readonly Mock<IArmyRepository> _armiesMock = new();
     private readonly TurnService _sut;
 
     // Fixed IDs
@@ -45,6 +47,7 @@ public class TurnServiceTests
         _unitOfWorkMock.Setup(u => u.Buildings).Returns(_buildingsMock.Object);
         _unitOfWorkMock.Setup(u => u.KingdomResources).Returns(_resourcesMock.Object);
         _unitOfWorkMock.Setup(u => u.BuildingTypes).Returns(_buildingTypesMock.Object);
+        _unitOfWorkMock.Setup(u => u.Armies).Returns(_armiesMock.Object);
         _unitOfWorkMock.Setup(u => u.CommitAsync(default)).ReturnsAsync(1);
 
         _sut = new TurnService(_unitOfWorkMock.Object, _gameGuardMock.Object);
@@ -110,7 +113,44 @@ public class TurnServiceTests
         // No buildings -- income returns empty
         _tilesMock.Setup(t => t.GetTilesWithBuildingsAndTerrainForKingdomAsync(It.IsAny<Guid>()))
             .ReturnsAsync(new List<Tile>());
+        // No armies -- healing/upkeep skipped
+        _armiesMock.Setup(a => a.GetArmiesWithTypeForKingdomAsync(It.IsAny<Guid>()))
+            .ReturnsAsync(new List<Army>());
     }
+
+    private static FactionType CreateFactionTypeWithHealing(decimal healRateModifier = 1.0m) => new()
+    {
+        Id = FactionTypeId,
+        Name = new LangStr("Test Faction", "en"),
+        ActionPointModifier = 0,
+        ResourceProductionModifier = 1.0m,
+        HealRateModifier = healRateModifier
+    };
+
+    private static ArmyType CreateArmyType(int upkeepGold = 5, int upkeepFood = 3, int upkeepMana = 0) => new()
+    {
+        Id = Guid.NewGuid(),
+        Name = new LangStr("Warrior", "en"),
+        Attack = 10,
+        HP = 100,
+        Initiative = 5,
+        UpkeepGold = upkeepGold,
+        UpkeepFood = upkeepFood,
+        UpkeepMana = upkeepMana,
+        RequiredBuildingTypeId = Guid.NewGuid()
+    };
+
+    private static Army CreateArmy(Guid kingdomId, ArmyType armyType, int currentHP, int maxHP) => new()
+    {
+        Id = Guid.NewGuid(),
+        ArmyTypeId = armyType.Id,
+        ArmyType = armyType,
+        KingdomId = kingdomId,
+        BuildingId = Guid.NewGuid(),
+        CurrentHP = currentHP,
+        MaxHP = maxHP,
+        CreatedOnRound = 1
+    };
 
     // -------------------------------------------------------------------------
     // Guard failure tests
@@ -394,5 +434,209 @@ public class TurnServiceTests
         await _sut.EndTurnAsync(GameId, UserId);
 
         _unitOfWorkMock.Verify(u => u.CommitAsync(default), Times.Once);
+    }
+
+    // -------------------------------------------------------------------------
+    // Income Phase: Army Healing tests
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task EndTurnAsync_IncomePhase_HealsDamagedArmies()
+    {
+        var game = CreateGame();
+        game.HealPercent = 0.10m;
+        SetupGuardSuccess(game);
+        var k1 = CreateKingdom(Kingdom1Id, 1);
+        SetupKingdoms(k1);
+        SetupFactionType(CreateFactionTypeWithHealing());
+
+        // No buildings (skip income)
+        _tilesMock.Setup(t => t.GetTilesWithBuildingsAndTerrainForKingdomAsync(Kingdom1Id))
+            .ReturnsAsync(new List<Tile>());
+
+        // Army at 80/100 HP -- should heal to 90 (10% of 100 = 10)
+        var armyType = CreateArmyType(upkeepGold: 0, upkeepFood: 0);
+        var army = CreateArmy(Kingdom1Id, armyType, currentHP: 80, maxHP: 100);
+        _armiesMock.Setup(a => a.GetArmiesWithTypeForKingdomAsync(Kingdom1Id))
+            .ReturnsAsync(new List<Army> { army });
+
+        // Provide enough resources so upkeep doesn't trigger disbanding
+        var resources = new List<KingdomResource>
+        {
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Gold, Amount = 1000 },
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Food, Amount = 1000 },
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Mana, Amount = 1000 }
+        };
+        _resourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom1Id)).ReturnsAsync(resources);
+
+        var result = await _sut.EndTurnAsync(GameId, UserId);
+
+        result.IsSuccess.ShouldBeTrue();
+        army.CurrentHP.ShouldBe(90);
+        _armiesMock.Verify(a => a.UpdateAsync(army), Times.Once);
+        _turnLogsMock.Verify(t => t.AddAsync(It.Is<TurnLog>(
+            tl => tl.EventType == EEventType.ArmyHealed)), Times.Once);
+    }
+
+    [Fact]
+    public async Task EndTurnAsync_IncomePhase_DoesNotHealFullHPArmies()
+    {
+        var game = CreateGame();
+        game.HealPercent = 0.10m;
+        SetupGuardSuccess(game);
+        var k1 = CreateKingdom(Kingdom1Id, 1);
+        SetupKingdoms(k1);
+        SetupFactionType(CreateFactionTypeWithHealing());
+
+        _tilesMock.Setup(t => t.GetTilesWithBuildingsAndTerrainForKingdomAsync(Kingdom1Id))
+            .ReturnsAsync(new List<Tile>());
+
+        // Army at full HP
+        var armyType = CreateArmyType(upkeepGold: 0, upkeepFood: 0);
+        var army = CreateArmy(Kingdom1Id, armyType, currentHP: 100, maxHP: 100);
+        _armiesMock.Setup(a => a.GetArmiesWithTypeForKingdomAsync(Kingdom1Id))
+            .ReturnsAsync(new List<Army> { army });
+
+        var resources = new List<KingdomResource>
+        {
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Gold, Amount = 1000 },
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Food, Amount = 1000 },
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Mana, Amount = 1000 }
+        };
+        _resourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom1Id)).ReturnsAsync(resources);
+
+        await _sut.EndTurnAsync(GameId, UserId);
+
+        army.CurrentHP.ShouldBe(100);
+        _armiesMock.Verify(a => a.UpdateAsync(It.IsAny<Army>()), Times.Never);
+        _turnLogsMock.Verify(t => t.AddAsync(It.Is<TurnLog>(
+            tl => tl.EventType == EEventType.ArmyHealed)), Times.Never);
+    }
+
+    // -------------------------------------------------------------------------
+    // Income Phase: Army Upkeep tests
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task EndTurnAsync_IncomePhase_DeductsUpkeepForArmies()
+    {
+        var game = CreateGame();
+        game.HealPercent = 0.10m;
+        SetupGuardSuccess(game);
+        var k1 = CreateKingdom(Kingdom1Id, 1);
+        SetupKingdoms(k1);
+        SetupFactionType(CreateFactionTypeWithHealing());
+
+        _tilesMock.Setup(t => t.GetTilesWithBuildingsAndTerrainForKingdomAsync(Kingdom1Id))
+            .ReturnsAsync(new List<Tile>());
+
+        var armyType = CreateArmyType(upkeepGold: 5, upkeepFood: 3, upkeepMana: 0);
+        var army = CreateArmy(Kingdom1Id, armyType, currentHP: 100, maxHP: 100);
+        _armiesMock.Setup(a => a.GetArmiesWithTypeForKingdomAsync(Kingdom1Id))
+            .ReturnsAsync(new List<Army> { army });
+
+        var resources = new List<KingdomResource>
+        {
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Gold, Amount = 100 },
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Food, Amount = 100 },
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Mana, Amount = 100 }
+        };
+        _resourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom1Id)).ReturnsAsync(resources);
+
+        await _sut.EndTurnAsync(GameId, UserId);
+
+        resources.First(r => r.ResourceType == EResourceType.Gold).Amount.ShouldBe(95);
+        resources.First(r => r.ResourceType == EResourceType.Food).Amount.ShouldBe(97);
+        _turnLogsMock.Verify(t => t.AddAsync(It.Is<TurnLog>(
+            tl => tl.EventType == EEventType.UpkeepPaid)), Times.Once);
+    }
+
+    [Fact]
+    public async Task EndTurnAsync_IncomePhase_DisbandsMostExpensiveWhenUnaffordable()
+    {
+        var game = CreateGame();
+        game.HealPercent = 0.10m;
+        SetupGuardSuccess(game);
+        var k1 = CreateKingdom(Kingdom1Id, 1);
+        SetupKingdoms(k1);
+        SetupFactionType(CreateFactionTypeWithHealing());
+
+        _tilesMock.Setup(t => t.GetTilesWithBuildingsAndTerrainForKingdomAsync(Kingdom1Id))
+            .ReturnsAsync(new List<Tile>());
+
+        // Expensive army (upkeep gold=50) and cheap army (upkeep gold=2)
+        var expensiveType = CreateArmyType(upkeepGold: 50, upkeepFood: 0, upkeepMana: 0);
+        var cheapType = CreateArmyType(upkeepGold: 2, upkeepFood: 0, upkeepMana: 0);
+        var expensiveArmy = CreateArmy(Kingdom1Id, expensiveType, currentHP: 100, maxHP: 100);
+        var cheapArmy = CreateArmy(Kingdom1Id, cheapType, currentHP: 100, maxHP: 100);
+
+        _armiesMock.Setup(a => a.GetArmiesWithTypeForKingdomAsync(Kingdom1Id))
+            .ReturnsAsync(new List<Army> { expensiveArmy, cheapArmy });
+
+        // Only 10 gold -- can't afford both (52 total), can afford cheap (2) after disbanding expensive
+        var resources = new List<KingdomResource>
+        {
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Gold, Amount = 10 },
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Food, Amount = 1000 },
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Mana, Amount = 1000 }
+        };
+        _resourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom1Id)).ReturnsAsync(resources);
+
+        await _sut.EndTurnAsync(GameId, UserId);
+
+        // Expensive army should be disbanded
+        _armiesMock.Verify(a => a.DeleteAsync(expensiveArmy.Id), Times.Once);
+        // Cheap army should NOT be disbanded
+        _armiesMock.Verify(a => a.DeleteAsync(cheapArmy.Id), Times.Never);
+        // Disband log created
+        _turnLogsMock.Verify(t => t.AddAsync(It.Is<TurnLog>(
+            tl => tl.EventType == EEventType.ArmyDisbanded)), Times.Once);
+        // Upkeep still paid for remaining
+        _turnLogsMock.Verify(t => t.AddAsync(It.Is<TurnLog>(
+            tl => tl.EventType == EEventType.UpkeepPaid)), Times.Once);
+        // Resources deducted for cheap army
+        resources.First(r => r.ResourceType == EResourceType.Gold).Amount.ShouldBe(8);
+    }
+
+    [Fact]
+    public async Task EndTurnAsync_IncomePhase_HealingHappensBeforeUpkeep()
+    {
+        // A scenario where a damaged army's healing happens before upkeep is checked.
+        // This test verifies the correct ordering: income -> heal -> upkeep.
+        var game = CreateGame();
+        game.HealPercent = 0.10m;
+        SetupGuardSuccess(game);
+        var k1 = CreateKingdom(Kingdom1Id, 1);
+        SetupKingdoms(k1);
+        SetupFactionType(CreateFactionTypeWithHealing());
+
+        _tilesMock.Setup(t => t.GetTilesWithBuildingsAndTerrainForKingdomAsync(Kingdom1Id))
+            .ReturnsAsync(new List<Tile>());
+
+        // Damaged army should be healed first, then upkeep deducted
+        var armyType = CreateArmyType(upkeepGold: 5, upkeepFood: 0, upkeepMana: 0);
+        var army = CreateArmy(Kingdom1Id, armyType, currentHP: 50, maxHP: 100);
+        _armiesMock.Setup(a => a.GetArmiesWithTypeForKingdomAsync(Kingdom1Id))
+            .ReturnsAsync(new List<Army> { army });
+
+        var resources = new List<KingdomResource>
+        {
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Gold, Amount = 100 },
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Food, Amount = 100 },
+            new() { Id = Guid.NewGuid(), KingdomId = Kingdom1Id, ResourceType = EResourceType.Mana, Amount = 100 }
+        };
+        _resourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom1Id)).ReturnsAsync(resources);
+
+        await _sut.EndTurnAsync(GameId, UserId);
+
+        // Healing happened (50 + 10% of 100 = 60)
+        army.CurrentHP.ShouldBe(60);
+        // Then upkeep was deducted
+        resources.First(r => r.ResourceType == EResourceType.Gold).Amount.ShouldBe(95);
+        // Both logs present
+        _turnLogsMock.Verify(t => t.AddAsync(It.Is<TurnLog>(
+            tl => tl.EventType == EEventType.ArmyHealed)), Times.Once);
+        _turnLogsMock.Verify(t => t.AddAsync(It.Is<TurnLog>(
+            tl => tl.EventType == EEventType.UpkeepPaid)), Times.Once);
     }
 }
