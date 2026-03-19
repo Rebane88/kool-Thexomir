@@ -4,6 +4,7 @@ import { useParams } from 'react-router';
 import { useGameStore } from './game-store';
 import { connectToGame, disconnectFromGame } from './game-hub';
 import { useGameCanvas } from './canvas/useGameCanvas';
+import { textureCache } from './canvas/texture-cache';
 import { drawGameMap } from './canvas/hex-renderer';
 import { pixelToAxial, getHexNeighbors } from './canvas/hex-math';
 import { screenToWorld, computeZoom, DEFAULT_CAMERA } from './canvas/camera';
@@ -34,6 +35,10 @@ export function GamePage() {
 
   const [armyHighlightTileKey, setArmyHighlightTileKey] = useState<string | null>(null);
   const [attackTarget, setAttackTarget] = useState<{ tileId: string; tileKey: string } | null>(null);
+  const [assetsReady, setAssetsReady] = useState(false);
+  const [loadProgress, setLoadProgress] = useState({ loaded: 0, total: 19 });
+  const assetsReadyRef = useRef(false);
+  assetsReadyRef.current = assetsReady;
 
   const hoveredRef = useRef(hoveredTileKey);
   const selectedRef = useRef(selectedTileKey);
@@ -160,6 +165,7 @@ export function GamePage() {
         selectedTileKey: selectedRef.current,
         buildModeTypeId: state.buildModeTypeId,
         armyHighlightTileKey: armyHighlightRef.current,
+        assetsReady: assetsReadyRef.current,
       };
       const cam = cameraRef.current;
 
@@ -194,6 +200,23 @@ export function GamePage() {
   );
 
   const { canvasRef, markDirty } = useGameCanvas({ draw });
+
+  // Initialize TextureCache when connected
+  useEffect(() => {
+    if (connectionStatus !== 'connected' || assetsReady) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
+    textureCache.init(ctx, (loaded, total) => {
+      setLoadProgress({ loaded, total });
+    }).then(() => {
+      setAssetsReady(true);
+      markDirty();
+    }).catch((err) => {
+      console.error('Failed to load game assets:', err);
+    });
+  }, [connectionStatus, assetsReady, canvasRef, markDirty]);
 
   useEffect(() => {
     const unsub = useGameStore.subscribe(() => markDirty());
@@ -436,7 +459,7 @@ export function GamePage() {
     if (gameOver) setStandingsOpen(false);
   }, [gameOver]);
 
-  const isLoading = connectionStatus === 'connecting' || connectionStatus === 'disconnected';
+  const isLoading = connectionStatus === 'connecting' || connectionStatus === 'disconnected' || (connectionStatus === 'connected' && !assetsReady);
   const isFailed = connectionStatus === 'failed';
 
   // Force redraw when canvas transitions from hidden to visible
@@ -450,7 +473,7 @@ export function GamePage() {
 
   return (
     <div className="relative flex flex-col w-full flex-1 min-h-0 overflow-hidden">
-      {isLoading && <LoadingScreen />}
+      {isLoading && <LoadingScreen message={connectionStatus === 'connected' ? `Preparing the realm... (${loadProgress.loaded}/${loadProgress.total})` : undefined} />}
       {connectionStatus === 'reconnecting' && <ReconnectBanner />}
       <canvas
         ref={canvasRef}

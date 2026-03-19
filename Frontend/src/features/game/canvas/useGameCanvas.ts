@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react';
+import { textureCache } from './texture-cache';
 
 interface UseGameCanvasOptions {
   draw: (ctx: CanvasRenderingContext2D, width: number, height: number) => void;
@@ -32,6 +33,10 @@ export function useGameCanvas({ draw }: UseGameCanvasOptions): UseGameCanvasResu
       canvas!.width = rect.width * dpr;
       canvas!.height = rect.height * dpr;
       ctx!.scale(dpr, dpr);
+      // Rebuild texture patterns for new canvas context
+      if (textureCache.initialized) {
+        textureCache.invalidate(ctx!);
+      }
       // Draw immediately to avoid black flash between resize and next RAF tick
       draw(ctx!, rect.width, rect.height);
       dirtyRef.current = false;

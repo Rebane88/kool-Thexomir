@@ -1,14 +1,14 @@
 import type { HexLayoutConfig, MapRenderState, Point2D } from './types';
 import {
-  TERRAIN_COLORS,
   KINGDOM_COLORS,
-  KINGDOM_OVERLAY_ALPHA,
   HEX_BORDER_COLOR,
   SELECTION_COLOR,
   HOVER_COLOR,
-  CAPITAL_COLOR,
 } from './types';
 import { axialToPixel, hexCorners, getHexNeighbors } from './hex-math';
+import { textureCache } from './texture-cache';
+import { drawTerritoryBorders } from './territory-borders';
+import { TERRAIN_BASE_COLORS } from './terrain-patterns';
 import type { Tile } from '../types/map-types';
 import type { Kingdom } from '../types/kingdom-types';
 import type { Army } from '../types/military-types';
@@ -66,35 +66,6 @@ function drawFilledHex(
   ctx.stroke();
 }
 
-function drawCrown(ctx: CanvasRenderingContext2D, cx: number, cy: number, crownSize: number): void {
-  const half = crownSize / 2;
-  const baseY = cy + half * 0.4;
-  const topY = cy - half * 0.6;
-
-  ctx.beginPath();
-  // Base of crown
-  ctx.moveTo(cx - half, baseY);
-  // Left peak
-  ctx.lineTo(cx - half * 0.6, topY);
-  // Left valley
-  ctx.lineTo(cx - half * 0.2, baseY - half * 0.2);
-  // Center peak
-  ctx.lineTo(cx, topY - half * 0.2);
-  // Right valley
-  ctx.lineTo(cx + half * 0.2, baseY - half * 0.2);
-  // Right peak
-  ctx.lineTo(cx + half * 0.6, topY);
-  // Base right
-  ctx.lineTo(cx + half, baseY);
-  ctx.closePath();
-
-  ctx.fillStyle = CAPITAL_COLOR;
-  ctx.fill();
-  ctx.strokeStyle = CAPITAL_COLOR;
-  ctx.lineWidth = 0.5;
-  ctx.stroke();
-}
-
 function drawBadge(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -125,11 +96,11 @@ function drawBadge(
  *
  * Layers (in order):
  * 1. Clear canvas
- * 2. Terrain fills with hex borders
- * 3. Kingdom ownership overlays
+ * 2. Terrain fills with hex borders (pattern fills from TextureCache)
+ * 3. Territory borders (faction-colored edges + ember glow)
  * 2.5. Build mode overlays
  * 2.6. Movement/attack overlays
- * 4. Indicators (capitals, buildings, armies)
+ * 4. Indicators (building icons, army badges)
  * 5. Hover highlight
  * 6. Selection highlight
  */
@@ -176,42 +147,38 @@ export function drawGameMap(
     tileRenderData.set(key, { center, corners });
   }
 
-  // Layer 1: Terrain fills
+  // Layer 1: Terrain fills (pattern fills from TextureCache)
   for (const [key, tile] of state.tiles) {
     const data = tileRenderData.get(key)!;
-    const terrainColor = TERRAIN_COLORS[tile.terrainName] ?? '#333333';
+    const pattern = textureCache.getTerrainPattern(tile.terrainName);
+
     drawHexPath(ctx, data.corners);
-    ctx.fillStyle = terrainColor;
-    ctx.fill();
+    if (pattern) {
+      ctx.save();
+      ctx.clip();
+      ctx.fillStyle = pattern;
+      ctx.fillRect(
+        data.center.x - layout.size,
+        data.center.y - layout.size,
+        layout.size * 2,
+        layout.size * 2,
+      );
+      ctx.restore();
+    } else {
+      // Fallback to flat color from TERRAIN_BASE_COLORS
+      ctx.fillStyle = TERRAIN_BASE_COLORS[tile.terrainName] ?? '#333333';
+      ctx.fill();
+    }
+
+    // Hex border
+    drawHexPath(ctx, data.corners);
     ctx.strokeStyle = HEX_BORDER_COLOR;
     ctx.lineWidth = 1;
     ctx.stroke();
   }
 
-  // Layer 2: Kingdom overlays
-  for (const [key, tile] of state.tiles) {
-    if (tile.kingdomId === null) continue;
-    const data = tileRenderData.get(key)!;
-    const kingdomColor = getKingdomColor(state.kingdoms, tile.kingdomId);
-
-    ctx.save();
-    ctx.globalAlpha = KINGDOM_OVERLAY_ALPHA;
-    drawHexPath(ctx, data.corners);
-    ctx.fillStyle = kingdomColor;
-    ctx.fill();
-    ctx.restore();
-
-    // Ember glow for player's own kingdom
-    if (tile.kingdomId === state.myKingdomId) {
-      ctx.save();
-      ctx.globalAlpha = 0.6;
-      drawHexPath(ctx, data.corners);
-      ctx.strokeStyle = SELECTION_COLOR;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.restore();
-    }
-  }
+  // Layer 2: Territory borders (replaces kingdom color overlay)
+  drawTerritoryBorders(ctx, state.tiles, state.kingdoms, layout, state.myKingdomId);
 
   // Layer 2.5: Build mode overlays
   if (renderState.buildModeTypeId) {
@@ -281,21 +248,37 @@ export function drawGameMap(
     const data = tileRenderData.get(key)!;
     const { center } = data;
 
-    // Capital crown
-    if (tile.isCapital) {
-      drawCrown(ctx, center.x, center.y, 12);
-    }
+    // Building icon (or Castle icon for castle tiles)
+    const buildingName = tile.isCastle
+      ? 'Castle'
+      : tile.buildings.length > 0
+        ? tile.buildings[0].buildingName
+        : null;
 
-    // Building count badge (bottom-right)
-    if (tile.buildings.length > 0) {
-      drawBadge(
-        ctx,
-        center.x + layout.size * 0.3,
-        center.y + layout.size * 0.35,
-        tile.buildings.length.toString(),
-        '#ffffff',
-        'rgba(0, 0, 0, 0.7)',
-      );
+    if (buildingName) {
+      const icon = textureCache.getBuildingIcon(buildingName);
+      if (icon) {
+        const iconLogicalSize = 22; // matches ICON_RENDER_SIZE
+        const drawX = center.x - iconLogicalSize / 2;
+        const drawY = center.y - iconLogicalSize / 2;
+
+        if (tile.kingdomId) {
+          // Draw tinted icon using temp canvas compositing
+          const tintColor = getKingdomColor(state.kingdoms, tile.kingdomId);
+          const temp = document.createElement('canvas');
+          temp.width = icon.width;
+          temp.height = icon.height;
+          const tctx = temp.getContext('2d')!;
+          tctx.drawImage(icon, 0, 0);
+          tctx.globalCompositeOperation = 'source-atop';
+          tctx.fillStyle = tintColor;
+          tctx.globalAlpha = 0.4;
+          tctx.fillRect(0, 0, temp.width, temp.height);
+          ctx.drawImage(temp, 0, 0, temp.width, temp.height, drawX, drawY, iconLogicalSize, iconLogicalSize);
+        } else {
+          ctx.drawImage(icon, 0, 0, icon.width, icon.height, drawX, drawY, iconLogicalSize, iconLogicalSize);
+        }
+      }
     }
 
     // Army unit count badge (top-left)
