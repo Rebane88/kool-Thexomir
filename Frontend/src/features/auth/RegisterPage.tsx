@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { API_BASE_URL } from '@/lib/constants';
 import type { LoginResponse, ProblemDetails } from '@/shared/types/api';
-import { Button, Panel, Input } from '@/shared/ui';
+import { Button, Panel, Input, FogBackground } from '@/shared/ui';
 import { EyeIcon, EyeOffIcon } from '@/assets/icons';
 
 function validateRegisterForm(
@@ -127,15 +127,18 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-4 relative">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--color-ash-800)_0%,_transparent_70%)] pointer-events-none" />
+    <div className="min-h-dvh flex flex-col items-center justify-center px-4 bg-ash-950">
+      <FogBackground />
 
       <div className="relative z-10 max-w-md w-full">
-        <h1 className="font-heading text-gold-500 text-4xl text-center mb-8 tracking-wide">
-          Realms of Ash
-        </h1>
+        <div className="text-center mb-8">
+          <h1 className="font-heading text-gold-500 text-5xl tracking-wide" style={{ textShadow: '0 0 20px rgba(201, 168, 76, 0.4), 0 0 40px rgba(217, 119, 6, 0.15)' }}>
+            Realms of Ash
+          </h1>
+          <p className="text-parchment-400 italic mt-2 text-sm">Forge your kingdom</p>
+        </div>
 
-        <Panel className="p-6">
+        <Panel variant="auth-frame" className="p-8">
           {generalError && (
             <div className="bg-blood-600/20 border border-blood-600/30 text-blood-500 px-4 py-2 text-sm mb-4">
               {generalError}
