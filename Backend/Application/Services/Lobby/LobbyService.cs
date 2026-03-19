@@ -15,8 +15,8 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
 
     public async Task<Result<CreateLobbyResponse>> CreateLobbyAsync(Guid userId, CreateLobbyRequest request)
     {
-        if (request.MaxPlayers < 2 || request.MaxPlayers > 8)
-            return Result<CreateLobbyResponse>.Fail("MaxPlayers must be between 2 and 8.");
+        if (request.MaxPlayers < 2 || request.MaxPlayers > 4)
+            return Result<CreateLobbyResponse>.Fail("MaxPlayers must be between 2 and 4.");
 
         var code = await GenerateUniqueLobbyCodeAsync();
 

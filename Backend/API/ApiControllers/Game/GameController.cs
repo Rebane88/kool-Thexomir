@@ -37,14 +37,13 @@ public class GameController(IUnitOfWork unitOfWork) : ControllerBase
             WinnerKingdomId = game.WinnerKingdomId,
             WinConditionType = game.WinCondition.ToString(),
             TotalTurns = game.RoundNumber,
-            FinalScores = kingdoms.Select(k => new KingdomScoreDto
+            FinalStandings = kingdoms.Select(k => new KingdomResultDto
             {
                 KingdomId = k.Id,
                 KingdomName = k.Name,
-                Score = 0, // ScoreChecker removed -- to be redesigned
                 TilesOwned = tiles.Count(t => t.KingdomId == k.Id),
                 Status = k.Status.ToString()
-            }).OrderByDescending(s => s.Score).ToList(),
+            }).OrderByDescending(s => s.Status == "Active" ? 1 : 0).ThenByDescending(s => s.TilesOwned).ToList(),
             EliminationOrder = kingdoms
                 .Where(k => k.Status == EKingdomStatus.Defeated)
                 .OrderBy(k => k.DefeatedAt ?? k.UpdatedAt)

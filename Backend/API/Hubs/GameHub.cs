@@ -87,12 +87,11 @@ public class GameHub(IGameInitializationService gameInitializationService, IUnit
                             GameId = parsedGameId,
                             WinnerKingdomId = null,
                             WinConditionType = game.WinCondition.ToString(),
-                            FinalScores = game.Kingdoms?
-                                .Select(k => new KingdomScoreDto
+                            FinalStandings = game.Kingdoms?
+                                .Select(k => new KingdomResultDto
                                 {
                                     KingdomId = k.Id,
                                     KingdomName = k.Name,
-                                    Score = 0,
                                     TilesOwned = 0,
                                     Status = k.Status.ToString(),
                                 }).ToList() ?? [],
