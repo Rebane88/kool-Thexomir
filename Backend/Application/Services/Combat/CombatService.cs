@@ -93,6 +93,187 @@ public class CombatService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IComb
         });
     }
 
+    public async Task<Result<BattleSetupDto>> SelectArmiesAsync(
+        Guid gameId, Guid userId, SelectArmiesRequest request)
+    {
+        // 1. Load game
+        var game = await unitOfWork.Games.GetByIdWithLockAsync(gameId);
+        if (game is null) return Result<BattleSetupDto>.Fail("Game not found.");
+        if (game.Status != EGameStatus.InProgress) return Result<BattleSetupDto>.Fail("Game is not in progress.");
+        if (game.CurrentPhase != EGamePhase.Battle) return Result<BattleSetupDto>.Fail("Army selection only available during Battle Phase.");
+
+        // 2. Load player's kingdom
+        var kingdom = await unitOfWork.Kingdoms.GetKingdomByUserAndGameAsync(userId, gameId);
+        if (kingdom is null) return Result<BattleSetupDto>.Fail("You are not in this game.");
+
+        // 3. Load declared attack
+        var attack = await unitOfWork.DeclaredAttacks.GetByIdAsync(request.DeclaredAttackId);
+        if (attack is null) return Result<BattleSetupDto>.Fail("Declared attack not found.");
+        if (attack.GameId != gameId) return Result<BattleSetupDto>.Fail("Attack does not belong to this game.");
+
+        // 4. Verify player is attacker or defender
+        bool isAttacker = attack.AttackerKingdomId == kingdom.Id;
+        bool isDefender = attack.DefenderKingdomId == kingdom.Id;
+        if (!isAttacker && !isDefender)
+            return Result<BattleSetupDto>.Fail("You are not involved in this battle.");
+
+        // 5. Load target and risked tiles for castle check
+        var targetTile = await unitOfWork.Tiles.GetByIdAsync(attack.TargetTileId);
+        var riskedTile = await unitOfWork.Tiles.GetByIdAsync(attack.RiskedTileId);
+        var maxArmies = CombatRules.GetMaxArmies(targetTile!.IsCastle, riskedTile!.IsCastle);
+
+        // 6. Validate army selection
+        var validationError = CombatRules.ValidateArmySelection(request.ArmyIds, maxArmies, new HashSet<Guid>());
+        if (validationError is not null)
+            return Result<BattleSetupDto>.Fail(validationError);
+
+        // 7. Verify all army IDs belong to the player's kingdom
+        var playerArmies = await unitOfWork.Armies.GetArmiesForKingdomAsync(kingdom.Id);
+        var playerArmyIds = playerArmies.Select(a => a.Id).ToHashSet();
+        var invalidArmies = request.ArmyIds.Where(id => !playerArmyIds.Contains(id)).ToList();
+        if (invalidArmies.Count != 0)
+            return Result<BattleSetupDto>.Fail("One or more selected armies do not belong to your kingdom.");
+
+        // 8. Store selection
+        if (isAttacker)
+            attack.AttackerSelectedArmyIds = string.Join(",", request.ArmyIds);
+        else
+            attack.DefenderSelectedArmyIds = string.Join(",", request.ArmyIds);
+
+        attack.UpdatedAt = DateTime.UtcNow;
+        await unitOfWork.DeclaredAttacks.UpdateAsync(attack);
+        await unitOfWork.CommitAsync();
+
+        return Result<BattleSetupDto>.Ok(new BattleSetupDto
+        {
+            DeclaredAttackId = attack.Id,
+            KingdomId = kingdom.Id,
+            ArmiesSelected = request.ArmyIds.Count,
+            MaxArmies = maxArmies
+        });
+    }
+
+    public async Task<Result<ArmyRevealDto>> GetArmyRevealAsync(
+        Guid gameId, Guid userId, Guid declaredAttackId)
+    {
+        // 1. Validate game/player/attack access
+        var game = await unitOfWork.Games.GetByIdWithLockAsync(gameId);
+        if (game is null) return Result<ArmyRevealDto>.Fail("Game not found.");
+        if (game.Status != EGameStatus.InProgress) return Result<ArmyRevealDto>.Fail("Game is not in progress.");
+        if (game.CurrentPhase != EGamePhase.Battle) return Result<ArmyRevealDto>.Fail("Army reveal only available during Battle Phase.");
+
+        var kingdom = await unitOfWork.Kingdoms.GetKingdomByUserAndGameAsync(userId, gameId);
+        if (kingdom is null) return Result<ArmyRevealDto>.Fail("You are not in this game.");
+
+        var attack = await unitOfWork.DeclaredAttacks.GetByIdAsync(declaredAttackId);
+        if (attack is null) return Result<ArmyRevealDto>.Fail("Declared attack not found.");
+        if (attack.GameId != gameId) return Result<ArmyRevealDto>.Fail("Attack does not belong to this game.");
+
+        bool isAttacker = attack.AttackerKingdomId == kingdom.Id;
+        bool isDefender = attack.DefenderKingdomId == kingdom.Id;
+        if (!isAttacker && !isDefender)
+            return Result<ArmyRevealDto>.Fail("You are not involved in this battle.");
+
+        // 2. Parse pre-selected army IDs
+        var attackerArmyIds = ParseArmyIds(attack.AttackerSelectedArmyIds);
+        var defenderArmyIds = ParseArmyIds(attack.DefenderSelectedArmyIds);
+
+        // 3. Load armies with types for both sides
+        var attackerArmies = await LoadRevealedArmies(attack.AttackerKingdomId, attackerArmyIds);
+        var defenderArmies = await LoadRevealedArmies(attack.DefenderKingdomId, defenderArmyIds);
+
+        return Result<ArmyRevealDto>.Ok(new ArmyRevealDto
+        {
+            DeclaredAttackId = attack.Id,
+            AttackerKingdomId = attack.AttackerKingdomId,
+            DefenderKingdomId = attack.DefenderKingdomId,
+            AttackerArmies = attackerArmies,
+            DefenderArmies = defenderArmies
+        });
+    }
+
+    public async Task<Result<BattleSetupDto>> SetLineupAsync(
+        Guid gameId, Guid userId, SetLineupRequest request)
+    {
+        // 1. Validate game/player/attack access
+        var game = await unitOfWork.Games.GetByIdWithLockAsync(gameId);
+        if (game is null) return Result<BattleSetupDto>.Fail("Game not found.");
+        if (game.Status != EGameStatus.InProgress) return Result<BattleSetupDto>.Fail("Game is not in progress.");
+        if (game.CurrentPhase != EGamePhase.Battle) return Result<BattleSetupDto>.Fail("Lineup ordering only available during Battle Phase.");
+
+        var kingdom = await unitOfWork.Kingdoms.GetKingdomByUserAndGameAsync(userId, gameId);
+        if (kingdom is null) return Result<BattleSetupDto>.Fail("You are not in this game.");
+
+        var attack = await unitOfWork.DeclaredAttacks.GetByIdAsync(request.DeclaredAttackId);
+        if (attack is null) return Result<BattleSetupDto>.Fail("Declared attack not found.");
+        if (attack.GameId != gameId) return Result<BattleSetupDto>.Fail("Attack does not belong to this game.");
+
+        bool isAttacker = attack.AttackerKingdomId == kingdom.Id;
+        bool isDefender = attack.DefenderKingdomId == kingdom.Id;
+        if (!isAttacker && !isDefender)
+            return Result<BattleSetupDto>.Fail("You are not involved in this battle.");
+
+        // 2. Validate the lineup contains exactly the same army IDs as the selection
+        var selectedIds = ParseArmyIds(isAttacker
+            ? attack.AttackerSelectedArmyIds
+            : attack.DefenderSelectedArmyIds);
+
+        if (selectedIds.Count == 0)
+            return Result<BattleSetupDto>.Fail("You must select armies before setting lineup.");
+
+        if (request.ArmyIdsInOrder.Count != selectedIds.Count)
+            return Result<BattleSetupDto>.Fail($"Lineup must contain exactly {selectedIds.Count} armies.");
+
+        var selectedSet = selectedIds.ToHashSet();
+        var lineupSet = request.ArmyIdsInOrder.ToHashSet();
+        if (!selectedSet.SetEquals(lineupSet))
+            return Result<BattleSetupDto>.Fail("Lineup must contain the same armies as your selection.");
+
+        // 3. Store lineup order (overwrites selection order)
+        if (isAttacker)
+            attack.AttackerSelectedArmyIds = string.Join(",", request.ArmyIdsInOrder);
+        else
+            attack.DefenderSelectedArmyIds = string.Join(",", request.ArmyIdsInOrder);
+
+        attack.UpdatedAt = DateTime.UtcNow;
+        await unitOfWork.DeclaredAttacks.UpdateAsync(attack);
+        await unitOfWork.CommitAsync();
+
+        return Result<BattleSetupDto>.Ok(new BattleSetupDto
+        {
+            DeclaredAttackId = attack.Id,
+            KingdomId = kingdom.Id,
+            ArmiesSelected = request.ArmyIdsInOrder.Count,
+            MaxArmies = selectedIds.Count
+        });
+    }
+
+    private static List<Guid> ParseArmyIds(string? armyIdsString)
+    {
+        if (string.IsNullOrEmpty(armyIdsString)) return [];
+        return armyIdsString.Split(',').Select(Guid.Parse).ToList();
+    }
+
+    private async Task<List<RevealedArmyDto>> LoadRevealedArmies(Guid kingdomId, List<Guid> selectedArmyIds)
+    {
+        var armies = (await unitOfWork.Armies.GetArmiesWithTypeForKingdomAsync(kingdomId)).ToList();
+
+        var selected = selectedArmyIds.Count > 0
+            ? armies.Where(a => selectedArmyIds.Contains(a.Id)).ToList()
+            : armies;
+
+        return selected.Select(a => new RevealedArmyDto
+        {
+            ArmyId = a.Id,
+            ArmyTypeId = a.ArmyTypeId,
+            ArmyTypeName = a.ArmyType!.Name.ToString(),
+            CurrentHP = a.CurrentHP,
+            MaxHP = a.MaxHP,
+            Attack = a.ArmyType.Attack,
+            Initiative = a.ArmyType.Initiative
+        }).ToList();
+    }
+
     public async Task<List<BattleResultDto>> ResolveBattlesAsync(Domain.Game.Game game)
     {
         var results = new List<BattleResultDto>();
@@ -142,16 +323,41 @@ public class CombatService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IComb
         // e. Determine max armies
         var maxArmies = CombatRules.GetMaxArmies(attack.TargetTile!.IsCastle, attack.RiskedTile!.IsCastle);
 
-        // f. Auto-select armies for both sides
-        var attackerAvailable = attackerArmies
-            .Select(a => (a, a.ArmyType!))
-            .ToList();
-        var selectedAttackers = CombatRules.AutoSelectArmies(attackerAvailable, maxArmies, committedArmyIds);
+        // f. Use pre-selected armies if available, otherwise auto-select
+        var attackerPreselected = ParseArmyIds(attack.AttackerSelectedArmyIds);
+        var defenderPreselected = ParseArmyIds(attack.DefenderSelectedArmyIds);
 
-        var defenderAvailable = defenderArmies
-            .Select(a => (a, a.ArmyType!))
-            .ToList();
-        var selectedDefenders = CombatRules.AutoSelectArmies(defenderAvailable, maxArmies, committedArmyIds);
+        List<MilitaryArmy> selectedAttackers;
+        if (attackerPreselected.Count > 0)
+        {
+            selectedAttackers = attackerPreselected
+                .Select(id => attackerArmies.FirstOrDefault(a => a.Id == id))
+                .Where(a => a is not null)
+                .ToList()!;
+        }
+        else
+        {
+            var attackerAvailable = attackerArmies
+                .Select(a => (a, a.ArmyType!))
+                .ToList();
+            selectedAttackers = CombatRules.AutoSelectArmies(attackerAvailable, maxArmies, committedArmyIds);
+        }
+
+        List<MilitaryArmy> selectedDefenders;
+        if (defenderPreselected.Count > 0)
+        {
+            selectedDefenders = defenderPreselected
+                .Select(id => defenderArmies.FirstOrDefault(a => a.Id == id))
+                .Where(a => a is not null)
+                .ToList()!;
+        }
+        else
+        {
+            var defenderAvailable = defenderArmies
+                .Select(a => (a, a.ArmyType!))
+                .ToList();
+            selectedDefenders = CombatRules.AutoSelectArmies(defenderAvailable, maxArmies, committedArmyIds);
+        }
 
         // g. Add selected army IDs to committedArmyIds
         foreach (var army in selectedAttackers)

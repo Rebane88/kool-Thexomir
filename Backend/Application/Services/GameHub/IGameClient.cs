@@ -39,6 +39,8 @@ public interface IGameClient
 
     // Combat events
     Task AttackDeclared(DeclareAttackResponse attackDeclared);
+    Task ArmiesSelected(BattleSetupDto armiesSelected);
+    Task LineupSet(BattleSetupDto lineupSet);
     Task BattleResolved(BattleResultDto battleResult);
 
     // Phase 13 events

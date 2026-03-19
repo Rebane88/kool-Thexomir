@@ -38,6 +38,54 @@ public class CombatController(
         return Ok(result.Value);
     }
 
+    [HttpPost("select-armies")]
+    [ProducesResponseType(typeof(BattleSetupDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SelectArmies(Guid gameId, [FromBody] SelectArmiesRequest request)
+    {
+        using var gameLock = await gameLockManager.AcquireAsync(gameId);
+
+        var result = await combatService.SelectArmiesAsync(gameId, User.UserId(), request);
+        if (!result.IsSuccess)
+            return BadRequest(ProblemDetailsFor(400, result.Error!));
+
+        await hubContext.Clients.Group($"game:{gameId}")
+            .ArmiesSelected(result.Value!);
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet("reveal-armies/{declaredAttackId:guid}")]
+    [ProducesResponseType(typeof(ArmyRevealDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RevealArmies(Guid gameId, Guid declaredAttackId)
+    {
+        using var gameLock = await gameLockManager.AcquireAsync(gameId);
+
+        var result = await combatService.GetArmyRevealAsync(gameId, User.UserId(), declaredAttackId);
+        if (!result.IsSuccess)
+            return BadRequest(ProblemDetailsFor(400, result.Error!));
+
+        return Ok(result.Value);
+    }
+
+    [HttpPost("set-lineup")]
+    [ProducesResponseType(typeof(BattleSetupDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SetLineup(Guid gameId, [FromBody] SetLineupRequest request)
+    {
+        using var gameLock = await gameLockManager.AcquireAsync(gameId);
+
+        var result = await combatService.SetLineupAsync(gameId, User.UserId(), request);
+        if (!result.IsSuccess)
+            return BadRequest(ProblemDetailsFor(400, result.Error!));
+
+        await hubContext.Clients.Group($"game:{gameId}")
+            .LineupSet(result.Value!);
+
+        return Ok(result.Value);
+    }
+
     private static ProblemDetails ProblemDetailsFor(int status, string detail) => new()
     {
         Status = status,

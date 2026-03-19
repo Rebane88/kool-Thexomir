@@ -13,6 +13,10 @@ public class DeclaredAttack : BaseEntity
     public Guid TargetTileId { get; set; }
     public Guid RiskedTileId { get; set; }
 
+    // Army selection/lineup storage (comma-separated GUIDs)
+    public string? AttackerSelectedArmyIds { get; set; }
+    public string? DefenderSelectedArmyIds { get; set; }
+
     // Navigation
     public Domain.Game.Game? Game { get; set; }
     public Kingdom? AttackerKingdom { get; set; }
