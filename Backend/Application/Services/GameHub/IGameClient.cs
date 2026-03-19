@@ -1,3 +1,4 @@
+using Application.Services.Army.DTOs;
 using Application.Services.Building.DTOs;
 using Application.Services.GameInitialization.DTOs;
 using Application.Services.Lobby.DTOs;
@@ -31,6 +32,9 @@ public interface IGameClient
 
     // Slot machine events
     Task SlotMachineSpun(SpinResultDto spinResult);
+
+    // Army events
+    Task ArmyTrained(ArmyTrainedDto armyTrained);
 
     // Phase 13 events
     Task GameOver(GameOverDto gameOver);

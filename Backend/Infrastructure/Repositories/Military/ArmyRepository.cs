@@ -25,4 +25,13 @@ public class ArmyRepository(AppDbContext context)
             .Include(a => a.ArmyType)
             .Where(a => a.KingdomId == kingdomId)
             .ToListAsync();
+
+    public async Task<int> GetArmyCountForBuildingAsync(Guid buildingId)
+        => await context.Armies.CountAsync(a => a.BuildingId == buildingId);
+
+    public async Task DeleteArmiesForBuildingAsync(Guid buildingId)
+    {
+        var armies = await context.Armies.Where(a => a.BuildingId == buildingId).ToListAsync();
+        context.Armies.RemoveRange(armies);
+    }
 }
