@@ -4,3 +4,6 @@ export { Input } from './Input';
 export { Select } from './Select';
 export { Badge } from './Badge';
 export { Modal } from './Modal';
+export { Checkbox } from './Checkbox';
+export { Tooltip } from './Tooltip';
+export { FogBackground } from './FogBackground';

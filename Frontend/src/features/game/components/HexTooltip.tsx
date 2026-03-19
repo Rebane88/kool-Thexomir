@@ -1,4 +1,4 @@
-import { Panel } from '@/shared/ui/Panel';
+import { Tooltip } from '@/shared/ui/Tooltip';
 import type { Tile } from '../types/map-types';
 import type { Kingdom } from '../types/kingdom-types';
 import type { Army } from '../types/military-types';
@@ -10,41 +10,63 @@ interface HexTooltipProps {
   position: { x: number; y: number };
 }
 
+const terrainDotColor: Record<string, string> = {
+  grass: 'bg-green-500',
+  water: 'bg-blue-500',
+  mountain: 'bg-stone-500',
+  forest: 'bg-green-700',
+  desert: 'bg-amber-500',
+};
+
+function getTerrainDotClass(terrainName: string): string {
+  const key = terrainName.toLowerCase();
+  return terrainDotColor[key] ?? 'bg-parchment-400';
+}
+
 export function HexTooltip({ tile, kingdom, armies, position }: HexTooltipProps) {
+  const hasBuildings = tile.buildings.length > 0;
+  const hasArmies = armies.length > 0;
+
   return (
-    <Panel
-      variant="elevated"
-      className="pointer-events-none"
-      style={{
-        position: 'absolute',
-        left: position.x,
-        top: position.y,
-        zIndex: 50,
-        minWidth: 160,
-        padding: '8px 12px',
-        fontSize: 13,
-      }}
-    >
-      <div className="text-parchment-300 font-semibold">{tile.terrainName}</div>
-      <div className="text-parchment-500 text-xs">{kingdom ? kingdom.name : 'Unowned'}</div>
-
-      {tile.isCapital && <div className="text-xs text-gold-400">Capital</div>}
-
-      {tile.buildings.length > 0 &&
-        tile.buildings.map((b) => (
-          <div key={b.id} className="text-xs text-parchment-400">
-            {b.buildingName}
-          </div>
-        ))}
-
-      {armies.length > 0 &&
-        armies.map((army) =>
-          army.units.map((u) => (
-            <div key={`${army.id}-${u.unitTypeId}`} className="text-xs text-parchment-400">
-              {u.unitTypeName}: {u.quantity}
-            </div>
-          )),
+    <div className="pointer-events-none">
+      <Tooltip position={position} className="p-2.5" style={{ minWidth: 180 }}>
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${getTerrainDotClass(tile.terrainName)}`} />
+          <span className="text-parchment-200 font-heading font-semibold text-sm">{tile.terrainName}</span>
+        </div>
+        <div className="text-parchment-400 text-xs">
+          {kingdom ? kingdom.name : 'Unowned'}
+        </div>
+        {tile.isCapital && (
+          <div className="text-gold-400 text-xs font-heading">Capital</div>
         )}
-    </Panel>
+
+        {hasBuildings && (
+          <>
+            <div className="border-t border-bronze-700/50 mt-1.5 pt-1.5">
+              {tile.buildings.map((b) => (
+                <div key={b.id} className="text-xs text-parchment-300">
+                  {b.buildingName}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {hasArmies && (
+          <>
+            <div className="border-t border-bronze-700/50 mt-1.5 pt-1.5">
+              {armies.map((army) =>
+                army.units.map((u) => (
+                  <div key={`${army.id}-${u.unitTypeId}`} className="text-xs text-parchment-300">
+                    {u.unitTypeName}: {u.quantity}
+                  </div>
+                )),
+              )}
+            </div>
+          </>
+        )}
+      </Tooltip>
+    </div>
   );
 }
