@@ -99,4 +99,18 @@
 
   /* Shadows -- panels */
   --shadow-panel: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(201, 168, 76, 0.05);
+
+  /* Animations -- phase banner */
+  --animate-banner-in: banner-in 0.4s ease-out forwards;
+  --animate-banner-out: banner-out 0.4s ease-in forwards;
+}
+
+@keyframes banner-in {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+@keyframes banner-out {
+  from { transform: translateY(0);     opacity: 1; }
+  to   { transform: translateY(-100%); opacity: 0; }
 }
