@@ -2,7 +2,8 @@ import { Panel } from '@/shared/ui/Panel';
 import { useGameStore } from '../game-store';
 import { ResourcePanel } from './ResourcePanel';
 import { TurnIndicator } from './TurnIndicator';
-import { WinConditionLabel } from './WinConditionLabel';
+import { ActionPointsPips } from './ActionPointsPips';
+import { GambleButton } from './GambleButton';
 import { EndTurnButton } from './EndTurnButton';
 
 interface GameHudProps {
@@ -21,9 +22,10 @@ export function GameHud({ onStandingsToggle }: GameHudProps) {
       <ResourcePanel />
       <div className="flex flex-col items-center gap-0.5">
         <TurnIndicator />
-        <WinConditionLabel />
+        <ActionPointsPips />
       </div>
       <div className="flex items-center gap-2">
+        <GambleButton />
         <button
           onClick={onStandingsToggle}
           className="text-parchment-400 hover:text-gold-400 text-xs px-2 py-1 border border-bronze-700 rounded transition-colors"
@@ -31,9 +33,7 @@ export function GameHud({ onStandingsToggle }: GameHudProps) {
         >
           Standings
         </button>
-        <div className={isMyTurn ? '' : 'opacity-50 pointer-events-none'}>
-          <EndTurnButton />
-        </div>
+        <EndTurnButton />
       </div>
     </Panel>
   );
