@@ -19,6 +19,7 @@ import { AttackConfirmModal } from './components/AttackConfirmModal';
 import { ResetCameraButton } from './components/ResetCameraButton';
 import { GameHud } from './components/GameHud';
 import { Standings } from './components/Standings';
+import { PhaseBanner } from './components/PhaseBanner';
 import { CombatResultModal } from './components/CombatResultModal';
 import { EliminationBanner } from './components/EliminationBanner';
 import { GameOverOverlay } from './components/GameOverOverlay';
@@ -66,7 +67,7 @@ export function GamePage() {
   const lastCombatResult = useGameStore((s) => s.lastCombatResult);
   const dismissCombatResult = useGameStore((s) => s.dismissCombatResult);
   const myKingdom = useGameStore((s) => s.myKingdomId ? s.kingdoms.get(s.myKingdomId) : undefined);
-  const isEliminated = myKingdom?.isEliminated ?? false;
+  const isEliminated = myKingdom?.status === 'Defeated';
 
   const [standingsOpen, setStandingsOpen] = useState(false);
   const [eliminationBanners, setEliminationBanners] = useState<string[]>([]);
@@ -129,7 +130,7 @@ export function GamePage() {
       const prev = prevKingdomsRef.current;
       for (const [id, kingdom] of state.kingdoms) {
         const prevKingdom = prev.get(id);
-        if (kingdom.isEliminated && prevKingdom && !prevKingdom.isEliminated) {
+        if (kingdom.status === 'Defeated' && prevKingdom && prevKingdom.status !== 'Defeated') {
           setEliminationBanners((b) => [...b, kingdom.name]);
         }
       }
@@ -486,6 +487,7 @@ export function GamePage() {
         onContextMenu={handleContextMenu}
         style={{ cursor: 'grab' }}
       />
+      {!isLoading && <PhaseBanner />}
       {!isLoading && <GameHud onStandingsToggle={() => setStandingsOpen((o) => !o)} />}
       {!isLoading && <Standings open={standingsOpen} onClose={() => setStandingsOpen(false)} />}
       {!isLoading && <SlotMachineOverlay />}

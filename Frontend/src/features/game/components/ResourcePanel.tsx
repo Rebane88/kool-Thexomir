@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { useGameStore } from '../game-store';
+import { useCountingTicker } from '../hooks/useCountingTicker';
 import { GoldIcon, FoodIcon, WoodIcon, StoneIcon, ManaIcon } from '@/assets/icons';
 import type { ComponentType, SVGProps } from 'react';
 
@@ -17,33 +17,22 @@ const RESOURCE_ICONS: Record<string, ComponentType<IconProps>> = {
   Mana: ManaIcon,
 };
 
+function ResourceValue({ amount }: { amount: number }) {
+  const display = useCountingTicker(amount, 1000);
+  const direction = amount > display ? 'up' : amount < display ? 'down' : null;
+  return (
+    <span className={`text-sm tabular-nums transition-colors duration-300 ${
+      direction === 'up' ? 'text-green-400' : direction === 'down' ? 'text-red-400' : 'text-parchment-200'
+    }`}>
+      {display}
+    </span>
+  );
+}
+
 export function ResourcePanel() {
   const myKingdom = useGameStore((s) =>
     s.myKingdomId ? s.kingdoms.get(s.myKingdomId) : undefined,
   );
-  const lastIncomeApplied = useGameStore((s) => s.lastIncomeApplied);
-
-  const [visibleDeltas, setVisibleDeltas] = useState<Record<string, number> | null>(null);
-  const [showDeltas, setShowDeltas] = useState(true);
-
-  useEffect(() => {
-    if (lastIncomeApplied === null) {
-      setVisibleDeltas(null);
-      setShowDeltas(true);
-      return;
-    }
-
-    setVisibleDeltas(lastIncomeApplied);
-    setShowDeltas(true);
-
-    const fadeTimer = setTimeout(() => setShowDeltas(false), 2500);
-    const clearTimer = setTimeout(() => setVisibleDeltas(null), 3000);
-
-    return () => {
-      clearTimeout(fadeTimer);
-      clearTimeout(clearTimer);
-    };
-  }, [lastIncomeApplied]);
 
   if (!myKingdom) return null;
 
@@ -52,18 +41,11 @@ export function ResourcePanel() {
       {RESOURCE_ORDER.map((type) => {
         const Icon = RESOURCE_ICONS[type];
         const count = myKingdom.resources[type] ?? 0;
-        const delta = visibleDeltas?.[type];
-        const hasDelta = delta !== undefined && delta !== 0;
 
         return (
           <div key={type} className="flex items-center gap-1">
             <Icon size={16} className="text-gold-400" />
-            <span className="text-parchment-200 text-sm tabular-nums">{count}</span>
-            <span
-              className={`text-green-400 text-xs ml-0.5 transition-opacity duration-500 w-6 ${hasDelta && showDeltas ? 'opacity-100' : 'opacity-0'}`}
-            >
-              {hasDelta ? `+${delta}` : ''}
-            </span>
+            <ResourceValue amount={count} />
           </div>
         );
       })}

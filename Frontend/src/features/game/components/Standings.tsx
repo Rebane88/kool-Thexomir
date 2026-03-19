@@ -20,12 +20,11 @@ export function Standings({ open, onClose }: StandingsProps) {
   });
 
   const active = entries
-    .filter((e) => !e.kingdom.isEliminated)
+    .filter((e) => e.kingdom.status !== 'Defeated')
     .sort((a, b) => b.tileCount - a.tileCount || a.kingdom.name.localeCompare(b.kingdom.name));
-  const eliminated = entries
-    .filter((e) => e.kingdom.isEliminated)
-    .sort((a, b) => b.tileCount - a.tileCount || a.kingdom.name.localeCompare(b.kingdom.name));
-  const sorted = [...active, ...eliminated];
+  const fallen = entries
+    .filter((e) => e.kingdom.status === 'Defeated')
+    .sort((a, b) => a.kingdom.name.localeCompare(b.kingdom.name));
 
   return (
     <Panel className="absolute top-14 right-4 z-30 w-64 p-4">
@@ -33,17 +32,47 @@ export function Standings({ open, onClose }: StandingsProps) {
         <h3 className="font-heading text-gold-400 text-sm font-bold">Standings</h3>
         <button onClick={onClose} className="text-parchment-400 hover:text-parchment-200 text-xs px-1" aria-label="Close standings">X</button>
       </div>
-      <div className="space-y-1.5">
-        {sorted.map((entry, index) => (
-          <div key={entry.kingdom.id} className={`flex items-center gap-2 text-xs ${entry.kingdom.isEliminated ? 'opacity-50' : ''}`}>
-            <span className="text-parchment-500 w-4">{index + 1}.</span>
-            <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: getKingdomColor(kingdoms, entry.kingdom.id) }} />
-            <span className="text-parchment-200 truncate flex-1">{entry.kingdom.name}</span>
-            {entry.kingdom.isEliminated && <Badge variant="danger">Eliminated</Badge>}
-            <span className="text-parchment-400 tabular-nums">{entry.tileCount} tiles</span>
-          </div>
-        ))}
+
+      {/* Active Kingdoms */}
+      <div className="mb-3">
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className="text-gold-400 text-xs">&#x1F6E1;</span>
+          <span className="font-heading text-gold-400 text-xs tracking-wide uppercase">Active Kingdoms</span>
+        </div>
+        <div className="space-y-1.5">
+          {active.map((entry, index) => (
+            <div key={entry.kingdom.id} className="flex items-center gap-2 text-xs">
+              <span className="text-parchment-500 w-4">{index + 1}.</span>
+              <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: getKingdomColor(kingdoms, entry.kingdom.id) }} />
+              <span className="text-parchment-200 truncate flex-1">{entry.kingdom.name}</span>
+              <span className="text-parchment-400 tabular-nums">{entry.tileCount} tiles</span>
+            </div>
+          ))}
+          {active.length === 0 && (
+            <span className="text-parchment-500 text-xs italic">None</span>
+          )}
+        </div>
       </div>
+
+      {/* Fallen Kingdoms */}
+      {fallen.length > 0 && (
+        <div>
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="text-parchment-500 text-xs">&#x2620;</span>
+            <span className="font-heading text-parchment-500 text-xs tracking-wide uppercase">Fallen Kingdoms</span>
+          </div>
+          <div className="space-y-1.5">
+            {fallen.map((entry) => (
+              <div key={entry.kingdom.id} className="flex items-center gap-2 text-xs opacity-50">
+                <span className="w-4" />
+                <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 opacity-50" style={{ backgroundColor: getKingdomColor(kingdoms, entry.kingdom.id) }} />
+                <span className="text-parchment-400 truncate flex-1 line-through">{entry.kingdom.name}</span>
+                <Badge variant="danger">Eliminated</Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </Panel>
   );
 }
