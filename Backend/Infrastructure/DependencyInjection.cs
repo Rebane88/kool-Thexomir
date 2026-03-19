@@ -118,6 +118,7 @@ public static class DependencyInjection
         services.AddScoped<IArmyTypeRepository, ArmyTypeRepository>();
         services.AddScoped<IBattleRepository, BattleRepository>();
         services.AddScoped<IBattleRoundRepository, BattleRoundRepository>();
+        services.AddScoped<IDeclaredAttackRepository, DeclaredAttackRepository>();
 
         // Repositories - Resources
         services.AddScoped<IKingdomResourceRepository, KingdomResourceRepository>();

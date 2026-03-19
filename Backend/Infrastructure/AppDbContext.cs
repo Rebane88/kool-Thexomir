@@ -38,6 +38,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<ArmyType> ArmyTypes { get; set; }
     public DbSet<Battle> Battles { get; set; }
     public DbSet<BattleRound> BattleRounds { get; set; }
+    public DbSet<DeclaredAttack> DeclaredAttacks { get; set; }
 
     // Resources
     public DbSet<KingdomResource> KingdomResources { get; set; }
@@ -251,6 +252,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         // Army: query by kingdom
         builder.Entity<Army>()
             .HasIndex(a => a.KingdomId);
+
+        // DeclaredAttack: multiple FKs to Kingdom and Tile
+        builder.Entity<DeclaredAttack>(entity =>
+        {
+            entity.HasOne(d => d.Game).WithMany().HasForeignKey(d => d.GameId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(d => d.AttackerKingdom).WithMany().HasForeignKey(d => d.AttackerKingdomId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(d => d.DefenderKingdom).WithMany().HasForeignKey(d => d.DefenderKingdomId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(d => d.TargetTile).WithMany().HasForeignKey(d => d.TargetTileId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(d => d.RiskedTile).WithMany().HasForeignKey(d => d.RiskedTileId).OnDelete(DeleteBehavior.Restrict);
+        });
 
         // Disable cascade delete globally
         foreach (var relationship in builder.Model

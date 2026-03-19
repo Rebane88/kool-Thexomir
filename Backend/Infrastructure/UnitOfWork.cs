@@ -37,6 +37,7 @@ public class UnitOfWork(AppDbContext context) : IUnitOfWork
     private readonly Lazy<IArmyTypeRepository> _armyTypes = new(() => new ArmyTypeRepository(context));
     private readonly Lazy<IBattleRepository> _battles = new(() => new BattleRepository(context));
     private readonly Lazy<IBattleRoundRepository> _battleRounds = new(() => new BattleRoundRepository(context));
+    private readonly Lazy<IDeclaredAttackRepository> _declaredAttacks = new(() => new DeclaredAttackRepository(context));
 
     // Resources
     private readonly Lazy<IKingdomResourceRepository> _kingdomResources = new(() => new KingdomResourceRepository(context));
@@ -57,6 +58,7 @@ public class UnitOfWork(AppDbContext context) : IUnitOfWork
     public IArmyTypeRepository ArmyTypes => _armyTypes.Value;
     public IBattleRepository Battles => _battles.Value;
     public IBattleRoundRepository BattleRounds => _battleRounds.Value;
+    public IDeclaredAttackRepository DeclaredAttacks => _declaredAttacks.Value;
     public IKingdomResourceRepository KingdomResources => _kingdomResources.Value;
     public IFactionTypeRepository FactionTypes => _factionTypes.Value;
 
