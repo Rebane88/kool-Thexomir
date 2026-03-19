@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Panel, Button, Input, Select } from '@/shared/ui';
+import { Panel, Button, Input, FogBackground } from '@/shared/ui';
 import { createLobby, joinLobby } from './lobby-api';
-import { WIN_CONDITION_LABELS } from './lobby-types';
 
 export function LobbyHomePage() {
   const navigate = useNavigate();
@@ -12,8 +11,7 @@ export function LobbyHomePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Create tab state
-  const [maxPlayers, setMaxPlayers] = useState(8);
-  const [winCondition, setWinCondition] = useState(0);
+  const [maxPlayers, setMaxPlayers] = useState(2);
 
   // Join tab state
   const [inviteCode, setInviteCode] = useState('');
@@ -29,7 +27,7 @@ export function LobbyHomePage() {
     setError('');
 
     try {
-      const data = await createLobby(maxPlayers, winCondition);
+      const data = await createLobby(maxPlayers, 0);
       navigate(`/lobby/${data.lobbyId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create lobby');
@@ -54,21 +52,28 @@ export function LobbyHomePage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-      <div className="max-w-md w-full">
-        <h1 className="font-heading text-gold-500 text-3xl text-center mb-6 tracking-wide">
-          War Council
-        </h1>
+    <div className="min-h-dvh flex flex-col items-center justify-center px-4 py-8 bg-ash-950">
+      <FogBackground />
 
-        <Panel className="p-6">
-          <div className="flex border-b border-bronze-700 mb-5">
+      <div className="relative z-10 max-w-md w-full">
+        <div className="text-center mb-6">
+          <h1
+            className="font-heading text-gold-500 text-3xl tracking-wide"
+            style={{ textShadow: '0 0 20px rgba(201, 168, 76, 0.4), 0 0 40px rgba(217, 119, 6, 0.15)' }}
+          >
+            War Council
+          </h1>
+        </div>
+
+        <Panel variant="auth-frame" className="p-6">
+          <div className="flex mb-5 gap-1">
             <button
               type="button"
               onClick={() => handleTabChange('create')}
-              className={`flex-1 py-2 text-sm font-heading font-medium tracking-wide ${
+              className={`flex-1 py-2.5 text-sm font-heading font-bold tracking-wide border-2 transition-all ${
                 activeTab === 'create'
-                  ? 'text-gold-500 border-b-2 border-gold-500'
-                  : 'text-parchment-400 hover:text-parchment-200'
+                  ? 'bg-gold-500/10 border-gold-500 text-gold-500 shadow-ember'
+                  : 'bg-ash-700 border-bronze-700 text-parchment-400 hover:border-bronze-500 hover:text-parchment-200'
               }`}
             >
               Create
@@ -76,10 +81,10 @@ export function LobbyHomePage() {
             <button
               type="button"
               onClick={() => handleTabChange('join')}
-              className={`flex-1 py-2 text-sm font-heading font-medium tracking-wide ${
+              className={`flex-1 py-2.5 text-sm font-heading font-bold tracking-wide border-2 transition-all ${
                 activeTab === 'join'
-                  ? 'text-gold-500 border-b-2 border-gold-500'
-                  : 'text-parchment-400 hover:text-parchment-200'
+                  ? 'bg-gold-500/10 border-gold-500 text-gold-500 shadow-ember'
+                  : 'bg-ash-700 border-bronze-700 text-parchment-400 hover:border-bronze-500 hover:text-parchment-200'
               }`}
             >
               Join
@@ -94,31 +99,31 @@ export function LobbyHomePage() {
 
           {activeTab === 'create' ? (
             <form onSubmit={handleCreate} className="space-y-4">
-              <Select
-                id="maxPlayers"
-                label="Max Players"
-                value={maxPlayers}
-                onChange={(e) => setMaxPlayers(Number(e.target.value))}
-              >
-                {[2, 3, 4, 5, 6, 7, 8].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </Select>
+              <div>
+                <label className="text-parchment-300 text-sm font-medium mb-2 block">Max Players</label>
+                <div role="group" aria-label="Max Players" className="flex gap-2">
+                  {([2, 3, 4] as const).map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setMaxPlayers(n)}
+                      aria-pressed={maxPlayers === n}
+                      className={`w-12 h-12 text-lg font-heading font-bold border-2 transition-all ${
+                        maxPlayers === n
+                          ? 'bg-gold-500 text-ash-950 border-gold-500 shadow-ember'
+                          : 'bg-ash-700 text-parchment-300 border-bronze-700 hover:border-bronze-500 hover:text-parchment-200'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-              <Select
-                id="winCondition"
-                label="Win Condition"
-                value={winCondition}
-                onChange={(e) => setWinCondition(Number(e.target.value))}
-              >
-                {Object.entries(WIN_CONDITION_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </Select>
+              <div>
+                <label className="text-parchment-300 text-sm font-medium mb-1 block">Win Condition</label>
+                <p className="text-parchment-200 text-sm bg-ash-700 border border-bronze-700 px-3 py-2">Elimination</p>
+              </div>
 
               <Button
                 type="submit"

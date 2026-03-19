@@ -32,9 +32,7 @@ export interface FactionAvailabilityDto {
 
 // Display mappings for numeric enums
 export const WIN_CONDITION_LABELS: Record<number, string> = {
-  0: 'Domination',
-  1: 'Elimination',
-  2: 'Score',
+  0: 'Elimination',
 };
 
 export const GAME_STATUS = {
