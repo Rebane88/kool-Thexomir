@@ -13,15 +13,6 @@ export interface HexLayoutConfig {
   origin: Point2D;
 }
 
-/** Locked terrain colors from CONTEXT.md */
-export const TERRAIN_COLORS: Record<string, string> = {
-  Plains: '#4a6741',
-  Forest: '#2d5a27',
-  Mountain: '#6b6b6b',
-  River: '#2a5a8c',
-  'Magic Grove': '#5a3d7a',
-};
-
 export const HEX_BORDER_COLOR = '#1a1a24';
 export const SELECTION_COLOR = '#c9a84c';
 export const HOVER_COLOR = 'rgba(201, 168, 76, 0.5)';
@@ -39,12 +30,11 @@ export const KINGDOM_COLORS: string[] = [
   '#8b6640', // K8: Brown
 ];
 
-export const KINGDOM_OVERLAY_ALPHA = 0.3;
-
 /** State passed from GamePage to the draw function for hover/selection */
 export interface MapRenderState {
   hoveredTileKey: string | null;
   selectedTileKey: string | null;
   buildModeTypeId: string | null;
   armyHighlightTileKey: string | null;
+  assetsReady: boolean;
 }
