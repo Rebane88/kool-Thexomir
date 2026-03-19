@@ -13,7 +13,11 @@ namespace Application.Services.Turn;
 
 public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatService combatService) : ITurnService
 {
-    public async Task<Result<TurnAdvancedDto>> EndTurnAsync(Guid gameId, Guid userId)
+    public async Task<Result<TurnAdvancedDto>> EndTurnAsync(
+        Guid gameId,
+        Guid userId,
+        Func<BattleRoundResultDto, string, Task> onRoundResolved,
+        Func<BattleResultDto, Task> onBattleResolved)
     {
         // 1. Validate game/kingdom access (not ValidateActionAsync -- ending turn is free)
         var guardResult = await gameGuard.ValidateAsync(gameId, userId);
@@ -73,7 +77,7 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
         else
         {
             // All players done -- advance through phases
-            result = await AdvanceToNextPhaseAsync(game, kingdoms);
+            result = await AdvanceToNextPhaseAsync(game, kingdoms, onRoundResolved, onBattleResolved);
         }
 
         await unitOfWork.CommitAsync();
@@ -81,7 +85,11 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
         return Result<TurnAdvancedDto>.Ok(result);
     }
 
-    private async Task<TurnAdvancedDto> AdvanceToNextPhaseAsync(Game game, List<Kingdom> kingdoms)
+    private async Task<TurnAdvancedDto> AdvanceToNextPhaseAsync(
+        Game game,
+        List<Kingdom> kingdoms,
+        Func<BattleRoundResultDto, string, Task> onRoundResolved,
+        Func<BattleResultDto, Task> onBattleResolved)
     {
         var previousPhase = game.CurrentPhase;
         Dictionary<string, int>? incomeApplied = null;
@@ -99,6 +107,19 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
 
         // Resolve all declared attacks for this round
         battleResults = await combatService.ResolveBattlesAsync(game);
+
+        // Broadcast rounds individually before committing, so clients animate in real time
+        foreach (var battleResult in battleResults)
+        {
+            var battleIdStr = battleResult.BattleId.ToString();
+            foreach (var round in battleResult.Rounds)
+            {
+                await onRoundResolved(round, battleIdStr);
+                await Task.Delay(2500); // 2.5s per round for playback
+            }
+            await onBattleResolved(battleResult);
+            await Task.Delay(1500); // 1.5s pause between battles
+        }
 
         // Check if any kingdom was eliminated -- refresh kingdom statuses
         if (battleResults.Any())
@@ -118,7 +139,7 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
                     RoundNumber = game.RoundNumber,
                     CurrentPhase = game.CurrentPhase.ToString(),
                     PhaseChanged = true,
-                    BattleResults = battleResults,
+                    BattleResults = null,
                     GameOver = new WinCondition.DTOs.GameOverDto
                     {
                         GameId = game.Id,
@@ -202,7 +223,7 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
             ActionPoints = actionPoints,
             TurnDeadline = game.TurnDeadline,
             IncomeApplied = incomeApplied,
-            BattleResults = battleResults.Count > 0 ? battleResults : null,
+            BattleResults = null, // Battles broadcast individually via BattleRoundResolved/BattleResolved events
             PhaseChanged = true,
             GameOver = gameOver
         };

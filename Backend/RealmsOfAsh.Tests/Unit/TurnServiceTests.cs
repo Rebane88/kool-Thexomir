@@ -169,7 +169,7 @@ public class TurnServiceTests
         _gameGuardMock.Setup(gg => gg.ValidateAsync(GameId, UserId))
             .ReturnsAsync(Result<GameGuardContext>.Fail("Game not found."));
 
-        var result = await _sut.EndTurnAsync(GameId, UserId);
+        var result = await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         result.IsSuccess.ShouldBeFalse();
         result.Error.ShouldBe("Game not found.");
@@ -186,7 +186,7 @@ public class TurnServiceTests
         game.CurrentPhase = EGamePhase.Income;
         SetupGuardSuccess(game);
 
-        var result = await _sut.EndTurnAsync(GameId, UserId);
+        var result = await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         result.IsSuccess.ShouldBeFalse();
         result.Error.ShouldBe("Can only end turn during Action Phase.");
@@ -199,7 +199,7 @@ public class TurnServiceTests
         game.CurrentTurnKingdomId = Kingdom2Id;
         SetupGuardSuccess(game);
 
-        var result = await _sut.EndTurnAsync(GameId, UserId);
+        var result = await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         result.IsSuccess.ShouldBeFalse();
         result.Error.ShouldBe("It is not your turn.");
@@ -219,7 +219,7 @@ public class TurnServiceTests
         SetupKingdoms(k1, k2);
         SetupFactionType();
 
-        var result = await _sut.EndTurnAsync(GameId, UserId);
+        var result = await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value!.NextKingdomId.ShouldBe(Kingdom2Id);
@@ -239,7 +239,7 @@ public class TurnServiceTests
         SetupKingdoms(k1, k2);
         SetupFactionType();
 
-        await _sut.EndTurnAsync(GameId, UserId);
+        await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         _turnLogsMock.Verify(t => t.AddAsync(It.Is<TurnLog>(
             tl => tl.EventType == EEventType.TurnEnded)), Times.Once);
@@ -265,7 +265,7 @@ public class TurnServiceTests
         SetupKingdoms(k1, k2, k3);
         SetupFactionType();
 
-        var result = await _sut.EndTurnAsync(GameId, UserId);
+        var result = await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value!.NextKingdomId.ShouldBe(Kingdom3Id);
@@ -286,7 +286,7 @@ public class TurnServiceTests
         SetupFactionType();
         SetupIncomeForPhaseTransition();
 
-        var result = await _sut.EndTurnAsync(GameId, UserId);
+        var result = await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value!.PhaseChanged.ShouldBeTrue();
@@ -307,7 +307,7 @@ public class TurnServiceTests
         SetupFactionType();
         SetupIncomeForPhaseTransition();
 
-        await _sut.EndTurnAsync(GameId, UserId);
+        await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         // Should have PhaseChanged logs for Battle, Income, RoundEnd, Action
         _turnLogsMock.Verify(t => t.AddAsync(It.Is<TurnLog>(
@@ -333,7 +333,7 @@ public class TurnServiceTests
         SetupKingdoms(k1, k2);
         SetupFactionType();
 
-        var result = await _sut.EndTurnAsync(GameId, UserId);
+        var result = await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value!.TurnDeadline.ShouldNotBeNull();
@@ -351,7 +351,7 @@ public class TurnServiceTests
         SetupKingdoms(k1, k2);
         SetupFactionType();
 
-        var result = await _sut.EndTurnAsync(GameId, UserId);
+        var result = await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value!.TurnDeadline.ShouldBeNull();
@@ -413,7 +413,7 @@ public class TurnServiceTests
         };
         _resourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom1Id)).ReturnsAsync(resources);
 
-        var result = await _sut.EndTurnAsync(GameId, UserId);
+        var result = await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value!.IncomeApplied.ShouldNotBeNull();
@@ -438,7 +438,7 @@ public class TurnServiceTests
         SetupKingdoms(k1, k2);
         SetupFactionType();
 
-        await _sut.EndTurnAsync(GameId, UserId);
+        await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         _unitOfWorkMock.Verify(u => u.CommitAsync(default), Times.Once);
     }
@@ -476,7 +476,7 @@ public class TurnServiceTests
         };
         _resourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom1Id)).ReturnsAsync(resources);
 
-        var result = await _sut.EndTurnAsync(GameId, UserId);
+        var result = await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         result.IsSuccess.ShouldBeTrue();
         army.CurrentHP.ShouldBe(90);
@@ -512,7 +512,7 @@ public class TurnServiceTests
         };
         _resourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom1Id)).ReturnsAsync(resources);
 
-        await _sut.EndTurnAsync(GameId, UserId);
+        await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         army.CurrentHP.ShouldBe(100);
         _armiesMock.Verify(a => a.UpdateAsync(It.IsAny<Army>()), Times.Never);
@@ -550,7 +550,7 @@ public class TurnServiceTests
         };
         _resourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom1Id)).ReturnsAsync(resources);
 
-        await _sut.EndTurnAsync(GameId, UserId);
+        await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         resources.First(r => r.ResourceType == EResourceType.Gold).Amount.ShouldBe(95);
         resources.First(r => r.ResourceType == EResourceType.Food).Amount.ShouldBe(97);
@@ -589,7 +589,7 @@ public class TurnServiceTests
         };
         _resourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom1Id)).ReturnsAsync(resources);
 
-        await _sut.EndTurnAsync(GameId, UserId);
+        await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         // Expensive army should be disbanded
         _armiesMock.Verify(a => a.DeleteAsync(expensiveArmy.Id), Times.Once);
@@ -634,7 +634,7 @@ public class TurnServiceTests
         };
         _resourcesMock.Setup(r => r.GetMutableResourcesForKingdomAsync(Kingdom1Id)).ReturnsAsync(resources);
 
-        await _sut.EndTurnAsync(GameId, UserId);
+        await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         // Healing happened (50 + 10% of 100 = 60)
         army.CurrentHP.ShouldBe(60);
@@ -661,7 +661,7 @@ public class TurnServiceTests
         SetupFactionType();
         SetupIncomeForPhaseTransition();
 
-        await _sut.EndTurnAsync(GameId, UserId);
+        await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         _combatServiceMock.Verify(c => c.ResolveBattlesAsync(It.IsAny<Game>()), Times.Once);
     }
@@ -694,7 +694,7 @@ public class TurnServiceTests
 
         // After battle, re-fetch still returns both active (no elimination)
 
-        var result = await _sut.EndTurnAsync(GameId, UserId);
+        var result = await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value!.BattleResults.ShouldNotBeNull();
@@ -733,7 +733,7 @@ public class TurnServiceTests
             .ReturnsAsync(new List<Kingdom> { k2, k1 })          // first call (initial)
             .ReturnsAsync(new List<Kingdom> { k1, k2Defeated });  // second call (after battle)
 
-        var result = await _sut.EndTurnAsync(GameId, UserId);
+        var result = await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value!.GameOver.ShouldNotBeNull();

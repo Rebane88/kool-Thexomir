@@ -154,6 +154,10 @@ export interface BattleRoundResult {
   armyDestroyedId: string | null;
 }
 
+export interface BattleRoundResolvedEvent extends BattleRoundResult {
+  battleId: string;
+}
+
 export interface ArmyReveal {
   declaredAttackId: string;
   attackerKingdomId: string;

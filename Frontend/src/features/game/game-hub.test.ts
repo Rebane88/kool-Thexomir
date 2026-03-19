@@ -47,7 +47,8 @@ vi.mock('./game-store', () => ({
 
 const mockAnimationStoreState = {
   setSlotResult: vi.fn(),
-  startCombatPlayback: vi.fn(),
+  receiveRound: vi.fn(),
+  showPhaseBanner: vi.fn(),
 };
 
 vi.mock('./animation-store', () => ({
@@ -75,19 +76,20 @@ describe('game-hub', () => {
       'AttackDeclared',
       'ArmiesSelected',
       'LineupSet',
+      'BattleRoundResolved',
       'BattleResolved',
       'GameOver',
       'PlayerJoinedGame',
       'PlayerLeftGame',
     ];
 
-    it('registers all 15 event handlers', async () => {
+    it('registers all 16 event handlers', async () => {
       await connectToGame('game-1');
 
       for (const event of EXPECTED_EVENTS) {
         expect(onHandlers.has(event), `missing handler for ${event}`).toBe(true);
       }
-      expect(onHandlers.size).toBe(15);
+      expect(onHandlers.size).toBe(16);
     });
 
     it('does NOT register old v5.0 event names', async () => {
@@ -115,8 +117,33 @@ describe('game-hub', () => {
     });
   });
 
+  describe('BattleRoundResolved handler', () => {
+    it('calls animation store receiveRound with round data and battleId', async () => {
+      await connectToGame('game-1');
+
+      const handler = onHandlers.get('BattleRoundResolved')!;
+      const data = {
+        battleId: 'b1',
+        roundNumber: 1,
+        attackerArmyId: 'a1',
+        defenderArmyId: 'd1',
+        initiativeWinner: 'attacker',
+        attackerInitiativeChance: 0.6,
+        defenderInitiativeChance: 0.4,
+        damageDealt: 5,
+        chipDamageDealt: 1,
+        attackerArmyHPAfter: 10,
+        defenderArmyHPAfter: 5,
+        armyDestroyedId: null,
+      };
+      handler(data);
+
+      expect(mockAnimationStoreState.receiveRound).toHaveBeenCalledWith(data, 'b1');
+    });
+  });
+
   describe('BattleResolved handler', () => {
-    it('calls game store handler and animation store startCombatPlayback', async () => {
+    it('calls game store handler and does NOT call startCombatPlayback', async () => {
       await connectToGame('game-1');
 
       const handler = onHandlers.get('BattleResolved')!;
@@ -133,7 +160,8 @@ describe('game-hub', () => {
       handler(data);
 
       expect(mockGameStoreState.handleBattleResolved).toHaveBeenCalledWith(data);
-      expect(mockAnimationStoreState.startCombatPlayback).toHaveBeenCalledWith(mockRounds);
+      // Rounds arrive via BattleRoundResolved, not here
+      expect(mockAnimationStoreState.receiveRound).not.toHaveBeenCalled();
     });
   });
 

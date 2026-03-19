@@ -3,34 +3,33 @@ import { useAnimationStore } from './animation-store';
 import { useGameStore } from './game-store';
 import type { BattleRoundResult } from './types/event-types';
 
-const mockRounds: BattleRoundResult[] = [
-  {
-    roundNumber: 1,
-    attackerArmyId: 'a1',
-    defenderArmyId: 'd1',
-    initiativeWinner: 'attacker',
-    attackerInitiativeChance: 0.6,
-    defenderInitiativeChance: 0.4,
-    damageDealt: 5,
-    chipDamageDealt: 1,
-    attackerArmyHPAfter: 10,
-    defenderArmyHPAfter: 5,
-    armyDestroyedId: null,
-  },
-  {
-    roundNumber: 2,
-    attackerArmyId: 'a1',
-    defenderArmyId: 'd1',
-    initiativeWinner: 'defender',
-    attackerInitiativeChance: 0.6,
-    defenderInitiativeChance: 0.4,
-    damageDealt: 3,
-    chipDamageDealt: 0,
-    attackerArmyHPAfter: 7,
-    defenderArmyHPAfter: 5,
-    armyDestroyedId: null,
-  },
-];
+const mockRound1: BattleRoundResult = {
+  roundNumber: 1,
+  attackerArmyId: 'a1',
+  defenderArmyId: 'd1',
+  initiativeWinner: 'attacker',
+  attackerInitiativeChance: 0.6,
+  defenderInitiativeChance: 0.4,
+  damageDealt: 5,
+  chipDamageDealt: 1,
+  attackerArmyHPAfter: 10,
+  defenderArmyHPAfter: 5,
+  armyDestroyedId: null,
+};
+
+const mockRound2: BattleRoundResult = {
+  roundNumber: 2,
+  attackerArmyId: 'a1',
+  defenderArmyId: 'd1',
+  initiativeWinner: 'defender',
+  attackerInitiativeChance: 0.6,
+  defenderInitiativeChance: 0.4,
+  damageDealt: 3,
+  chipDamageDealt: 0,
+  attackerArmyHPAfter: 7,
+  defenderArmyHPAfter: 5,
+  armyDestroyedId: null,
+};
 
 describe('useAnimationStore', () => {
   beforeEach(() => {
@@ -41,8 +40,9 @@ describe('useAnimationStore', () => {
     const state = useAnimationStore.getState();
     expect(state.slotSpinning).toBe(false);
     expect(state.slotResult).toBeNull();
-    expect(state.combatPlaybackRounds).toBeNull();
-    expect(state.combatPlaybackIndex).toBe(0);
+    expect(state.currentRound).toBeNull();
+    expect(state.currentBattleId).toBeNull();
+    expect(state.battleRoundHistory).toEqual([]);
   });
 
   it('startSlotSpin sets slotSpinning=true and slotResult=null', () => {
@@ -73,32 +73,33 @@ describe('useAnimationStore', () => {
     expect(state.slotResult).toBeNull();
   });
 
-  it('startCombatPlayback sets rounds and resets index to 0', () => {
-    useAnimationStore.getState().startCombatPlayback(mockRounds);
+  it('receiveRound sets currentRound, currentBattleId, and appends to battleRoundHistory', () => {
+    useAnimationStore.getState().receiveRound(mockRound1, 'battle-1');
 
     const state = useAnimationStore.getState();
-    expect(state.combatPlaybackRounds).toEqual(mockRounds);
-    expect(state.combatPlaybackIndex).toBe(0);
+    expect(state.currentRound).toEqual(mockRound1);
+    expect(state.currentBattleId).toBe('battle-1');
+    expect(state.battleRoundHistory).toHaveLength(1);
+    expect(state.battleRoundHistory[0]).toEqual(mockRound1);
   });
 
-  it('advanceCombatPlayback increments index by 1', () => {
-    useAnimationStore.getState().startCombatPlayback(mockRounds);
-    useAnimationStore.getState().advanceCombatPlayback();
+  it('receiveRound accumulates history across multiple rounds', () => {
+    useAnimationStore.getState().receiveRound(mockRound1, 'battle-1');
+    useAnimationStore.getState().receiveRound(mockRound2, 'battle-1');
 
-    expect(useAnimationStore.getState().combatPlaybackIndex).toBe(1);
-
-    useAnimationStore.getState().advanceCombatPlayback();
-    expect(useAnimationStore.getState().combatPlaybackIndex).toBe(2);
+    const state = useAnimationStore.getState();
+    expect(state.currentRound).toEqual(mockRound2);
+    expect(state.battleRoundHistory).toHaveLength(2);
   });
 
-  it('clearCombatPlayback resets combat playback state', () => {
-    useAnimationStore.getState().startCombatPlayback(mockRounds);
-    useAnimationStore.getState().advanceCombatPlayback();
+  it('clearCombatPlayback resets server-driven combat state', () => {
+    useAnimationStore.getState().receiveRound(mockRound1, 'battle-1');
     useAnimationStore.getState().clearCombatPlayback();
 
     const state = useAnimationStore.getState();
-    expect(state.combatPlaybackRounds).toBeNull();
-    expect(state.combatPlaybackIndex).toBe(0);
+    expect(state.currentRound).toBeNull();
+    expect(state.currentBattleId).toBeNull();
+    expect(state.battleRoundHistory).toEqual([]);
   });
 
   it('is a separate store instance from useGameStore', () => {

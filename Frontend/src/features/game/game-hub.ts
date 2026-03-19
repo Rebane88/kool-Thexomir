@@ -17,6 +17,7 @@ import type {
   ArmiesSelectedEvent,
   LineupSetEvent,
   BattleResolvedEvent,
+  BattleRoundResolvedEvent,
   GameOverEvent,
 } from './types';
 
@@ -101,9 +102,13 @@ export async function connectToGame(gameId: string): Promise<void> {
     useGameStore.getState().handleLineupSet(data);
   });
 
+  connection.on('BattleRoundResolved', (data: BattleRoundResolvedEvent) => {
+    useAnimationStore.getState().receiveRound(data, data.battleId);
+  });
+
   connection.on('BattleResolved', (data: BattleResolvedEvent) => {
     useGameStore.getState().handleBattleResolved(data);
-    useAnimationStore.getState().startCombatPlayback(data.rounds);
+    // Don't call startCombatPlayback — rounds already received via BattleRoundResolved
   });
 
   // --- Game over ---

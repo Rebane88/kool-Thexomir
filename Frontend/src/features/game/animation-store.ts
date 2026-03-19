@@ -7,9 +7,10 @@ interface AnimationState {
   slotSpinning: boolean;
   slotResult: { outcome: number; actionPointsAfter: number } | null;
 
-  // Combat playback
-  combatPlaybackRounds: BattleRoundResult[] | null;
-  combatPlaybackIndex: number;
+  // Server-driven combat playback
+  currentRound: BattleRoundResult | null;
+  currentBattleId: string | null;
+  battleRoundHistory: BattleRoundResult[];
 
   // Phase banner
   phaseBannerPhase: GamePhase | null;
@@ -19,8 +20,7 @@ interface AnimationState {
   startSlotSpin: () => void;
   setSlotResult: (result: { outcome: number; actionPointsAfter: number }) => void;
   clearSlot: () => void;
-  startCombatPlayback: (rounds: BattleRoundResult[]) => void;
-  advanceCombatPlayback: () => void;
+  receiveRound: (round: BattleRoundResult, battleId: string) => void;
   clearCombatPlayback: () => void;
   showPhaseBanner: (phase: GamePhase, round: number) => void;
   hidePhaseBanner: () => void;
@@ -30,8 +30,9 @@ interface AnimationState {
 const initialState = {
   slotSpinning: false,
   slotResult: null as { outcome: number; actionPointsAfter: number } | null,
-  combatPlaybackRounds: null as BattleRoundResult[] | null,
-  combatPlaybackIndex: 0,
+  currentRound: null as BattleRoundResult | null,
+  currentBattleId: null as string | null,
+  battleRoundHistory: [] as BattleRoundResult[],
   phaseBannerPhase: null as GamePhase | null,
   phaseBannerRound: null as number | null,
 };
@@ -45,14 +46,15 @@ export const useAnimationStore = create<AnimationState>((set) => ({
 
   clearSlot: () => set({ slotSpinning: false, slotResult: null }),
 
-  startCombatPlayback: (rounds) =>
-    set({ combatPlaybackRounds: rounds, combatPlaybackIndex: 0 }),
-
-  advanceCombatPlayback: () =>
-    set((state) => ({ combatPlaybackIndex: state.combatPlaybackIndex + 1 })),
+  receiveRound: (round, battleId) =>
+    set((state) => ({
+      currentRound: round,
+      currentBattleId: battleId,
+      battleRoundHistory: [...state.battleRoundHistory, round],
+    })),
 
   clearCombatPlayback: () =>
-    set({ combatPlaybackRounds: null, combatPlaybackIndex: 0 }),
+    set({ currentRound: null, currentBattleId: null, battleRoundHistory: [] }),
 
   showPhaseBanner: (phase, round) =>
     set({ phaseBannerPhase: phase, phaseBannerRound: round }),

@@ -49,6 +49,10 @@ interface GameState {
   activeBattle: BattleStep | null;
   lastBattleResult: BattleResolvedEvent | null;
 
+  // Bilateral readiness tracking for multi-kingdom battle steps
+  battleReadiness: Map<string, { attackerReady: boolean; defenderReady: boolean }>;
+  lineupReadiness: Map<string, { attackerReady: boolean; defenderReady: boolean }>;
+
   // Building reference data
   buildingTypes: BuildingTypeRef[];
   buildModeTypeId: string | null;
@@ -108,6 +112,8 @@ const initialState = {
   declaredAttacks: [] as DeclaredAttack[],
   activeBattle: null as BattleStep | null,
   lastBattleResult: null as BattleResolvedEvent | null,
+  battleReadiness: new Map<string, { attackerReady: boolean; defenderReady: boolean }>(),
+  lineupReadiness: new Map<string, { attackerReady: boolean; defenderReady: boolean }>(),
   buildingTypes: [] as BuildingTypeRef[],
   buildModeTypeId: null as string | null,
   armyTypes: [] as ArmyTypeRef[],
@@ -190,6 +196,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       maxActionPoints: null,
       declaredAttacks: [],
       activeBattle: null,
+      battleReadiness: new Map(),
+      lineupReadiness: new Map(),
     });
   },
 
@@ -215,6 +223,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       declaredAttacks: [],
       activeBattle: null,
       lastBattleResult: null,
+      battleReadiness: new Map(),
+      lineupReadiness: new Map(),
       buildingTypes: [],
       buildModeTypeId: null,
       armyTypes: [],
@@ -260,6 +270,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       gameOver: data.gameOver ?? get().gameOver,
       lastIncomeApplied: isMyIncome ? data.incomeApplied : null,
       declaredAttacks: [],
+      battleReadiness: new Map(),
+      lineupReadiness: new Map(),
     });
   },
 
@@ -311,7 +323,15 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   handlePhaseChanged: (data) => {
-    set({ currentPhase: data.phase as GamePhase });
+    const updates: Partial<ReturnType<typeof get>> = {
+      currentPhase: data.phase as GamePhase,
+    };
+    if (data.phase === 'Battle') {
+      updates.activeBattle = 'SelectArmies';
+      updates.battleReadiness = new Map();
+      updates.lineupReadiness = new Map();
+    }
+    set(updates);
   },
 
   handleTurnStarted: (data) => {
@@ -375,16 +395,60 @@ export const useGameStore = create<GameState>((set, get) => ({
           defenderKingdomId: data.defenderKingdomId,
         },
       ],
-      activeBattle: 'SelectArmies',
+      // Do NOT set activeBattle here — battle step advances when Phase changes to Battle
     });
   },
 
-  handleArmiesSelected: (_data) => {
-    set({ activeBattle: 'RevealArmies' });
+  handleArmiesSelected: (data) => {
+    const { declaredAttacks, battleReadiness } = get();
+    const attack = declaredAttacks.find((da) => da.attackId === data.declaredAttackId);
+    if (!attack) return;
+
+    const existing = battleReadiness.get(data.declaredAttackId) ?? { attackerReady: false, defenderReady: false };
+    const isAttacker = data.kingdomId === attack.attackerKingdomId;
+    const updated = isAttacker
+      ? { ...existing, attackerReady: true }
+      : { ...existing, defenderReady: true };
+
+    const newReadiness = new Map(battleReadiness);
+    newReadiness.set(data.declaredAttackId, updated);
+
+    // All battles ready when every declared attack has both sides confirmed
+    const allReady = declaredAttacks.every((da) => {
+      const r = da.attackId === data.declaredAttackId ? updated : battleReadiness.get(da.attackId);
+      return r?.attackerReady && r?.defenderReady;
+    });
+
+    set({
+      battleReadiness: newReadiness,
+      ...(allReady ? { activeBattle: 'RevealArmies' } : {}),
+    });
   },
 
-  handleLineupSet: (_data) => {
-    set({ activeBattle: 'Resolve' });
+  handleLineupSet: (data) => {
+    const { declaredAttacks, lineupReadiness } = get();
+    const attack = declaredAttacks.find((da) => da.attackId === data.declaredAttackId);
+    if (!attack) return;
+
+    const existing = lineupReadiness.get(data.declaredAttackId) ?? { attackerReady: false, defenderReady: false };
+    const isAttacker = data.kingdomId === attack.attackerKingdomId;
+    const updated = isAttacker
+      ? { ...existing, attackerReady: true }
+      : { ...existing, defenderReady: true };
+
+    const newReadiness = new Map(lineupReadiness);
+    newReadiness.set(data.declaredAttackId, updated);
+
+    // All battles ready when every declared attack has both sides confirmed
+    const allReady = declaredAttacks.every((da) => {
+      const r = da.attackId === data.declaredAttackId ? updated : lineupReadiness.get(da.attackId);
+      return r?.attackerReady && r?.defenderReady;
+    });
+
+    set({
+      lineupReadiness: newReadiness,
+      ...(allReady ? { activeBattle: 'Resolve' } : {}),
+    });
   },
 
   handleBattleResolved: (data) => {
@@ -415,11 +479,14 @@ export const useGameStore = create<GameState>((set, get) => ({
       (da) => da.attackId !== data.battleId,
     );
 
+    // Only clear activeBattle when ALL battles are resolved
+    const allResolved = newDeclaredAttacks.length === 0;
+
     set({
       tiles: newTiles,
       armies: newArmies,
       lastBattleResult: data,
-      activeBattle: null,
+      activeBattle: allResolved ? null : get().activeBattle,
       declaredAttacks: newDeclaredAttacks,
     });
   },

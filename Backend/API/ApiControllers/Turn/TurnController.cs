@@ -27,7 +27,13 @@ public class TurnController(
     {
         using var gameLock = await gameLockManager.AcquireAsync(gameId);
 
-        var result = await turnService.EndTurnAsync(gameId, User.UserId());
+        var result = await turnService.EndTurnAsync(
+            gameId,
+            User.UserId(),
+            onRoundResolved: async (round, battleId) =>
+                await hubContext.Clients.Group($"game:{gameId}").BattleRoundResolved(round),
+            onBattleResolved: async (battleResult) =>
+                await hubContext.Clients.Group($"game:{gameId}").BattleResolved(battleResult));
         if (!result.IsSuccess)
             return BadRequest(ProblemDetailsFor(400, result.Error!));
 

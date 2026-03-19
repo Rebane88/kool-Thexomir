@@ -423,7 +423,7 @@ describe('delta events', () => {
     expect(kingdom.resources.Gold).toBe(120);
   });
 
-  it('handleAttackDeclared appends to declaredAttacks', () => {
+  it('handleAttackDeclared appends to declaredAttacks but does not set activeBattle', () => {
     const event: AttackDeclaredEvent = {
       attackId: 'atk-1',
       targetTileId: 'tile-2',
@@ -437,30 +437,65 @@ describe('delta events', () => {
     expect(attacks).toHaveLength(1);
     expect(attacks[0].attackId).toBe('atk-1');
     expect(attacks[0].targetTileId).toBe('tile-2');
-    expect(useGameStore.getState().activeBattle).toBe('SelectArmies');
+    // activeBattle is only set when Phase changes to Battle
+    expect(useGameStore.getState().activeBattle).toBeNull();
   });
 
-  it('handleArmiesSelected advances battle step', () => {
-    const event: ArmiesSelectedEvent = {
+  it('handleArmiesSelected advances battle step when both sides confirm', () => {
+    // Set up declared attack
+    useGameStore.getState().handleAttackDeclared({
+      attackId: 'atk-1',
+      targetTileId: 'tile-2',
+      riskedTileId: 'tile-1',
+      attackerKingdomId: 'k-1',
+      defenderKingdomId: 'k-2',
+    });
+
+    // Attacker confirms
+    useGameStore.getState().handleArmiesSelected({
       declaredAttackId: 'atk-1',
       kingdomId: 'k-1',
       armiesSelected: 2,
       maxArmies: 3,
-    };
-    useGameStore.getState().handleArmiesSelected(event);
+    });
+    expect(useGameStore.getState().activeBattle).toBeNull(); // Not yet — defender not ready
 
+    // Defender confirms
+    useGameStore.getState().handleArmiesSelected({
+      declaredAttackId: 'atk-1',
+      kingdomId: 'k-2',
+      armiesSelected: 2,
+      maxArmies: 3,
+    });
     expect(useGameStore.getState().activeBattle).toBe('RevealArmies');
   });
 
-  it('handleLineupSet advances battle step to Resolve', () => {
-    const event: LineupSetEvent = {
+  it('handleLineupSet advances battle step to Resolve when both sides confirm', () => {
+    // Set up declared attack
+    useGameStore.getState().handleAttackDeclared({
+      attackId: 'atk-1',
+      targetTileId: 'tile-2',
+      riskedTileId: 'tile-1',
+      attackerKingdomId: 'k-1',
+      defenderKingdomId: 'k-2',
+    });
+
+    // Attacker confirms
+    useGameStore.getState().handleLineupSet({
       declaredAttackId: 'atk-1',
       kingdomId: 'k-1',
       armiesSelected: 2,
       maxArmies: 3,
-    };
-    useGameStore.getState().handleLineupSet(event);
+    });
+    expect(useGameStore.getState().activeBattle).toBeNull(); // Not yet
 
+    // Defender confirms
+    useGameStore.getState().handleLineupSet({
+      declaredAttackId: 'atk-1',
+      kingdomId: 'k-2',
+      armiesSelected: 2,
+      maxArmies: 3,
+    });
     expect(useGameStore.getState().activeBattle).toBe('Resolve');
   });
 
