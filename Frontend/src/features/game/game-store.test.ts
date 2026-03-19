@@ -4,9 +4,15 @@ import type {
   GameStateSnapshot,
   TurnAdvancedEvent,
   BuildingPlacedEvent,
-  TroopsTrainedEvent,
-  ArmyMovedEvent,
-  CombatResolvedEvent,
+  ArmyTrainedEvent,
+  SlotMachineSpunEvent,
+  AttackDeclaredEvent,
+  ArmiesSelectedEvent,
+  LineupSetEvent,
+  BattleResolvedEvent,
+  PhaseChangedEvent,
+  TurnStartedEvent,
+  RoundStartedEvent,
   GameOverEvent,
 } from './types';
 
@@ -14,9 +20,10 @@ function createMockSnapshot(): GameStateSnapshot {
   return {
     gameId: 'game-1',
     status: 'InProgress',
-    turnNumber: 3,
-    winCondition: 'Domination',
-    mapRadius: 5,
+    roundNumber: 3,
+    winCondition: 'Elimination',
+    mapWidth: 10,
+    mapHeight: 8,
     currentTurnKingdomId: 'k-1',
     tiles: [
       {
@@ -26,7 +33,7 @@ function createMockSnapshot(): GameStateSnapshot {
         terrainTypeId: 'plains',
         terrainName: 'Plains',
         kingdomId: 'k-1',
-        isCapital: true,
+        isCastle: true,
         buildings: [{ id: 'b-1', buildingTypeId: 'castle', buildingName: 'Castle' }],
       },
       {
@@ -36,7 +43,7 @@ function createMockSnapshot(): GameStateSnapshot {
         terrainTypeId: 'forest',
         terrainName: 'Forest',
         kingdomId: 'k-2',
-        isCapital: false,
+        isCastle: false,
         buildings: [],
       },
       {
@@ -46,7 +53,7 @@ function createMockSnapshot(): GameStateSnapshot {
         terrainTypeId: 'mountain',
         terrainName: 'Mountain',
         kingdomId: null,
-        isCapital: false,
+        isCastle: false,
         buildings: [],
       },
     ],
@@ -57,7 +64,7 @@ function createMockSnapshot(): GameStateSnapshot {
         userId: 'user-1',
         factionTypeId: 'human',
         factionName: 'Humans',
-        isEliminated: false,
+        status: 'Active',
         resources: [
           { resourceType: 'Gold', amount: 100 },
           { resourceType: 'Food', amount: 50 },
@@ -69,16 +76,18 @@ function createMockSnapshot(): GameStateSnapshot {
         userId: 'user-2',
         factionTypeId: 'elf',
         factionName: 'Elves',
-        isEliminated: false,
+        status: 'Active',
         resources: [{ resourceType: 'Gold', amount: 80 }],
       },
     ],
     armies: [
       {
         id: 'army-1',
-        tileId: 'tile-1',
+        buildingId: 'b-1',
         kingdomId: 'k-1',
-        units: [{ unitTypeId: 'warrior', unitTypeName: 'Warrior', quantity: 10 }],
+        armyTypeId: 'warrior',
+        currentHP: 100,
+        maxHP: 100,
       },
     ],
   };
@@ -97,7 +106,7 @@ describe('loadSnapshot', () => {
     expect(tile).toBeDefined();
     expect(tile!.id).toBe('tile-1');
     expect(tile!.terrainName).toBe('Plains');
-    expect(tile!.isCapital).toBe(true);
+    expect(tile!.isCastle).toBe(true);
     expect(useGameStore.getState().tiles.size).toBe(3);
   });
 
@@ -110,13 +119,15 @@ describe('loadSnapshot', () => {
     expect(useGameStore.getState().tileIdToCoord.get('tile-3')).toBe('0,1');
   });
 
-  it('populates kingdoms map', () => {
+  it('populates kingdoms with status string (not isEliminated)', () => {
     const snapshot = createMockSnapshot();
     useGameStore.getState().loadSnapshot(snapshot, 'user-1');
 
     const kingdom = useGameStore.getState().kingdoms.get('k-1');
     expect(kingdom).toBeDefined();
     expect(kingdom!.name).toBe('Kingdom Alpha');
+    expect(kingdom!.status).toBe('Active');
+    expect(kingdom!.factionTypeId).toBe('human');
     expect(useGameStore.getState().kingdoms.size).toBe(2);
   });
 
@@ -128,14 +139,16 @@ describe('loadSnapshot', () => {
     expect(kingdom.resources).toEqual({ Gold: 100, Food: 50 });
   });
 
-  it('populates armies map', () => {
+  it('populates armies with v6.0 shape (buildingId, armyTypeId, HP)', () => {
     const snapshot = createMockSnapshot();
     useGameStore.getState().loadSnapshot(snapshot, 'user-1');
 
     const army = useGameStore.getState().armies.get('army-1');
     expect(army).toBeDefined();
-    expect(army!.units).toHaveLength(1);
-    expect(army!.units[0].unitTypeName).toBe('Warrior');
+    expect(army!.buildingId).toBe('b-1');
+    expect(army!.armyTypeId).toBe('warrior');
+    expect(army!.currentHP).toBe(100);
+    expect(army!.maxHP).toBe(100);
   });
 
   it('identifies player kingdom', () => {
@@ -152,17 +165,29 @@ describe('loadSnapshot', () => {
     expect(useGameStore.getState().myKingdomId).toBeNull();
   });
 
-  it('sets game metadata', () => {
+  it('sets game metadata with roundNumber, mapWidth, mapHeight', () => {
     const snapshot = createMockSnapshot();
     useGameStore.getState().loadSnapshot(snapshot, 'user-1');
 
     const state = useGameStore.getState();
     expect(state.gameId).toBe('game-1');
     expect(state.status).toBe('InProgress');
-    expect(state.turnNumber).toBe(3);
+    expect(state.roundNumber).toBe(3);
     expect(state.currentTurnKingdomId).toBe('k-1');
-    expect(state.winCondition).toBe('Domination');
-    expect(state.mapRadius).toBe(5);
+    expect(state.winCondition).toBe('Elimination');
+    expect(state.mapWidth).toBe(10);
+    expect(state.mapHeight).toBe(8);
+  });
+
+  it('initializes v6.0 phase/AP fields on snapshot load', () => {
+    const snapshot = createMockSnapshot();
+    useGameStore.getState().loadSnapshot(snapshot, 'user-1');
+
+    const state = useGameStore.getState();
+    expect(state.currentPhase).toBeNull();
+    expect(state.actionPoints).toBeNull();
+    expect(state.declaredAttacks).toEqual([]);
+    expect(state.activeBattle).toBeNull();
   });
 });
 
@@ -172,25 +197,37 @@ describe('delta events', () => {
     useGameStore.getState().loadSnapshot(createMockSnapshot(), 'user-1');
   });
 
-  it('handleTurnAdvanced updates turn state', () => {
+  it('handleTurnAdvanced updates turn state with v6.0 fields', () => {
     const event: TurnAdvancedEvent = {
-      newKingdomId: 'k-2',
-      turnNumber: 4,
+      nextKingdomId: 'k-2',
+      roundNumber: 4,
+      currentPhase: 'Action',
+      actionPoints: 3,
+      turnDeadline: null,
       incomeApplied: { Gold: 20 },
+      battleResults: null,
+      phaseChanged: false,
       gameOver: null,
     };
     useGameStore.getState().handleTurnAdvanced(event);
 
-    expect(useGameStore.getState().turnNumber).toBe(4);
-    expect(useGameStore.getState().currentTurnKingdomId).toBe('k-2');
+    const state = useGameStore.getState();
+    expect(state.roundNumber).toBe(4);
+    expect(state.currentTurnKingdomId).toBe('k-2');
+    expect(state.currentPhase).toBe('Action');
+    expect(state.actionPoints).toBe(3);
   });
 
-  it('handleTurnAdvanced applies income to kingdom resources', () => {
-    // currentTurnKingdomId is k-1 before advance, so income applies to k-1
+  it('handleTurnAdvanced applies income to kingdom whose turn just ended', () => {
     const event: TurnAdvancedEvent = {
-      newKingdomId: 'k-2',
-      turnNumber: 4,
+      nextKingdomId: 'k-2',
+      roundNumber: 4,
+      currentPhase: 'Action',
+      actionPoints: 3,
+      turnDeadline: null,
       incomeApplied: { Gold: 20, Food: 10 },
+      battleResults: null,
+      phaseChanged: false,
       gameOver: null,
     };
     useGameStore.getState().handleTurnAdvanced(event);
@@ -200,18 +237,49 @@ describe('delta events', () => {
     expect(kingdom.resources.Food).toBe(60); // 50 + 10
   });
 
+  it('handleTurnAdvanced clears declaredAttacks on new turn', () => {
+    // First add a declared attack
+    useGameStore.getState().handleAttackDeclared({
+      attackId: 'atk-1',
+      targetTileId: 'tile-2',
+      riskedTileId: 'tile-1',
+      attackerKingdomId: 'k-1',
+      defenderKingdomId: 'k-2',
+    });
+    expect(useGameStore.getState().declaredAttacks.length).toBe(1);
+
+    const event: TurnAdvancedEvent = {
+      nextKingdomId: 'k-2',
+      roundNumber: 4,
+      currentPhase: 'Action',
+      actionPoints: 3,
+      turnDeadline: null,
+      incomeApplied: null,
+      battleResults: null,
+      phaseChanged: false,
+      gameOver: null,
+    };
+    useGameStore.getState().handleTurnAdvanced(event);
+    expect(useGameStore.getState().declaredAttacks).toEqual([]);
+  });
+
   it('handleTurnAdvanced sets gameOver when present', () => {
     const gameOver: GameOverEvent = {
       gameId: 'game-1',
       winnerKingdomId: 'k-1',
-      winConditionType: 'Domination',
+      winConditionType: 'Elimination',
       finalStandings: [],
       eliminationOrder: [],
     };
     const event: TurnAdvancedEvent = {
-      newKingdomId: 'k-2',
-      turnNumber: 4,
-      incomeApplied: {},
+      nextKingdomId: 'k-2',
+      roundNumber: 4,
+      currentPhase: 'Action',
+      actionPoints: 3,
+      turnDeadline: null,
+      incomeApplied: null,
+      battleResults: null,
+      phaseChanged: false,
       gameOver,
     };
     useGameStore.getState().handleTurnAdvanced(event);
@@ -227,6 +295,8 @@ describe('delta events', () => {
       buildingName: 'Farm',
       kingdomId: 'k-2',
       resourcesAfter: { Gold: 60 },
+      claimedTileIds: [],
+      isUpgrade: false,
     };
     useGameStore.getState().handleBuildingPlaced(event);
 
@@ -234,6 +304,43 @@ describe('delta events', () => {
     expect(tile.buildings).toHaveLength(1);
     expect(tile.buildings[0].id).toBe('b-new');
     expect(tile.buildings[0].buildingName).toBe('Farm');
+  });
+
+  it('handleBuildingPlaced handles upgrade by replacing existing building', () => {
+    const event: BuildingPlacedEvent = {
+      buildingId: 'b-upgraded',
+      tileId: 'tile-1',
+      buildingTypeId: 'fortress',
+      buildingName: 'Fortress',
+      kingdomId: 'k-1',
+      resourcesAfter: { Gold: 50, Food: 30 },
+      claimedTileIds: [],
+      isUpgrade: true,
+    };
+    useGameStore.getState().handleBuildingPlaced(event);
+
+    const tile = useGameStore.getState().tiles.get('0,0')!;
+    // Upgrade replaces; still 1 building
+    expect(tile.buildings).toHaveLength(1);
+    expect(tile.buildings[0].id).toBe('b-upgraded');
+    expect(tile.buildings[0].buildingName).toBe('Fortress');
+  });
+
+  it('handleBuildingPlaced claims tiles from claimedTileIds', () => {
+    const event: BuildingPlacedEvent = {
+      buildingId: 'b-new',
+      tileId: 'tile-2',
+      buildingTypeId: 'farm',
+      buildingName: 'Farm',
+      kingdomId: 'k-2',
+      resourcesAfter: { Gold: 60 },
+      claimedTileIds: ['tile-3'],
+      isUpgrade: false,
+    };
+    useGameStore.getState().handleBuildingPlaced(event);
+
+    const claimedTile = useGameStore.getState().tiles.get('0,1')!;
+    expect(claimedTile.kingdomId).toBe('k-2');
   });
 
   it('handleBuildingPlaced updates kingdom resources', () => {
@@ -244,6 +351,8 @@ describe('delta events', () => {
       buildingName: 'Farm',
       kingdomId: 'k-2',
       resourcesAfter: { Gold: 60 },
+      claimedTileIds: [],
+      isUpgrade: false,
     };
     useGameStore.getState().handleBuildingPlaced(event);
 
@@ -251,236 +360,223 @@ describe('delta events', () => {
     expect(kingdom.resources).toEqual({ Gold: 60 });
   });
 
-  it('handleTroopsTrained updates existing unit quantity', () => {
-    const event: TroopsTrainedEvent = {
-      armyId: 'army-1',
-      tileId: 'tile-1',
-      unitTypeId: 'warrior',
-      unitTypeName: 'Warrior',
-      quantityTrained: 5,
-      totalQuantity: 15,
+  it('handleArmyTrained creates new army with HP fields', () => {
+    const event: ArmyTrainedEvent = {
+      armyId: 'army-new',
+      buildingId: 'b-1',
+      armyTypeId: 'archer',
+      armyTypeName: 'Archer',
       kingdomId: 'k-1',
+      currentHP: 80,
+      maxHP: 80,
       resourcesAfter: { Gold: 50, Food: 30 },
     };
-    useGameStore.getState().handleTroopsTrained(event);
-
-    const army = useGameStore.getState().armies.get('army-1')!;
-    const unit = army.units.find((u) => u.unitTypeId === 'warrior')!;
-    expect(unit.quantity).toBe(15);
-  });
-
-  it('handleTroopsTrained creates new army when armyId not in store', () => {
-    const event: TroopsTrainedEvent = {
-      armyId: 'army-new',
-      tileId: 'tile-2',
-      unitTypeId: 'archer',
-      unitTypeName: 'Archer',
-      quantityTrained: 5,
-      totalQuantity: 5,
-      kingdomId: 'k-2',
-      resourcesAfter: { Gold: 50 },
-    };
-    useGameStore.getState().handleTroopsTrained(event);
+    useGameStore.getState().handleArmyTrained(event);
 
     const army = useGameStore.getState().armies.get('army-new');
     expect(army).toBeDefined();
-    expect(army!.units).toHaveLength(1);
-    expect(army!.units[0].unitTypeName).toBe('Archer');
-    expect(army!.units[0].quantity).toBe(5);
+    expect(army!.buildingId).toBe('b-1');
+    expect(army!.armyTypeId).toBe('archer');
+    expect(army!.currentHP).toBe(80);
+    expect(army!.maxHP).toBe(80);
+    expect(army!.kingdomId).toBe('k-1');
   });
 
-  it('handleArmyMoved updates army tileId', () => {
-    const event: ArmyMovedEvent = {
-      armyId: 'army-1',
-      fromTileId: 'tile-1',
-      toTileId: 'tile-3',
+  it('handleArmyTrained updates kingdom resources', () => {
+    const event: ArmyTrainedEvent = {
+      armyId: 'army-new',
+      buildingId: 'b-1',
+      armyTypeId: 'archer',
+      armyTypeName: 'Archer',
       kingdomId: 'k-1',
-      tileClaimed: false,
-      armyMerged: false,
-      mergedIntoArmyId: null,
+      currentHP: 80,
+      maxHP: 80,
+      resourcesAfter: { Gold: 50, Food: 30 },
     };
-    useGameStore.getState().handleArmyMoved(event);
+    useGameStore.getState().handleArmyTrained(event);
 
-    expect(useGameStore.getState().armies.get('army-1')!.tileId).toBe('tile-3');
+    const kingdom = useGameStore.getState().kingdoms.get('k-1')!;
+    expect(kingdom.resources).toEqual({ Gold: 50, Food: 30 });
   });
 
-  it('handleArmyMoved claims tile when tileClaimed', () => {
-    const event: ArmyMovedEvent = {
-      armyId: 'army-1',
-      fromTileId: 'tile-1',
-      toTileId: 'tile-3',
+  it('handleSlotMachineSpun updates actionPoints and gold', () => {
+    // Set initial actionPoints
+    useGameStore.getState().handleTurnStarted({
       kingdomId: 'k-1',
-      tileClaimed: true,
-      armyMerged: false,
-      mergedIntoArmyId: null,
-    };
-    useGameStore.getState().handleArmyMoved(event);
-
-    const tile = useGameStore.getState().tiles.get('0,1')!;
-    expect(tile.kingdomId).toBe('k-1');
-  });
-
-  it('handleArmyMoved deletes absorbed army when merged', () => {
-    // Add a second army to merge into
-    const snapshot = createMockSnapshot();
-    snapshot.armies.push({
-      id: 'army-2',
-      tileId: 'tile-3',
-      kingdomId: 'k-1',
-      units: [{ unitTypeId: 'warrior', unitTypeName: 'Warrior', quantity: 5 }],
+      kingdomName: 'Kingdom Alpha',
+      actionPoints: 3,
+      turnDeadline: null,
+      roundNumber: 3,
     });
-    useGameStore.getState().resetState();
-    useGameStore.getState().loadSnapshot(snapshot, 'user-1');
 
-    const event: ArmyMovedEvent = {
-      armyId: 'army-1',
-      fromTileId: 'tile-1',
-      toTileId: 'tile-3',
-      kingdomId: 'k-1',
-      tileClaimed: false,
-      armyMerged: true,
-      mergedIntoArmyId: 'army-2',
+    const event: SlotMachineSpunEvent = {
+      outcome: 7,
+      actionPointsAfter: 4,
+      goldAfter: 120,
+      goldSpent: 10,
     };
-    useGameStore.getState().handleArmyMoved(event);
+    useGameStore.getState().handleSlotMachineSpun(event);
 
-    expect(useGameStore.getState().armies.has('army-1')).toBe(false);
-    expect(useGameStore.getState().armies.has('army-2')).toBe(true);
+    const state = useGameStore.getState();
+    expect(state.actionPoints).toBe(4);
+    const kingdom = state.kingdoms.get('k-1')!;
+    expect(kingdom.resources.Gold).toBe(120);
   });
 
-  it('handleCombatResolved captures tile', () => {
-    const event: CombatResolvedEvent = {
-      battleId: 'battle-1',
-      tileId: 'tile-2',
+  it('handleAttackDeclared appends to declaredAttacks', () => {
+    const event: AttackDeclaredEvent = {
+      attackId: 'atk-1',
+      targetTileId: 'tile-2',
+      riskedTileId: 'tile-1',
       attackerKingdomId: 'k-1',
       defenderKingdomId: 'k-2',
-      winnerKingdomId: 'k-1',
-      tileCaptured: true,
-      attackerStrength: 100,
-      defenderStrength: 50,
-      attackerCasualties: [],
-      defenderCasualties: [],
-      gameOver: null,
     };
-    useGameStore.getState().handleCombatResolved(event);
+    useGameStore.getState().handleAttackDeclared(event);
 
+    const attacks = useGameStore.getState().declaredAttacks;
+    expect(attacks).toHaveLength(1);
+    expect(attacks[0].attackId).toBe('atk-1');
+    expect(attacks[0].targetTileId).toBe('tile-2');
+    expect(useGameStore.getState().activeBattle).toBe('SelectArmies');
+  });
+
+  it('handleArmiesSelected advances battle step', () => {
+    const event: ArmiesSelectedEvent = {
+      declaredAttackId: 'atk-1',
+      kingdomId: 'k-1',
+      armiesSelected: 2,
+      maxArmies: 3,
+    };
+    useGameStore.getState().handleArmiesSelected(event);
+
+    expect(useGameStore.getState().activeBattle).toBe('RevealArmies');
+  });
+
+  it('handleLineupSet advances battle step to Resolve', () => {
+    const event: LineupSetEvent = {
+      declaredAttackId: 'atk-1',
+      kingdomId: 'k-1',
+      armiesSelected: 2,
+      maxArmies: 3,
+    };
+    useGameStore.getState().handleLineupSet(event);
+
+    expect(useGameStore.getState().activeBattle).toBe('Resolve');
+  });
+
+  it('handleBattleResolved updates tiles and removes destroyed armies', () => {
+    // First declare an attack so we can verify it gets removed
+    useGameStore.getState().handleAttackDeclared({
+      attackId: 'battle-1',
+      targetTileId: 'tile-2',
+      riskedTileId: 'tile-1',
+      attackerKingdomId: 'k-1',
+      defenderKingdomId: 'k-2',
+    });
+
+    const event: BattleResolvedEvent = {
+      battleId: 'battle-1',
+      attackerKingdomId: 'k-1',
+      defenderKingdomId: 'k-2',
+      outcome: 'AttackerWins',
+      tileCapturedId: 'tile-2',
+      tileCapturedFromKingdomId: 'k-2',
+      rounds: [
+        {
+          roundNumber: 1,
+          attackerArmyId: 'army-1',
+          defenderArmyId: 'army-def',
+          initiativeWinner: 'army-1',
+          attackerInitiativeChance: 0.6,
+          defenderInitiativeChance: 0.4,
+          damageDealt: 50,
+          chipDamageDealt: 5,
+          attackerArmyHPAfter: 80,
+          defenderArmyHPAfter: 0,
+          armyDestroyedId: 'army-def',
+        },
+      ],
+    };
+    useGameStore.getState().handleBattleResolved(event);
+
+    // Tile captured
     const tile = useGameStore.getState().tiles.get('1,0')!;
     expect(tile.kingdomId).toBe('k-1');
+
+    // Destroyed army removed (army-def was never in our store, but the handler shouldn't crash)
+    expect(useGameStore.getState().activeBattle).toBeNull();
+    expect(useGameStore.getState().lastBattleResult).toEqual(event);
+
+    // Declared attack removed
+    expect(useGameStore.getState().declaredAttacks).toEqual([]);
   });
 
-  it('handleCombatResolved sets gameOver when present', () => {
-    const gameOver: GameOverEvent = {
-      gameId: 'game-1',
-      winnerKingdomId: 'k-1',
-      winConditionType: 'Domination',
-      finalStandings: [],
-      eliminationOrder: [],
-    };
-    const event: CombatResolvedEvent = {
-      battleId: 'battle-1',
-      tileId: 'tile-2',
-      attackerKingdomId: 'k-1',
-      defenderKingdomId: 'k-2',
-      winnerKingdomId: 'k-1',
-      tileCaptured: true,
-      attackerStrength: 100,
-      defenderStrength: 50,
-      attackerCasualties: [],
-      defenderCasualties: [],
-      gameOver,
-    };
-    useGameStore.getState().handleCombatResolved(event);
-
-    expect(useGameStore.getState().gameOver).toEqual(gameOver);
-  });
-
-  it('handleCombatResolved sets lastCombatResult when myKingdomId is attacker', () => {
-    const event: CombatResolvedEvent = {
-      battleId: 'battle-1',
-      tileId: 'tile-2',
-      attackerKingdomId: 'k-1',
-      defenderKingdomId: 'k-2',
-      winnerKingdomId: 'k-1',
-      tileCaptured: false,
-      attackerStrength: 100,
-      defenderStrength: 50,
-      attackerCasualties: [],
-      defenderCasualties: [],
-      gameOver: null,
-    };
-    useGameStore.getState().handleCombatResolved(event);
-
-    expect(useGameStore.getState().lastCombatResult).toEqual(event);
-  });
-
-  it('handleCombatResolved sets lastCombatResult when myKingdomId is defender', () => {
-    // Reload snapshot as user-2 (myKingdomId='k-2')
-    useGameStore.getState().resetState();
-    useGameStore.getState().loadSnapshot(createMockSnapshot(), 'user-2');
-
-    const event: CombatResolvedEvent = {
+  it('handleBattleResolved does not capture tile when tileCapturedId is empty GUID', () => {
+    const event: BattleResolvedEvent = {
       battleId: 'battle-2',
-      tileId: 'tile-2',
       attackerKingdomId: 'k-1',
       defenderKingdomId: 'k-2',
-      winnerKingdomId: 'k-1',
-      tileCaptured: false,
-      attackerStrength: 100,
-      defenderStrength: 50,
-      attackerCasualties: [],
-      defenderCasualties: [],
-      gameOver: null,
+      outcome: 'DefenderWins',
+      tileCapturedId: '00000000-0000-0000-0000-000000000000',
+      tileCapturedFromKingdomId: '00000000-0000-0000-0000-000000000000',
+      rounds: [],
     };
-    useGameStore.getState().handleCombatResolved(event);
+    useGameStore.getState().handleBattleResolved(event);
 
-    expect(useGameStore.getState().lastCombatResult).toEqual(event);
+    // Tile-2 should still belong to k-2
+    const tile = useGameStore.getState().tiles.get('1,0')!;
+    expect(tile.kingdomId).toBe('k-2');
   });
 
-  it('handleCombatResolved does NOT set lastCombatResult for uninvolved player', () => {
-    const event: CombatResolvedEvent = {
-      battleId: 'battle-3',
-      tileId: 'tile-2',
-      attackerKingdomId: 'k-3',
-      defenderKingdomId: 'k-4',
-      winnerKingdomId: 'k-3',
-      tileCaptured: false,
-      attackerStrength: 100,
-      defenderStrength: 50,
-      attackerCasualties: [],
-      defenderCasualties: [],
-      gameOver: null,
+  it('handlePhaseChanged updates currentPhase', () => {
+    const event: PhaseChangedEvent = {
+      phase: 'Battle',
+      previousPhase: 'Action',
+      roundNumber: 3,
     };
-    useGameStore.getState().handleCombatResolved(event);
+    useGameStore.getState().handlePhaseChanged(event);
 
-    expect(useGameStore.getState().lastCombatResult).toBeNull();
+    expect(useGameStore.getState().currentPhase).toBe('Battle');
   });
 
-  it('dismissCombatResult clears lastCombatResult', () => {
-    // First set it via handleCombatResolved
-    const event: CombatResolvedEvent = {
-      battleId: 'battle-4',
-      tileId: 'tile-2',
+  it('handleTurnStarted updates currentTurnKingdomId, actionPoints, roundNumber', () => {
+    const event: TurnStartedEvent = {
+      kingdomId: 'k-2',
+      kingdomName: 'Kingdom Beta',
+      actionPoints: 5,
+      turnDeadline: null,
+      roundNumber: 4,
+    };
+    useGameStore.getState().handleTurnStarted(event);
+
+    const state = useGameStore.getState();
+    expect(state.currentTurnKingdomId).toBe('k-2');
+    expect(state.actionPoints).toBe(5);
+    expect(state.roundNumber).toBe(4);
+  });
+
+  it('handleRoundStarted updates roundNumber and clears declaredAttacks', () => {
+    // Add a declared attack first
+    useGameStore.getState().handleAttackDeclared({
+      attackId: 'atk-1',
+      targetTileId: 'tile-2',
+      riskedTileId: 'tile-1',
       attackerKingdomId: 'k-1',
       defenderKingdomId: 'k-2',
-      winnerKingdomId: 'k-1',
-      tileCaptured: false,
-      attackerStrength: 100,
-      defenderStrength: 50,
-      attackerCasualties: [],
-      defenderCasualties: [],
-      gameOver: null,
-    };
-    useGameStore.getState().handleCombatResolved(event);
-    expect(useGameStore.getState().lastCombatResult).not.toBeNull();
+    });
 
-    useGameStore.getState().dismissCombatResult();
-    expect(useGameStore.getState().lastCombatResult).toBeNull();
+    const event: RoundStartedEvent = { roundNumber: 5 };
+    useGameStore.getState().handleRoundStarted(event);
+
+    expect(useGameStore.getState().roundNumber).toBe(5);
+    expect(useGameStore.getState().declaredAttacks).toEqual([]);
   });
 
   it('handleGameOver sets status and gameOver', () => {
     const event: GameOverEvent = {
       gameId: 'game-1',
       winnerKingdomId: 'k-1',
-      winConditionType: 'Domination',
+      winConditionType: 'Elimination',
       finalStandings: [
         { kingdomId: 'k-1', kingdomName: 'Kingdom Alpha', tilesOwned: 5, status: 'Active' },
       ],
@@ -490,6 +586,25 @@ describe('delta events', () => {
 
     expect(useGameStore.getState().status).toBe('Completed');
     expect(useGameStore.getState().gameOver).toEqual(event);
+    expect(useGameStore.getState().lastBattleResult).toBeNull();
+  });
+
+  it('dismissBattleResult clears lastBattleResult', () => {
+    // Set it via handleBattleResolved
+    const event: BattleResolvedEvent = {
+      battleId: 'battle-3',
+      attackerKingdomId: 'k-1',
+      defenderKingdomId: 'k-2',
+      outcome: 'AttackerWins',
+      tileCapturedId: '00000000-0000-0000-0000-000000000000',
+      tileCapturedFromKingdomId: '00000000-0000-0000-0000-000000000000',
+      rounds: [],
+    };
+    useGameStore.getState().handleBattleResolved(event);
+    expect(useGameStore.getState().lastBattleResult).not.toBeNull();
+
+    useGameStore.getState().dismissBattleResult();
+    expect(useGameStore.getState().lastBattleResult).toBeNull();
   });
 });
 
@@ -498,7 +613,7 @@ describe('resetState', () => {
     useGameStore.getState().resetState();
   });
 
-  it('clears all state', () => {
+  it('clears all v6.0 fields', () => {
     useGameStore.getState().loadSnapshot(createMockSnapshot(), 'user-1');
     useGameStore.getState().resetState();
 
@@ -510,12 +625,17 @@ describe('resetState', () => {
     expect(state.myKingdomId).toBeNull();
     expect(state.gameId).toBeNull();
     expect(state.status).toBe('Lobby');
-    expect(state.turnNumber).toBe(0);
+    expect(state.roundNumber).toBe(0);
     expect(state.currentTurnKingdomId).toBeNull();
     expect(state.winCondition).toBeNull();
-    expect(state.mapRadius).toBe(0);
+    expect(state.mapWidth).toBe(0);
+    expect(state.mapHeight).toBe(0);
     expect(state.gameOver).toBeNull();
-    expect(state.unitTypes).toEqual([]);
-    expect(state.lastCombatResult).toBeNull();
+    expect(state.currentPhase).toBeNull();
+    expect(state.actionPoints).toBeNull();
+    expect(state.declaredAttacks).toEqual([]);
+    expect(state.activeBattle).toBeNull();
+    expect(state.lastBattleResult).toBeNull();
+    expect(state.armyTypes).toEqual([]);
   });
 });
