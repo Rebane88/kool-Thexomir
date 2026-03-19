@@ -6,26 +6,24 @@ import { connectToGame, disconnectFromGame } from './game-hub';
 import { useGameCanvas } from './canvas/useGameCanvas';
 import { textureCache } from './canvas/texture-cache';
 import { drawGameMap } from './canvas/hex-renderer';
-import { pixelToAxial, getHexNeighbors } from './canvas/hex-math';
+import { pixelToAxial } from './canvas/hex-math';
 import { screenToWorld, computeZoom, DEFAULT_CAMERA } from './canvas/camera';
 import type { CameraState } from './canvas/camera';
-import { placeBuilding, fetchBuildingTypes, fetchUnitTypes, moveArmy, attackTile } from './game-api';
+import { placeBuilding, fetchBuildingTypes, fetchArmyTypes } from './game-api';
 import { BuildingPanel } from './components/BuildingPanel';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ErrorScreen } from './components/ErrorScreen';
 import { ReconnectBanner } from './components/ReconnectBanner';
 import { HexTooltip } from './components/HexTooltip';
-import { AttackConfirmModal } from './components/AttackConfirmModal';
 import { ResetCameraButton } from './components/ResetCameraButton';
 import { GameHud } from './components/GameHud';
 import { Standings } from './components/Standings';
 import { PhaseBanner } from './components/PhaseBanner';
-import { CombatResultModal } from './components/CombatResultModal';
 import { EliminationBanner } from './components/EliminationBanner';
 import { GameOverOverlay } from './components/GameOverOverlay';
 import { SlotMachineOverlay } from './components/SlotMachineOverlay';
+import { ArmyRosterDrawer } from './components/ArmyRosterDrawer';
 import type { HexLayoutConfig, MapRenderState } from './canvas/types';
-import type { Army } from './types/military-types';
 
 export function GamePage() {
   const { id: gameId } = useParams();
@@ -35,8 +33,6 @@ export function GamePage() {
   const [selectedTileKey, setSelectedTileKey] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
-  const [armyHighlightTileKey, setArmyHighlightTileKey] = useState<string | null>(null);
-  const [attackTarget, setAttackTarget] = useState<{ tileId: string; tileKey: string } | null>(null);
   const [assetsReady, setAssetsReady] = useState(false);
   const [loadProgress, setLoadProgress] = useState({ loaded: 0, total: 19 });
   const assetsReadyRef = useRef(false);
@@ -44,10 +40,8 @@ export function GamePage() {
 
   const hoveredRef = useRef(hoveredTileKey);
   const selectedRef = useRef(selectedTileKey);
-  const armyHighlightRef = useRef(armyHighlightTileKey);
   hoveredRef.current = hoveredTileKey;
   selectedRef.current = selectedTileKey;
-  armyHighlightRef.current = armyHighlightTileKey;
 
   const cameraRef = useRef<CameraState>({ ...DEFAULT_CAMERA });
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -64,31 +58,11 @@ export function GamePage() {
   });
   const showBuildingPanel = selectedTile !== null && selectedTile.kingdomId === myKingdomId;
 
-  const lastCombatResult = useGameStore((s) => s.lastCombatResult);
-  const dismissCombatResult = useGameStore((s) => s.dismissCombatResult);
   const myKingdom = useGameStore((s) => s.myKingdomId ? s.kingdoms.get(s.myKingdomId) : undefined);
   const isEliminated = myKingdom?.status === 'Defeated';
 
   const [standingsOpen, setStandingsOpen] = useState(false);
   const [eliminationBanners, setEliminationBanners] = useState<string[]>([]);
-
-  const findMyArmyOnTile = useCallback((tileKey: string) => {
-    const state = useGameStore.getState();
-    if (!state.myKingdomId) return null;
-    for (const army of state.armies.values()) {
-      const coord = state.tileIdToCoord.get(army.tileId);
-      if (coord === tileKey && army.kingdomId === state.myKingdomId) return army;
-    }
-    return null;
-  }, []);
-
-  const isNeighborOfHighlight = useCallback((targetKey: string, highlightKey: string) => {
-    const state = useGameStore.getState();
-    const highlightTile = state.tiles.get(highlightKey);
-    if (!highlightTile) return false;
-    const neighbors = getHexNeighbors(highlightTile.coordQ, highlightTile.coordR);
-    return neighbors.some(n => `${n.q},${n.r}` === targetKey);
-  }, []);
 
   useEffect(() => {
     if (!gameId) return;
@@ -106,14 +80,14 @@ export function GamePage() {
       .catch((err) => console.error('Failed to fetch building types:', err));
   }, [gameId, connectionStatus]);
 
-  // Fetch unit types once on connection
+  // Fetch army types once on connection
   useEffect(() => {
     if (!gameId || connectionStatus !== 'connected') return;
-    const { unitTypes } = useGameStore.getState();
-    if (unitTypes.length > 0) return;
-    fetchUnitTypes(gameId)
-      .then((types) => useGameStore.getState().setUnitTypes(types))
-      .catch((err) => console.error('Failed to fetch unit types:', err));
+    const { armyTypes } = useGameStore.getState();
+    if (armyTypes.length > 0) return;
+    fetchArmyTypes(gameId)
+      .then((types) => useGameStore.getState().setArmyTypes(types))
+      .catch((err) => console.error('Failed to fetch army types:', err));
   }, [gameId, connectionStatus]);
 
   // Clear build mode when panel hides
@@ -139,26 +113,6 @@ export function GamePage() {
     return unsub;
   }, []);
 
-  // Auto-highlight army on selected tile
-  useEffect(() => {
-    if (!selectedTileKey || !isMyTurn || isEliminated) {
-      setArmyHighlightTileKey(null);
-      return;
-    }
-    const army = findMyArmyOnTile(selectedTileKey);
-    setArmyHighlightTileKey(army ? selectedTileKey : null);
-  }, [selectedTileKey, isMyTurn, isEliminated, findMyArmyOnTile]);
-
-  // Clear army highlights when build mode activates
-  useEffect(() => {
-    const unsub = useGameStore.subscribe((state) => {
-      if (state.buildModeTypeId) {
-        setArmyHighlightTileKey(null);
-      }
-    });
-    return unsub;
-  }, []);
-
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
       const state = useGameStore.getState();
@@ -166,7 +120,7 @@ export function GamePage() {
         hoveredTileKey: hoveredRef.current,
         selectedTileKey: selectedRef.current,
         buildModeTypeId: state.buildModeTypeId,
-        armyHighlightTileKey: armyHighlightRef.current,
+        armyHighlightTileKey: null,
         assetsReady: assetsReadyRef.current,
       };
       const cam = cameraRef.current;
@@ -190,7 +144,7 @@ export function GamePage() {
           armies: state.armies,
           tileIdToCoord: state.tileIdToCoord,
           myKingdomId: state.myKingdomId,
-          mapRadius: state.mapRadius,
+          mapRadius: 0,
         },
         renderState,
         { skipClear: true },
@@ -321,27 +275,6 @@ export function GamePage() {
       const state = useGameStore.getState();
       const tile = state.tiles.get(key);
 
-      // ARMY MOVEMENT/ATTACK INTERCEPT
-      if (armyHighlightRef.current && tile && isNeighborOfHighlight(key, armyHighlightRef.current)) {
-        const army = findMyArmyOnTile(armyHighlightRef.current);
-        if (army) {
-          const isEnemy = tile.kingdomId !== null && tile.kingdomId !== state.myKingdomId;
-          if (isEnemy) {
-            setAttackTarget({ tileId: tile.id, tileKey: key });
-            return;
-          }
-          // Friendly/empty tile: move army
-          if (state.gameId) {
-            moveArmy(state.gameId, { armyId: army.id, targetTileId: tile.id })
-              .catch((err) => console.error('Failed to move army:', err));
-          }
-          setSelectedTileKey(null);
-          setArmyHighlightTileKey(null);
-          markDirty();
-          return;
-        }
-      }
-
       // BUILD MODE INTERCEPT: handle placement instead of selection
       if (state.buildModeTypeId && tile) {
         if (tile.kingdomId === state.myKingdomId && tile.buildings.length === 0) {
@@ -405,7 +338,7 @@ export function GamePage() {
     markDirty();
   }, [markDirty]);
 
-  // Keyboard shortcuts: Home (reset camera), Escape (exit build mode)
+  // Keyboard shortcuts: Home (reset camera), Escape (exit build mode / deselect)
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Tab') {
@@ -417,19 +350,9 @@ export function GamePage() {
         handleResetCamera();
       }
       if (e.key === 'Escape') {
-        const { lastCombatResult: combatResult } = useGameStore.getState();
-        if (combatResult) {
-          useGameStore.getState().dismissCombatResult();
-          return;
-        }
         const { buildModeTypeId } = useGameStore.getState();
         if (buildModeTypeId) {
           useGameStore.getState().setBuildMode(null);
-          markDirty();
-        }
-        if (armyHighlightRef.current) {
-          setArmyHighlightTileKey(null);
-          setSelectedTileKey(null);
           markDirty();
         }
       }
@@ -444,11 +367,6 @@ export function GamePage() {
       const { buildModeTypeId } = useGameStore.getState();
       if (buildModeTypeId) {
         useGameStore.getState().setBuildMode(null);
-        markDirty();
-      }
-      if (armyHighlightRef.current) {
-        setArmyHighlightTileKey(null);
-        setSelectedTileKey(null);
         markDirty();
       }
     },
@@ -491,6 +409,7 @@ export function GamePage() {
       {!isLoading && <GameHud onStandingsToggle={() => setStandingsOpen((o) => !o)} />}
       {!isLoading && <Standings open={standingsOpen} onClose={() => setStandingsOpen(false)} />}
       {!isLoading && <SlotMachineOverlay />}
+      {!isLoading && <ArmyRosterDrawer />}
       {!isLoading && showBuildingPanel && (
         <div className={isMyTurn && !isEliminated ? '' : 'opacity-50 pointer-events-none'}>
           <BuildingPanel selectedTileKey={selectedTileKey!} />
@@ -504,59 +423,6 @@ export function GamePage() {
           onFaded={() => setEliminationBanners((b) => b.filter((_, i) => i !== index))}
         />
       ))}
-      {lastCombatResult && (() => {
-        const state = useGameStore.getState();
-        const attackerKingdom = state.kingdoms.get(lastCombatResult.attackerKingdomId);
-        const defenderKingdom = state.kingdoms.get(lastCombatResult.defenderKingdomId);
-        return (
-          <CombatResultModal
-            open={true}
-            onClose={dismissCombatResult}
-            result={lastCombatResult}
-            myKingdomId={state.myKingdomId ?? ''}
-            attackerKingdomName={attackerKingdom?.name ?? 'Attacker'}
-            defenderKingdomName={defenderKingdom?.name ?? 'Defender'}
-          />
-        );
-      })()}
-      {attackTarget && armyHighlightTileKey && (() => {
-        const state = useGameStore.getState();
-        const myArmy = findMyArmyOnTile(armyHighlightTileKey);
-        const targetTile = state.tiles.get(attackTarget.tileKey);
-        if (!myArmy || !targetTile) return null;
-
-        let defenderArmy: Army | null = null;
-        for (const army of state.armies.values()) {
-          const coord = state.tileIdToCoord.get(army.tileId);
-          if (coord === attackTarget.tileKey) { defenderArmy = army; break; }
-        }
-
-        const myKingdomObj = state.myKingdomId ? state.kingdoms.get(state.myKingdomId) : null;
-        const defenderKingdom = targetTile.kingdomId ? state.kingdoms.get(targetTile.kingdomId) : null;
-
-        return (
-          <AttackConfirmModal
-            open={true}
-            onClose={() => setAttackTarget(null)}
-            onConfirm={() => {
-              if (state.gameId && myArmy) {
-                attackTile(state.gameId, {
-                  attackerArmyId: myArmy.id,
-                  defenderTileId: targetTile.id,
-                }).catch((err) => console.error('Failed to attack:', err));
-              }
-              setAttackTarget(null);
-              setSelectedTileKey(null);
-              setArmyHighlightTileKey(null);
-              markDirty();
-            }}
-            attackerArmy={myArmy}
-            defenderArmy={defenderArmy}
-            attackerKingdomName={myKingdomObj?.name ?? 'Your Army'}
-            defenderKingdomName={defenderKingdom?.name ?? 'Enemy'}
-          />
-        );
-      })()}
       {hoveredTileKey &&
         tooltipPos &&
         (() => {
@@ -566,10 +432,7 @@ export function GamePage() {
           const kingdom = tile.kingdomId
             ? (state.kingdoms.get(tile.kingdomId) ?? null)
             : null;
-          const armies = [...state.armies.values()].filter((a) => {
-            const coord = state.tileIdToCoord.get(a.tileId);
-            return coord === hoveredTileKey;
-          });
+          const armies = [...state.armies.values()].filter((a) => a.kingdomId === tile.kingdomId);
           return (
             <HexTooltip tile={tile} kingdom={kingdom} armies={armies} position={tooltipPos} />
           );
