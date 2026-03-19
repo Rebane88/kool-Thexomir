@@ -3,6 +3,7 @@ import { createGameHubConnection } from '@/lib/signalr-client';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { useGameStore } from './game-store';
 import { useAnimationStore } from './animation-store';
+import type { GamePhase } from './types/enums';
 import type {
   GameStateSnapshot,
   TurnAdvancedEvent,
@@ -54,6 +55,10 @@ export async function connectToGame(gameId: string): Promise<void> {
 
   connection.on('PhaseChanged', (data: PhaseChangedEvent) => {
     useGameStore.getState().handlePhaseChanged(data);
+    useAnimationStore.getState().showPhaseBanner(
+      data.phase as GamePhase,
+      data.roundNumber,
+    );
   });
 
   connection.on('TurnStarted', (data: TurnStartedEvent) => {

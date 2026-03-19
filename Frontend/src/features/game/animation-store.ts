@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { BattleRoundResult } from './types/event-types';
+import type { GamePhase } from './types/enums';
 
 interface AnimationState {
   // Slot machine
@@ -10,6 +11,10 @@ interface AnimationState {
   combatPlaybackRounds: BattleRoundResult[] | null;
   combatPlaybackIndex: number;
 
+  // Phase banner
+  phaseBannerPhase: GamePhase | null;
+  phaseBannerRound: number | null;
+
   // Actions
   startSlotSpin: () => void;
   setSlotResult: (result: { outcome: number; actionPointsAfter: number }) => void;
@@ -17,6 +22,8 @@ interface AnimationState {
   startCombatPlayback: (rounds: BattleRoundResult[]) => void;
   advanceCombatPlayback: () => void;
   clearCombatPlayback: () => void;
+  showPhaseBanner: (phase: GamePhase, round: number) => void;
+  hidePhaseBanner: () => void;
   reset: () => void;
 }
 
@@ -25,6 +32,8 @@ const initialState = {
   slotResult: null as { outcome: number; actionPointsAfter: number } | null,
   combatPlaybackRounds: null as BattleRoundResult[] | null,
   combatPlaybackIndex: 0,
+  phaseBannerPhase: null as GamePhase | null,
+  phaseBannerRound: null as number | null,
 };
 
 export const useAnimationStore = create<AnimationState>((set) => ({
@@ -44,6 +53,12 @@ export const useAnimationStore = create<AnimationState>((set) => ({
 
   clearCombatPlayback: () =>
     set({ combatPlaybackRounds: null, combatPlaybackIndex: 0 }),
+
+  showPhaseBanner: (phase, round) =>
+    set({ phaseBannerPhase: phase, phaseBannerRound: round }),
+
+  hidePhaseBanner: () =>
+    set({ phaseBannerPhase: null, phaseBannerRound: null }),
 
   reset: () => set({ ...initialState }),
 }));

@@ -44,6 +44,7 @@ interface GameState {
   // v6.0 phase/AP tracking
   currentPhase: GamePhase | null;
   actionPoints: number | null;
+  maxActionPoints: number | null;
   declaredAttacks: DeclaredAttack[];
   activeBattle: BattleStep | null;
   lastBattleResult: BattleResolvedEvent | null;
@@ -103,6 +104,7 @@ const initialState = {
   lastIncomeApplied: null,
   currentPhase: null as GamePhase | null,
   actionPoints: null as number | null,
+  maxActionPoints: null as number | null,
   declaredAttacks: [] as DeclaredAttack[],
   activeBattle: null as BattleStep | null,
   lastBattleResult: null as BattleResolvedEvent | null,
@@ -185,6 +187,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       gameOver: null,
       currentPhase: null,
       actionPoints: null,
+      maxActionPoints: null,
       declaredAttacks: [],
       activeBattle: null,
     });
@@ -208,6 +211,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastIncomeApplied: null,
       currentPhase: null,
       actionPoints: null,
+      maxActionPoints: null,
       declaredAttacks: [],
       activeBattle: null,
       lastBattleResult: null,
@@ -314,6 +318,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       currentTurnKingdomId: data.kingdomId,
       actionPoints: data.actionPoints,
+      maxActionPoints: data.actionPoints,
       roundNumber: data.roundNumber,
     });
   },

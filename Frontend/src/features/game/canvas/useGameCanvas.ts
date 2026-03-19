@@ -8,15 +8,21 @@ interface UseGameCanvasOptions {
 interface UseGameCanvasResult {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   markDirty: () => void;
+  setAnimating: (active: boolean) => void;
 }
 
 export function useGameCanvas({ draw }: UseGameCanvasOptions): UseGameCanvasResult {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dirtyRef = useRef(true);
+  const animatingRef = useRef(false);
   const rafIdRef = useRef(0);
 
   const markDirty = useCallback(() => {
     dirtyRef.current = true;
+  }, []);
+
+  const setAnimating = useCallback((active: boolean) => {
+    animatingRef.current = active;
   }, []);
 
   useEffect(() => {
@@ -50,7 +56,7 @@ export function useGameCanvas({ draw }: UseGameCanvasOptions): UseGameCanvasResu
     observer.observe(canvas);
 
     function loop() {
-      if (dirtyRef.current) {
+      if (dirtyRef.current || animatingRef.current) {
         dirtyRef.current = false;
         const rect = canvas!.getBoundingClientRect();
         draw(ctx!, rect.width, rect.height);
@@ -65,5 +71,5 @@ export function useGameCanvas({ draw }: UseGameCanvasOptions): UseGameCanvasResu
     };
   }, [draw]);
 
-  return { canvasRef, markDirty };
+  return { canvasRef, markDirty, setAnimating };
 }
