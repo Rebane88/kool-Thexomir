@@ -1,4 +1,6 @@
 using Application.Contracts;
+using Application.Services.Combat;
+using Application.Services.Combat.DTOs;
 using Application.Services.Turn.DTOs;
 using Base.Contracts;
 using Domain.Buildings;
@@ -9,7 +11,7 @@ using Domain.Resources;
 
 namespace Application.Services.Turn;
 
-public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : ITurnService
+public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatService combatService) : ITurnService
 {
     public async Task<Result<TurnAdvancedDto>> EndTurnAsync(Guid gameId, Guid userId)
     {
@@ -83,6 +85,7 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : ITurnSe
     {
         var previousPhase = game.CurrentPhase;
         Dictionary<string, int>? incomeApplied = null;
+        List<BattleResultDto> battleResults = [];
 
         // Clear turn state during non-Action phases
         game.CurrentTurnKingdomId = null;
@@ -94,7 +97,37 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : ITurnSe
         await AddTurnLogAsync(game.Id, null, game.RoundNumber, EEventType.PhaseChanged,
             $"Phase changed: {previousPhase} -> {game.CurrentPhase}");
 
-        // Skip battle for now (combat is Phase 26) -- transition directly to Income
+        // Resolve all declared attacks for this round
+        battleResults = await combatService.ResolveBattlesAsync(game);
+
+        // Check if any kingdom was eliminated -- refresh kingdom statuses
+        if (battleResults.Any())
+        {
+            kingdoms = await unitOfWork.Kingdoms.GetKingdomsForGameAsync(game.Id);
+
+            // Check if game ended via elimination
+            var activeKingdoms = kingdoms.Where(k => k.Status == EKingdomStatus.Active).ToList();
+            if (activeKingdoms.Count <= 1)
+            {
+                game.Status = EGameStatus.Completed;
+                game.FinishedAt = DateTime.UtcNow;
+                var winner = activeKingdoms.FirstOrDefault();
+                return new TurnAdvancedDto
+                {
+                    NextKingdomId = null,
+                    RoundNumber = game.RoundNumber,
+                    CurrentPhase = game.CurrentPhase.ToString(),
+                    PhaseChanged = true,
+                    BattleResults = battleResults,
+                    GameOver = new WinCondition.DTOs.GameOverDto
+                    {
+                        GameId = game.Id,
+                        WinnerKingdomId = winner?.Id,
+                        WinConditionType = "Elimination"
+                    }
+                };
+            }
+        }
 
         // --- Income Phase ---
         game.CurrentPhase = EGamePhase.Income;
@@ -169,6 +202,7 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : ITurnSe
             ActionPoints = actionPoints,
             TurnDeadline = game.TurnDeadline,
             IncomeApplied = incomeApplied,
+            BattleResults = battleResults.Count > 0 ? battleResults : null,
             PhaseChanged = true,
             GameOver = gameOver
         };
