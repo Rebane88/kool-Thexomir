@@ -4,6 +4,7 @@ using Application.Services.GameInitialization;
 using Application.Services.Guard;
 using Application.Services.Lobby;
 using Application.Services.Building;
+using Application.Services.Army;
 using Application.Services.SlotMachine;
 using Application.Services.Turn;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<ITurnService, TurnService>();
         services.AddScoped<IBuildingService, BuildingService>();
         services.AddScoped<ISlotMachineService, SlotMachineService>();
+        services.AddScoped<IArmyService, ArmyService>();
         return services;
     }
 }
