@@ -769,11 +769,17 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("AttackerKingdomId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AttackerSelectedArmyIds")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("DefenderKingdomId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("DefenderSelectedArmyIds")
+                        .HasColumnType("text");
 
                     b.Property<Guid>("GameId")
                         .HasColumnType("uuid");

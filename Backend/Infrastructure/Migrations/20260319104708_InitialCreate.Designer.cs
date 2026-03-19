@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260315154810_AddHostUserIdAndXminToGame")]
-    partial class AddHostUserIdAndXminToGame
+    [Migration("20260319104708_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -35,8 +35,17 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("BuildingTypeId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("BuiltAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("BuiltOnRound")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("KingdomId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("TileId")
                         .HasColumnType("uuid");
@@ -48,7 +57,10 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("BuildingTypeId");
 
-                    b.HasIndex("TileId");
+                    b.HasIndex("KingdomId");
+
+                    b.HasIndex("TileId")
+                        .IsUnique();
 
                     b.ToTable("Buildings");
                 });
@@ -59,9 +71,42 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("ArmyCapacity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BaseYieldFood")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BaseYieldGold")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BaseYieldMana")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BaseYieldStone")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BaseYieldWood")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Chain")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int>("CostFood")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CostGold")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CostMana")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CostStone")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CostWood")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -69,84 +114,27 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<int>("FoodYield")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("GoldCost")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("GoldYield")
-                        .HasColumnType("integer");
-
                     b.Property<string>("IconUrl")
                         .HasColumnType("text");
-
-                    b.Property<int>("ManaCost")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ManaYield")
-                        .HasColumnType("integer");
 
                     b.Property<LangStr>("Name")
                         .IsRequired()
                         .HasColumnType("jsonb");
 
-                    b.Property<Guid?>("PrerequisiteBuildingTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("StoneCost")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("StoneYield")
-                        .HasColumnType("integer");
-
                     b.Property<int>("Tier")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("UnlockedByBuildingTypeId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("WoodCost")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("WoodYield")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("PrerequisiteBuildingTypeId");
+                    b.HasIndex("UnlockedByBuildingTypeId");
 
                     b.ToTable("BuildingTypes");
-                });
-
-            modelBuilder.Entity("Domain.Factions.FactionResourceBonus", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("FactionTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Multiplier")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("ResourceType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FactionTypeId", "ResourceType")
-                        .IsUnique();
-
-                    b.ToTable("FactionResourceBonuses");
                 });
 
             modelBuilder.Entity("Domain.Factions.FactionType", b =>
@@ -155,7 +143,16 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("ActionPointModifier")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("AttackModifier")
+                        .HasColumnType("numeric");
+
                     b.Property<decimal>("BuildingCostModifier")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("ChipDamageModifier")
                         .HasColumnType("numeric");
 
                     b.Property<DateTime>("CreatedAt")
@@ -164,24 +161,36 @@ namespace Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<decimal>("HPModifier")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("HealRateModifier")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("IconUrl")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("InitiativeModifier")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("Lore")
+                        .HasColumnType("text");
+
                     b.Property<LangStr>("Name")
                         .IsRequired()
                         .HasColumnType("jsonb");
 
-                    b.Property<int>("StartingFood")
+                    b.Property<decimal>("ResourceProductionModifier")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("StartingBonusAmount")
                         .HasColumnType("integer");
 
-                    b.Property<int>("StartingGold")
-                        .HasColumnType("integer");
+                    b.Property<string>("StartingBonusResource")
+                        .HasColumnType("text");
 
-                    b.Property<int>("StartingMana")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("StartingStone")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("StartingWood")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("TrainingCostModifier")
+                        .HasColumnType("numeric");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -191,45 +200,30 @@ namespace Infrastructure.Migrations
                     b.ToTable("FactionTypes");
                 });
 
-            modelBuilder.Entity("Domain.Factions.FactionUnitBonus", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("FactionTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Multiplier")
-                        .HasColumnType("numeric");
-
-                    b.Property<Guid?>("UnitTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UnitTypeId");
-
-                    b.HasIndex("FactionTypeId", "UnitTypeId")
-                        .IsUnique();
-
-                    b.ToTable("FactionUnitBonuses");
-                });
-
             modelBuilder.Entity("Domain.Game.Game", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("BaseActionPoints")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrentPhase")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("CurrentTurnKingdomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("HealPercent")
+                        .HasColumnType("numeric");
 
                     b.Property<Guid?>("HostUserId")
                         .HasColumnType("uuid");
@@ -247,11 +241,37 @@ namespace Infrastructure.Migrations
                     b.Property<int>("MaxPlayers")
                         .HasColumnType("integer");
 
+                    b.Property<int>("MaxRounds")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("RemainingActionPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RoundNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SlotOutcomeWeights")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("SpinCostGold")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("TurnNumber")
+                    b.Property<DateTime?>("TurnDeadline")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("TurnTimeLimit")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -261,6 +281,9 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("WinnerKingdomId")
+                        .HasColumnType("uuid");
+
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -269,10 +292,14 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CurrentTurnKingdomId");
+
                     b.HasIndex("HostUserId");
 
                     b.HasIndex("LobbyCode")
                         .IsUnique();
+
+                    b.HasIndex("WinnerKingdomId");
 
                     b.ToTable("Games");
                 });
@@ -313,21 +340,35 @@ namespace Infrastructure.Migrations
                     b.Property<Guid?>("AppUserId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("FactionTypeId")
+                    b.Property<DateTime?>("DefeatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FactionTypeId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("IsEliminated")
-                        .HasColumnType("boolean");
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TurnOrder")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -349,12 +390,16 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Action")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
@@ -362,7 +407,13 @@ namespace Infrastructure.Migrations
                     b.Property<Guid?>("KingdomId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("TurnNumber")
+                    b.Property<string>("Metadata")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RoundNumber")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -370,14 +421,431 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GameId");
-
                     b.HasIndex("KingdomId");
+
+                    b.HasIndex("GameId", "KingdomId");
+
+                    b.HasIndex("GameId", "RoundNumber");
 
                     b.ToTable("TurnLogs");
                 });
 
-            modelBuilder.Entity("Domain.Identity.AppRefreshToken", b =>
+            modelBuilder.Entity("Domain.Map.TerrainType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IconUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("MapColor")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<LangStr>("Name")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("ResourceBonusType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("ResourceMultiplier")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TerrainTypes");
+                });
+
+            modelBuilder.Entity("Domain.Map.Tile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CoordQ")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CoordR")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsCastle")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<Guid?>("KingdomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TerrainTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KingdomId");
+
+                    b.HasIndex("TerrainTypeId");
+
+                    b.HasIndex("GameId", "CoordQ", "CoordR")
+                        .IsUnique();
+
+                    b.ToTable("Tiles");
+                });
+
+            modelBuilder.Entity("Domain.Military.Army", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ArmyTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BuildingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CreatedOnRound")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CurrentHP")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("KingdomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("MaxHP")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("TileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArmyTypeId");
+
+                    b.HasIndex("BuildingId");
+
+                    b.HasIndex("KingdomId");
+
+                    b.HasIndex("TileId");
+
+                    b.ToTable("Armies");
+                });
+
+            modelBuilder.Entity("Domain.Military.ArmyType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Attack")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("ChipDamageRangeMax")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("ChipDamageRangeMin")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("DamageRangeMax")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("DamageRangeMin")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<int>("HP")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("IconUrl")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Initiative")
+                        .HasColumnType("integer");
+
+                    b.Property<LangStr>("Name")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("RequiredBuildingTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SituationalBonusCondition")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SituationalBonusStat")
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("SituationalBonusValue")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("TrainingCostFood")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TrainingCostGold")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TrainingCostMana")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TrainingCostStone")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UpkeepFood")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UpkeepGold")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UpkeepMana")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequiredBuildingTypeId");
+
+                    b.ToTable("ArmyTypes");
+                });
+
+            modelBuilder.Entity("Domain.Military.Battle", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AttackerKingdomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AttackerTileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DefenderKingdomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DefenderTileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("RoundNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TileCapturedFromKingdomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TileCapturedId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttackerKingdomId");
+
+                    b.HasIndex("AttackerTileId");
+
+                    b.HasIndex("DefenderKingdomId");
+
+                    b.HasIndex("DefenderTileId");
+
+                    b.HasIndex("GameId");
+
+                    b.HasIndex("TileCapturedFromKingdomId");
+
+                    b.HasIndex("TileCapturedId");
+
+                    b.ToTable("Battles");
+                });
+
+            modelBuilder.Entity("Domain.Military.BattleRound", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ArmyDestroyedId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttackerArmyHPAfter")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("AttackerArmyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("AttackerInitiativeChance")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("BattleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ChipDamageDealt")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DamageDealt")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DefenderArmyHPAfter")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("DefenderArmyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("DefenderInitiativeChance")
+                        .HasColumnType("numeric");
+
+                    b.Property<string>("InitiativeWinner")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("RoundNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArmyDestroyedId");
+
+                    b.HasIndex("AttackerArmyId");
+
+                    b.HasIndex("DefenderArmyId");
+
+                    b.HasIndex("BattleId", "RoundNumber")
+                        .IsUnique();
+
+                    b.ToTable("BattleRounds");
+                });
+
+            modelBuilder.Entity("Domain.Military.DeclaredAttack", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AttackerKingdomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AttackerSelectedArmyIds")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DefenderKingdomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DefenderSelectedArmyIds")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RiskedTileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("RoundNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TargetTileId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttackerKingdomId");
+
+                    b.HasIndex("DefenderKingdomId");
+
+                    b.HasIndex("GameId");
+
+                    b.HasIndex("RiskedTileId");
+
+                    b.HasIndex("TargetTileId");
+
+                    b.ToTable("DeclaredAttacks");
+                });
+
+            modelBuilder.Entity("Domain.Resources.KingdomResource", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("KingdomId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ResourceType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KingdomId", "ResourceType")
+                        .IsUnique();
+
+                    b.ToTable("KingdomResources");
+                });
+
+            modelBuilder.Entity("Infrastructure.Identity.AppRefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -412,7 +880,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("Domain.Identity.AppRole", b =>
+            modelBuilder.Entity("Infrastructure.Identity.AppRole", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -445,7 +913,7 @@ namespace Infrastructure.Migrations
                     b.ToTable("AspNetRoles", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.Identity.AppUser", b =>
+            modelBuilder.Entity("Infrastructure.Identity.AppUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -514,288 +982,6 @@ namespace Infrastructure.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Map.TerrainType", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("DefenseBonus")
-                        .HasColumnType("numeric");
-
-                    b.Property<int>("MovementCost")
-                        .HasColumnType("integer");
-
-                    b.Property<LangStr>("Name")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("ResourceBonusType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TerrainTypes");
-                });
-
-            modelBuilder.Entity("Domain.Map.Tile", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("CoordQ")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("CoordR")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("GameId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("KingdomId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TerrainTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("KingdomId");
-
-                    b.HasIndex("TerrainTypeId");
-
-                    b.HasIndex("GameId", "CoordQ", "CoordR")
-                        .IsUnique();
-
-                    b.ToTable("Tiles");
-                });
-
-            modelBuilder.Entity("Domain.Military.Army", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("KingdomId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TileId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("KingdomId");
-
-                    b.HasIndex("TileId");
-
-                    b.ToTable("Armies");
-                });
-
-            modelBuilder.Entity("Domain.Military.Battle", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AttackerArmyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DefenderArmyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("GameId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TileId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("TurnNumber")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("WinnerId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AttackerArmyId");
-
-                    b.HasIndex("DefenderArmyId");
-
-                    b.HasIndex("GameId");
-
-                    b.HasIndex("TileId");
-
-                    b.HasIndex("WinnerId");
-
-                    b.ToTable("Battles");
-                });
-
-            modelBuilder.Entity("Domain.Military.Unit", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ArmyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("UnitTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ArmyId");
-
-                    b.HasIndex("UnitTypeId");
-
-                    b.ToTable("Units");
-                });
-
-            modelBuilder.Entity("Domain.Military.UnitType", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("BaseStrength")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<int>("FoodCost")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("GoldCost")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("IconUrl")
-                        .HasColumnType("text");
-
-                    b.Property<int>("ManaCost")
-                        .HasColumnType("integer");
-
-                    b.Property<LangStr>("Name")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<int>("StoneCost")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Upkeep")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("WoodCost")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("UnitTypes");
-                });
-
-            modelBuilder.Entity("Domain.Military.UnitTypeMatchup", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AttackerTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DefenderTypeId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Multiplier")
-                        .HasColumnType("numeric");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DefenderTypeId");
-
-                    b.HasIndex("AttackerTypeId", "DefenderTypeId")
-                        .IsUnique();
-
-                    b.ToTable("UnitTypeMatchups");
-                });
-
-            modelBuilder.Entity("Domain.Resources.KingdomResource", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("KingdomId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ResourceType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("KingdomId", "ResourceType")
-                        .IsUnique();
-
-                    b.ToTable("KingdomResources");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
@@ -928,6 +1114,12 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Domain.Game.Kingdom", "Kingdom")
+                        .WithMany("Buildings")
+                        .HasForeignKey("KingdomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Domain.Map.Tile", "Tile")
                         .WithMany("Buildings")
                         .HasForeignKey("TileId")
@@ -936,61 +1128,46 @@ namespace Infrastructure.Migrations
 
                     b.Navigation("BuildingType");
 
+                    b.Navigation("Kingdom");
+
                     b.Navigation("Tile");
                 });
 
             modelBuilder.Entity("Domain.Buildings.BuildingType", b =>
                 {
-                    b.HasOne("Domain.Buildings.BuildingType", "PrerequisiteBuildingType")
+                    b.HasOne("Domain.Buildings.BuildingType", "UnlockedByBuildingType")
                         .WithMany()
-                        .HasForeignKey("PrerequisiteBuildingTypeId")
+                        .HasForeignKey("UnlockedByBuildingTypeId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("PrerequisiteBuildingType");
-                });
-
-            modelBuilder.Entity("Domain.Factions.FactionResourceBonus", b =>
-                {
-                    b.HasOne("Domain.Factions.FactionType", "FactionType")
-                        .WithMany("ResourceBonuses")
-                        .HasForeignKey("FactionTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("FactionType");
-                });
-
-            modelBuilder.Entity("Domain.Factions.FactionUnitBonus", b =>
-                {
-                    b.HasOne("Domain.Factions.FactionType", "FactionType")
-                        .WithMany("UnitBonuses")
-                        .HasForeignKey("FactionTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Military.UnitType", "UnitType")
-                        .WithMany()
-                        .HasForeignKey("UnitTypeId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("FactionType");
-
-                    b.Navigation("UnitType");
+                    b.Navigation("UnlockedByBuildingType");
                 });
 
             modelBuilder.Entity("Domain.Game.Game", b =>
                 {
-                    b.HasOne("Domain.Identity.AppUser", "HostUser")
+                    b.HasOne("Domain.Game.Kingdom", "CurrentTurnKingdom")
+                        .WithMany()
+                        .HasForeignKey("CurrentTurnKingdomId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Infrastructure.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("HostUserId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("HostUser");
+                    b.HasOne("Domain.Game.Kingdom", "WinnerKingdom")
+                        .WithMany()
+                        .HasForeignKey("WinnerKingdomId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CurrentTurnKingdom");
+
+                    b.Navigation("WinnerKingdom");
                 });
 
             modelBuilder.Entity("Domain.Game.Kingdom", b =>
                 {
-                    b.HasOne("Domain.Identity.AppUser", "AppUser")
+                    b.HasOne("Infrastructure.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("AppUserId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -998,15 +1175,14 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.Factions.FactionType", "FactionType")
                         .WithMany("Kingdoms")
                         .HasForeignKey("FactionTypeId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Domain.Game.Game", "Game")
                         .WithMany("Kingdoms")
                         .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("AppUser");
 
                     b.Navigation("FactionType");
 
@@ -1029,17 +1205,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Game");
 
                     b.Navigation("Kingdom");
-                });
-
-            modelBuilder.Entity("Domain.Identity.AppRefreshToken", b =>
-                {
-                    b.HasOne("Domain.Identity.AppUser", "User")
-                        .WithMany("RefreshTokens")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Map.Tile", b =>
@@ -1070,28 +1235,122 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Military.Army", b =>
                 {
+                    b.HasOne("Domain.Military.ArmyType", "ArmyType")
+                        .WithMany("Armies")
+                        .HasForeignKey("ArmyTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Buildings.Building", "Building")
+                        .WithMany("Armies")
+                        .HasForeignKey("BuildingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Domain.Game.Kingdom", "Kingdom")
                         .WithMany("Armies")
                         .HasForeignKey("KingdomId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Map.Tile", "Tile")
+                    b.HasOne("Domain.Map.Tile", null)
                         .WithMany("Armies")
                         .HasForeignKey("TileId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ArmyType");
+
+                    b.Navigation("Building");
+
+                    b.Navigation("Kingdom");
+                });
+
+            modelBuilder.Entity("Domain.Military.ArmyType", b =>
+                {
+                    b.HasOne("Domain.Buildings.BuildingType", "RequiredBuildingType")
+                        .WithMany()
+                        .HasForeignKey("RequiredBuildingTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Kingdom");
-
-                    b.Navigation("Tile");
+                    b.Navigation("RequiredBuildingType");
                 });
 
             modelBuilder.Entity("Domain.Military.Battle", b =>
                 {
+                    b.HasOne("Domain.Game.Kingdom", "AttackerKingdom")
+                        .WithMany()
+                        .HasForeignKey("AttackerKingdomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Map.Tile", "AttackerTile")
+                        .WithMany()
+                        .HasForeignKey("AttackerTileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Game.Kingdom", "DefenderKingdom")
+                        .WithMany()
+                        .HasForeignKey("DefenderKingdomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Map.Tile", "DefenderTile")
+                        .WithMany()
+                        .HasForeignKey("DefenderTileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Game.Game", "Game")
+                        .WithMany("Battles")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Game.Kingdom", "TileCapturedFromKingdom")
+                        .WithMany()
+                        .HasForeignKey("TileCapturedFromKingdomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Map.Tile", "TileCaptured")
+                        .WithMany()
+                        .HasForeignKey("TileCapturedId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AttackerKingdom");
+
+                    b.Navigation("AttackerTile");
+
+                    b.Navigation("DefenderKingdom");
+
+                    b.Navigation("DefenderTile");
+
+                    b.Navigation("Game");
+
+                    b.Navigation("TileCaptured");
+
+                    b.Navigation("TileCapturedFromKingdom");
+                });
+
+            modelBuilder.Entity("Domain.Military.BattleRound", b =>
+                {
+                    b.HasOne("Domain.Military.Army", "ArmyDestroyed")
+                        .WithMany()
+                        .HasForeignKey("ArmyDestroyedId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Domain.Military.Army", "AttackerArmy")
                         .WithMany()
                         .HasForeignKey("AttackerArmyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Military.Battle", "Battle")
+                        .WithMany("BattleRounds")
+                        .HasForeignKey("BattleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1101,70 +1360,56 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("ArmyDestroyed");
+
+                    b.Navigation("AttackerArmy");
+
+                    b.Navigation("Battle");
+
+                    b.Navigation("DefenderArmy");
+                });
+
+            modelBuilder.Entity("Domain.Military.DeclaredAttack", b =>
+                {
+                    b.HasOne("Domain.Game.Kingdom", "AttackerKingdom")
+                        .WithMany()
+                        .HasForeignKey("AttackerKingdomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Game.Kingdom", "DefenderKingdom")
+                        .WithMany()
+                        .HasForeignKey("DefenderKingdomId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Domain.Game.Game", "Game")
                         .WithMany()
                         .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Map.Tile", "Tile")
+                    b.HasOne("Domain.Map.Tile", "RiskedTile")
                         .WithMany()
-                        .HasForeignKey("TileId")
+                        .HasForeignKey("RiskedTileId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Game.Kingdom", "Winner")
+                    b.HasOne("Domain.Map.Tile", "TargetTile")
                         .WithMany()
-                        .HasForeignKey("WinnerId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("TargetTileId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.Navigation("AttackerArmy");
+                    b.Navigation("AttackerKingdom");
 
-                    b.Navigation("DefenderArmy");
+                    b.Navigation("DefenderKingdom");
 
                     b.Navigation("Game");
 
-                    b.Navigation("Tile");
+                    b.Navigation("RiskedTile");
 
-                    b.Navigation("Winner");
-                });
-
-            modelBuilder.Entity("Domain.Military.Unit", b =>
-                {
-                    b.HasOne("Domain.Military.Army", "Army")
-                        .WithMany("Units")
-                        .HasForeignKey("ArmyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Military.UnitType", "UnitType")
-                        .WithMany("Units")
-                        .HasForeignKey("UnitTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Army");
-
-                    b.Navigation("UnitType");
-                });
-
-            modelBuilder.Entity("Domain.Military.UnitTypeMatchup", b =>
-                {
-                    b.HasOne("Domain.Military.UnitType", "AttackerType")
-                        .WithMany("AttackerMatchups")
-                        .HasForeignKey("AttackerTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Military.UnitType", "DefenderType")
-                        .WithMany("DefenderMatchups")
-                        .HasForeignKey("DefenderTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("AttackerType");
-
-                    b.Navigation("DefenderType");
+                    b.Navigation("TargetTile");
                 });
 
             modelBuilder.Entity("Domain.Resources.KingdomResource", b =>
@@ -1178,9 +1423,20 @@ namespace Infrastructure.Migrations
                     b.Navigation("Kingdom");
                 });
 
+            modelBuilder.Entity("Infrastructure.Identity.AppRefreshToken", b =>
+                {
+                    b.HasOne("Infrastructure.Identity.AppUser", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
-                    b.HasOne("Domain.Identity.AppRole", null)
+                    b.HasOne("Infrastructure.Identity.AppRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1189,7 +1445,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("Domain.Identity.AppUser", null)
+                    b.HasOne("Infrastructure.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1198,7 +1454,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("Domain.Identity.AppUser", null)
+                    b.HasOne("Infrastructure.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1207,13 +1463,13 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
                 {
-                    b.HasOne("Domain.Identity.AppRole", null)
+                    b.HasOne("Infrastructure.Identity.AppRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Identity.AppUser", null)
+                    b.HasOne("Infrastructure.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1222,11 +1478,16 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("Domain.Identity.AppUser", null)
+                    b.HasOne("Infrastructure.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Buildings.Building", b =>
+                {
+                    b.Navigation("Armies");
                 });
 
             modelBuilder.Entity("Domain.Buildings.BuildingType", b =>
@@ -1237,14 +1498,12 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Factions.FactionType", b =>
                 {
                     b.Navigation("Kingdoms");
-
-                    b.Navigation("ResourceBonuses");
-
-                    b.Navigation("UnitBonuses");
                 });
 
             modelBuilder.Entity("Domain.Game.Game", b =>
                 {
+                    b.Navigation("Battles");
+
                     b.Navigation("Kingdoms");
 
                     b.Navigation("Tiles");
@@ -1256,16 +1515,13 @@ namespace Infrastructure.Migrations
                 {
                     b.Navigation("Armies");
 
+                    b.Navigation("Buildings");
+
                     b.Navigation("Resources");
 
                     b.Navigation("Tiles");
 
                     b.Navigation("TurnLogs");
-                });
-
-            modelBuilder.Entity("Domain.Identity.AppUser", b =>
-                {
-                    b.Navigation("RefreshTokens");
                 });
 
             modelBuilder.Entity("Domain.Map.TerrainType", b =>
@@ -1280,18 +1536,19 @@ namespace Infrastructure.Migrations
                     b.Navigation("Buildings");
                 });
 
-            modelBuilder.Entity("Domain.Military.Army", b =>
+            modelBuilder.Entity("Domain.Military.ArmyType", b =>
                 {
-                    b.Navigation("Units");
+                    b.Navigation("Armies");
                 });
 
-            modelBuilder.Entity("Domain.Military.UnitType", b =>
+            modelBuilder.Entity("Domain.Military.Battle", b =>
                 {
-                    b.Navigation("AttackerMatchups");
+                    b.Navigation("BattleRounds");
+                });
 
-                    b.Navigation("DefenderMatchups");
-
-                    b.Navigation("Units");
+            modelBuilder.Entity("Infrastructure.Identity.AppUser", b =>
+                {
+                    b.Navigation("RefreshTokens");
                 });
 #pragma warning restore 612, 618
         }
