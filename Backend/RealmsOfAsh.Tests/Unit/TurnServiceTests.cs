@@ -1,4 +1,6 @@
 using Application.Contracts;
+using Application.Services.Combat;
+using Application.Services.Combat.DTOs;
 using Application.Services.Turn;
 using Application.Services.Turn.DTOs;
 using Base;
@@ -28,6 +30,7 @@ public class TurnServiceTests
     private readonly Mock<IKingdomResourceRepository> _resourcesMock = new();
     private readonly Mock<IBuildingTypeRepository> _buildingTypesMock = new();
     private readonly Mock<IArmyRepository> _armiesMock = new();
+    private readonly Mock<ICombatService> _combatServiceMock = new();
     private readonly TurnService _sut;
 
     // Fixed IDs
@@ -50,7 +53,11 @@ public class TurnServiceTests
         _unitOfWorkMock.Setup(u => u.Armies).Returns(_armiesMock.Object);
         _unitOfWorkMock.Setup(u => u.CommitAsync(default)).ReturnsAsync(1);
 
-        _sut = new TurnService(_unitOfWorkMock.Object, _gameGuardMock.Object);
+        // Default: no battles resolved
+        _combatServiceMock.Setup(c => c.ResolveBattlesAsync(It.IsAny<Game>()))
+            .ReturnsAsync(new List<BattleResultDto>());
+
+        _sut = new TurnService(_unitOfWorkMock.Object, _gameGuardMock.Object, _combatServiceMock.Object);
     }
 
     // -------------------------------------------------------------------------
@@ -638,5 +645,102 @@ public class TurnServiceTests
             tl => tl.EventType == EEventType.ArmyHealed)), Times.Once);
         _turnLogsMock.Verify(t => t.AddAsync(It.Is<TurnLog>(
             tl => tl.EventType == EEventType.UpkeepPaid)), Times.Once);
+    }
+
+    // -------------------------------------------------------------------------
+    // Battle Phase: Combat Integration tests
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task EndTurn_BattlePhase_CallsResolveBattles()
+    {
+        var game = CreateGame();
+        SetupGuardSuccess(game);
+        var k1 = CreateKingdom(Kingdom1Id, 1);
+        SetupKingdoms(k1);
+        SetupFactionType();
+        SetupIncomeForPhaseTransition();
+
+        await _sut.EndTurnAsync(GameId, UserId);
+
+        _combatServiceMock.Verify(c => c.ResolveBattlesAsync(It.IsAny<Game>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task EndTurn_BattlePhase_WithBattles_ReturnsBattleResults()
+    {
+        // k1 is last player (turn order 2) -- ending turn triggers phase transition
+        var game = CreateGame();
+        game.CurrentTurnKingdomId = Kingdom1Id;
+        var k1 = CreateKingdom(Kingdom1Id, 2); // last in turn order
+        var k2 = CreateKingdom(Kingdom2Id, 1); // already went
+        SetupGuardSuccess(game, k1);
+        SetupKingdoms(k2, k1); // both active
+        SetupFactionType();
+        SetupIncomeForPhaseTransition();
+
+        var battleResult = new BattleResultDto
+        {
+            BattleId = Guid.NewGuid(),
+            AttackerKingdomId = Kingdom1Id,
+            DefenderKingdomId = Kingdom2Id,
+            Outcome = "AttackerWins",
+            TileCapturedId = Guid.NewGuid(),
+            TileCapturedFromKingdomId = Kingdom2Id,
+            Rounds = []
+        };
+        _combatServiceMock.Setup(c => c.ResolveBattlesAsync(It.IsAny<Game>()))
+            .ReturnsAsync(new List<BattleResultDto> { battleResult });
+
+        // After battle, re-fetch still returns both active (no elimination)
+
+        var result = await _sut.EndTurnAsync(GameId, UserId);
+
+        result.IsSuccess.ShouldBeTrue();
+        result.Value!.BattleResults.ShouldNotBeNull();
+        result.Value.BattleResults!.Count.ShouldBe(1);
+        result.Value.BattleResults[0].Outcome.ShouldBe("AttackerWins");
+    }
+
+    [Fact]
+    public async Task EndTurn_BattlePhase_EliminationDuringCombat_ReturnsGameOver()
+    {
+        // k1 is last player (turn order 2) -- ending turn triggers phase transition
+        var game = CreateGame();
+        game.CurrentTurnKingdomId = Kingdom1Id;
+        var k1 = CreateKingdom(Kingdom1Id, 2); // last in turn order
+        var k2 = CreateKingdom(Kingdom2Id, 1); // already went
+        SetupGuardSuccess(game, k1);
+        SetupFactionType();
+        SetupIncomeForPhaseTransition();
+
+        var battleResult = new BattleResultDto
+        {
+            BattleId = Guid.NewGuid(),
+            AttackerKingdomId = Kingdom1Id,
+            DefenderKingdomId = Kingdom2Id,
+            Outcome = "AttackerWins",
+            TileCapturedId = Guid.NewGuid(),
+            TileCapturedFromKingdomId = Kingdom2Id,
+            Rounds = []
+        };
+        _combatServiceMock.Setup(c => c.ResolveBattlesAsync(It.IsAny<Game>()))
+            .ReturnsAsync(new List<BattleResultDto> { battleResult });
+
+        // After battle, kingdom2 is eliminated -- re-fetch returns k1 active, k2 defeated
+        var k2Defeated = CreateKingdom(Kingdom2Id, 1, EKingdomStatus.Defeated);
+        _kingdomsMock.SetupSequence(k => k.GetKingdomsForGameAsync(GameId))
+            .ReturnsAsync(new List<Kingdom> { k2, k1 })          // first call (initial)
+            .ReturnsAsync(new List<Kingdom> { k1, k2Defeated });  // second call (after battle)
+
+        var result = await _sut.EndTurnAsync(GameId, UserId);
+
+        result.IsSuccess.ShouldBeTrue();
+        result.Value!.GameOver.ShouldNotBeNull();
+        result.Value.GameOver!.WinConditionType.ShouldBe("Elimination");
+        result.Value.GameOver.WinnerKingdomId.ShouldBe(Kingdom1Id);
+        result.Value.BattleResults.ShouldNotBeNull();
+        result.Value.BattleResults!.Count.ShouldBe(1);
+        game.Status.ShouldBe(EGameStatus.Completed);
     }
 }
