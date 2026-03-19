@@ -22,6 +22,7 @@ import { Standings } from './components/Standings';
 import { CombatResultModal } from './components/CombatResultModal';
 import { EliminationBanner } from './components/EliminationBanner';
 import { GameOverOverlay } from './components/GameOverOverlay';
+import { SlotMachineOverlay } from './components/SlotMachineOverlay';
 import type { HexLayoutConfig, MapRenderState } from './canvas/types';
 import type { Army } from './types/military-types';
 
@@ -487,6 +488,7 @@ export function GamePage() {
       />
       {!isLoading && <GameHud onStandingsToggle={() => setStandingsOpen((o) => !o)} />}
       {!isLoading && <Standings open={standingsOpen} onClose={() => setStandingsOpen(false)} />}
+      {!isLoading && <SlotMachineOverlay />}
       {!isLoading && showBuildingPanel && (
         <div className={isMyTurn && !isEliminated ? '' : 'opacity-50 pointer-events-none'}>
           <BuildingPanel selectedTileKey={selectedTileKey!} />
