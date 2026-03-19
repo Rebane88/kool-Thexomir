@@ -1,4 +1,5 @@
 using Application.Contracts;
+using Application.Services.Combat.DTOs;
 using Application.Services.GameInitialization.DTOs;
 using Domain.Game;
 using Domain.Map;
@@ -164,6 +165,17 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
             }));
         }
 
+        // Load declared attacks for current round (for reconnect)
+        var declaredAttacks = await unitOfWork.DeclaredAttacks.GetForGameRoundAsync(gameId, game.RoundNumber);
+        var declaredAttackDtos = declaredAttacks.Select(da => new DeclareAttackResponse
+        {
+            AttackId = da.Id,
+            TargetTileId = da.TargetTileId,
+            RiskedTileId = da.RiskedTileId,
+            AttackerKingdomId = da.AttackerKingdomId,
+            DefenderKingdomId = da.DefenderKingdomId
+        }).ToList();
+
         return new GameStateDto
         {
             GameId = game.Id,
@@ -173,6 +185,9 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
             MapWidth = game.MapWidth,
             MapHeight = game.MapHeight,
             CurrentTurnKingdomId = game.CurrentTurnKingdomId,
+            CurrentPhase = game.CurrentPhase.ToString(),
+            RemainingActionPoints = game.RemainingActionPoints,
+            DeclaredAttacks = declaredAttackDtos,
             Tiles = tiles.Select(t => new TileDto
             {
                 Id = t.Id,

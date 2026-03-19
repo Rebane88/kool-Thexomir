@@ -29,6 +29,7 @@ public class GameInitializationServiceTests
     private readonly Mock<IBuildingRepository> _buildingsMock = new();
     private readonly Mock<IBuildingTypeRepository> _buildingTypesMock = new();
     private readonly Mock<IArmyRepository> _armiesMock = new();
+    private readonly Mock<IDeclaredAttackRepository> _declaredAttacksMock = new();
     private readonly List<KingdomResource> _addedResources = [];
     private readonly List<Tile> _addedTiles = [];
     private readonly List<Building> _addedBuildings = [];
@@ -60,6 +61,7 @@ public class GameInitializationServiceTests
         _unitOfWorkMock.Setup(u => u.Buildings).Returns(_buildingsMock.Object);
         _unitOfWorkMock.Setup(u => u.BuildingTypes).Returns(_buildingTypesMock.Object);
         _unitOfWorkMock.Setup(u => u.Armies).Returns(_armiesMock.Object);
+        _unitOfWorkMock.Setup(u => u.DeclaredAttacks).Returns(_declaredAttacksMock.Object);
         _unitOfWorkMock.Setup(u => u.CommitAsync(default)).ReturnsAsync(1);
 
         _kingdomResourcesMock.Setup(r => r.AddAsync(It.IsAny<KingdomResource>()))
@@ -149,6 +151,9 @@ public class GameInitializationServiceTests
 
         _kingdomResourcesMock.Setup(r => r.GetResourcesForKingdomAsync(It.IsAny<Guid>()))
             .ReturnsAsync(new List<KingdomResource>());
+
+        _declaredAttacksMock.Setup(d => d.GetForGameRoundAsync(It.IsAny<Guid>(), It.IsAny<int>()))
+            .ReturnsAsync(new List<DeclaredAttack>());
     }
 
     // -------------------------------------------------------------------------
@@ -473,5 +478,95 @@ public class GameInitializationServiceTests
         game.RoundNumber.ShouldBe(1);
         game.CurrentTurnKingdomId.ShouldBe(KingdomId1); // first by TurnOrder
         game.StartedAt.ShouldNotBeNull();
+    }
+
+    // -------------------------------------------------------------------------
+    // Snapshot DTO — v6.0 reconnect fields (SYNC-05)
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task InitializeGame_SnapshotIncludesPhaseAndActionPoints()
+    {
+        // Arrange
+        var game = CreateGame();
+        var kingdoms = new List<Kingdom>
+        {
+            CreateKingdom(KingdomId1, FactionId1, turnOrder: 1),
+            CreateKingdom(KingdomId2, FactionId2, turnOrder: 2)
+        };
+        var factions = new List<FactionType>
+        {
+            CreateFactionType(FactionId1),
+            CreateFactionType(FactionId2)
+        };
+        SetupInitializeMocks(game, kingdoms, factions);
+
+        // Act
+        var result = await _sut.InitializeGameAsync(GameId);
+
+        // Assert: snapshot includes phase and AP for reconnect
+        result.CurrentPhase.ShouldBe("Action");
+        result.RemainingActionPoints.ShouldBe(4); // BaseActionPoints + 0 modifier
+        result.DeclaredAttacks.ShouldNotBeNull();
+        result.DeclaredAttacks.Count.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task BuildSnapshot_IncludesDeclaredAttacksForCurrentRound()
+    {
+        // Arrange
+        var game = CreateGame();
+        game.Status = EGameStatus.InProgress;
+        game.CurrentPhase = EGamePhase.Battle;
+        game.RoundNumber = 2;
+        game.RemainingActionPoints = 3;
+        game.MapWidth = 16;
+        game.MapHeight = 16;
+        game.CurrentTurnKingdomId = KingdomId1;
+
+        var kingdoms = new List<Kingdom>
+        {
+            CreateKingdom(KingdomId1, FactionId1, turnOrder: 1),
+            CreateKingdom(KingdomId2, FactionId2, turnOrder: 2)
+        };
+
+        _gamesMock.Setup(g => g.GetByIdAsync(GameId)).ReturnsAsync(game);
+        _kingdomsMock.Setup(k => k.GetKingdomsForGameAsync(GameId)).ReturnsAsync(kingdoms);
+        _tilesMock.Setup(t => t.GetTilesWithBuildingsForGameAsync(GameId)).ReturnsAsync(new List<Tile>());
+        _armiesMock.Setup(a => a.GetArmiesForKingdomAsync(It.IsAny<Guid>())).ReturnsAsync(Enumerable.Empty<Army>());
+        _kingdomResourcesMock.Setup(r => r.GetResourcesForKingdomAsync(It.IsAny<Guid>())).ReturnsAsync(new List<KingdomResource>());
+
+        var attackId = Guid.NewGuid();
+        _declaredAttacksMock.Setup(d => d.GetForGameRoundAsync(GameId, 2))
+            .ReturnsAsync(new List<DeclaredAttack>
+            {
+                new()
+                {
+                    Id = attackId,
+                    GameId = GameId,
+                    RoundNumber = 2,
+                    TargetTileId = Guid.NewGuid(),
+                    RiskedTileId = Guid.NewGuid(),
+                    AttackerKingdomId = KingdomId1,
+                    DefenderKingdomId = KingdomId2
+                }
+            });
+
+        foreach (var factionId in new[] { FactionId1, FactionId2 })
+        {
+            _factionTypesMock.Setup(f => f.GetByIdAsync(factionId))
+                .ReturnsAsync(CreateFactionType(factionId));
+        }
+
+        // Act
+        var result = await _sut.BuildGameStateSnapshotAsync(GameId);
+
+        // Assert
+        result.CurrentPhase.ShouldBe("Battle");
+        result.RemainingActionPoints.ShouldBe(3);
+        result.DeclaredAttacks.Count.ShouldBe(1);
+        result.DeclaredAttacks[0].AttackId.ShouldBe(attackId);
+        result.DeclaredAttacks[0].AttackerKingdomId.ShouldBe(KingdomId1);
+        result.DeclaredAttacks[0].DefenderKingdomId.ShouldBe(KingdomId2);
     }
 }
