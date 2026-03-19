@@ -3,11 +3,13 @@ import { useParams, useNavigate } from 'react-router';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { createGameHubConnection } from '@/lib/signalr-client';
 import type * as signalR from '@microsoft/signalr';
-import { Panel, Button, Badge, Select } from '@/shared/ui';
-import { CrownIcon } from '@/assets/icons';
+import { Panel, Button, Badge, Modal, FogBackground } from '@/shared/ui';
+import { CrownIcon, ScrollIcon } from '@/assets/icons';
 import { getLobby, selectFaction, leaveLobby, startGame } from './lobby-api';
 import type { LobbyResponse } from './lobby-types';
-import { WIN_CONDITION_LABELS, GAME_STATUS } from './lobby-types';
+import { GAME_STATUS } from './lobby-types';
+import { FactionCard } from './FactionCard';
+import { FACTION_METADATA } from './faction-constants';
 
 export function LobbyDetailPage() {
   const { id } = useParams();
@@ -21,6 +23,7 @@ export function LobbyDetailPage() {
   const [isStarting, setIsStarting] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -136,7 +139,7 @@ export function LobbyDetailPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard API not available — no-op
+      // Clipboard API not available -- no-op
     }
   };
 
@@ -167,9 +170,9 @@ export function LobbyDetailPage() {
     }
   };
 
-  const handleLeave = async () => {
+  const confirmLeave = async () => {
     if (!lobby) return;
-    if (!window.confirm('Leave this lobby?')) return;
+    setShowLeaveConfirm(false);
     setIsLeaving(true);
     try {
       await leaveLobby(lobby.id);
@@ -180,8 +183,10 @@ export function LobbyDetailPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-      <div className="max-w-xl w-full">
+    <div className="min-h-dvh flex flex-col items-center justify-center px-4 py-8 bg-ash-950">
+      <FogBackground />
+
+      <div className="relative z-10 max-w-xl w-full">
         {!lobby ? (
           <p className="text-parchment-400 text-center">Loading...</p>
         ) : (
@@ -192,87 +197,89 @@ export function LobbyDetailPage() {
               </div>
             )}
 
-            <Panel className="p-6">
+            <Panel variant="auth-frame" className="p-6">
               <div className="text-center mb-6">
-                <p className="text-parchment-400 text-xs uppercase tracking-widest mb-1 font-heading">
-                  Invite Code
-                </p>
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-3xl font-mono font-bold text-gold-500 tracking-[0.3em]">
+                <p className="text-parchment-400 text-xs uppercase tracking-[0.3em] font-heading mb-2">Invite Code</p>
+                <div className="text-parchment-400 text-xs mb-1">{'\u2726 \u2726 \u2726'}</div>
+                <div className="flex items-center justify-center gap-3">
+                  <span className="text-3xl font-mono font-bold text-gold-500 tracking-[0.5em]">
                     {lobby.lobbyCode}
                   </span>
                   <button
                     onClick={handleCopy}
-                    className="text-parchment-400 hover:text-gold-500 text-sm transition-colors"
+                    className="text-parchment-400 hover:text-gold-500 transition-colors"
+                    title="Copy invite code"
                   >
-                    {copied ? 'Copied!' : 'Copy'}
+                    {copied ? (
+                      <span className="text-gold-500 text-xs font-heading">Copied!</span>
+                    ) : (
+                      <ScrollIcon size={18} />
+                    )}
                   </button>
                 </div>
+                <div className="text-parchment-400 text-xs mt-1">{'\u2726 \u2726 \u2726'}</div>
               </div>
 
               <div className="flex justify-between text-parchment-400 text-sm mb-4 border-b border-bronze-700 pb-3">
-                <span>
-                  Win: {WIN_CONDITION_LABELS[lobby.winCondition] ?? 'Unknown'}
-                </span>
-                <span>
-                  Players: {lobby.playerCount}/{lobby.maxPlayers}
-                </span>
+                <span>Elimination</span>
+                <span>Players: {lobby.playerCount}/{lobby.maxPlayers}</span>
               </div>
 
-              <div className="space-y-2 mb-4">
-                <h2 className="text-parchment-200 text-sm font-heading font-medium mb-2 tracking-wide">
-                  Players
-                </h2>
-                {lobby.players.map((player) => (
-                  <div
-                    key={player.kingdomId}
-                    className="flex items-center justify-between bg-ash-700/50 border border-bronze-700/50 px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      {player.isHost && (
-                        <CrownIcon size={16} className="text-gold-500" />
+              <div className="space-y-2 mb-6">
+                <h2 className="text-parchment-200 text-sm font-heading font-medium tracking-wide mb-2">Players</h2>
+                {lobby.players.map((player) => {
+                  const factionMeta = player.factionTypeId
+                    ? FACTION_METADATA[player.factionTypeId.toLowerCase()]
+                    : null;
+                  return (
+                    <div
+                      key={player.kingdomId}
+                      className={`flex items-center justify-between bg-ash-700/50 border border-bronze-700/50 px-3 py-2.5 border-l-4 ${
+                        factionMeta ? factionMeta.borderColor : 'border-l-bronze-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {player.isHost && <CrownIcon size={16} className="text-gold-500" />}
+                        <span className="text-parchment-200">{player.userEmail}</span>
+                      </div>
+                      {player.factionName ? (
+                        <Badge variant="success">{player.factionName}</Badge>
+                      ) : (
+                        <span className="text-parchment-400 text-sm italic">No faction</span>
                       )}
-                      <span className="text-parchment-200">{player.userEmail}</span>
                     </div>
-                    {player.factionName ? (
-                      <Badge variant="success">{player.factionName}</Badge>
-                    ) : (
-                      <span className="text-parchment-400 text-sm italic">No faction</span>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {lobby.status === GAME_STATUS.Lobby && (
-                <div className="mb-4">
-                  <Select
-                    id="factionSelect"
-                    label="Select Faction"
-                    value={currentPlayerFaction ?? ''}
-                    onChange={(e) => handleFactionChange(e.target.value)}
-                    disabled={pendingFaction}
-                  >
-                    <option value="">-- Select --</option>
-                    {lobby.factions.map((f) => (
-                      <option
-                        key={f.factionTypeId}
-                        value={f.factionTypeId}
-                        disabled={!f.isAvailable}
-                      >
-                        {f.name}
-                        {!f.isAvailable ? ' (Taken)' : ''}
-                      </option>
-                    ))}
-                  </Select>
-                  {factionError && (
-                    <p className="text-blood-500 text-xs mt-1">{factionError}</p>
-                  )}
+                <div className="mb-6">
+                  <h2 className="text-parchment-200 text-sm font-heading font-medium tracking-wide mb-3">Select Faction</h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    {lobby.factions.map((f) => {
+                      const takenPlayer = !f.isAvailable
+                        ? lobby.players.find((p) => p.factionTypeId === f.factionTypeId)
+                        : null;
+                      return (
+                        <FactionCard
+                          key={f.factionTypeId}
+                          factionTypeId={f.factionTypeId}
+                          isSelected={currentPlayerFaction === f.factionTypeId}
+                          isTaken={!f.isAvailable && currentPlayerFaction !== f.factionTypeId}
+                          takenByName={takenPlayer?.userEmail}
+                          onSelect={handleFactionChange}
+                          disabled={pendingFaction}
+                        />
+                      );
+                    })}
+                  </div>
+                  {factionError && <p className="text-blood-500 text-xs mt-2">{factionError}</p>}
                 </div>
               )}
 
               <div className="flex gap-3 mt-4">
                 <Button
-                  onClick={handleLeave}
+                  onClick={() => setShowLeaveConfirm(true)}
                   disabled={isLeaving}
                   variant="secondary"
                   className="flex-1"
@@ -296,6 +303,15 @@ export function LobbyDetailPage() {
                 </p>
               )}
             </Panel>
+
+            <Modal open={showLeaveConfirm} onClose={() => setShowLeaveConfirm(false)}>
+              <h3 className="font-heading text-parchment-200 text-lg mb-3">Leave Lobby?</h3>
+              <p className="text-parchment-400 text-sm mb-4">You will be removed from this war council.</p>
+              <div className="flex gap-3">
+                <Button onClick={() => setShowLeaveConfirm(false)} variant="secondary" className="flex-1">Cancel</Button>
+                <Button onClick={confirmLeave} variant="danger" className="flex-1">Leave</Button>
+              </div>
+            </Modal>
           </>
         )}
       </div>
