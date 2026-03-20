@@ -57,18 +57,18 @@ const RESOURCE_ICONS: Record<string, ComponentType<IconProps>> = {
 };
 
 const COST_RESOURCE_MAP: { key: keyof BuildingTypeRef; resource: string }[] = [
-  { key: 'goldCost', resource: 'Gold' },
-  { key: 'woodCost', resource: 'Wood' },
-  { key: 'stoneCost', resource: 'Stone' },
-  { key: 'manaCost', resource: 'Mana' },
+  { key: 'costGold', resource: 'Gold' },
+  { key: 'costWood', resource: 'Wood' },
+  { key: 'costStone', resource: 'Stone' },
+  { key: 'costMana', resource: 'Mana' },
 ];
 
 const YIELD_RESOURCE_MAP: { key: keyof BuildingTypeRef; resource: string }[] = [
-  { key: 'goldYield', resource: 'Gold' },
-  { key: 'foodYield', resource: 'Food' },
-  { key: 'woodYield', resource: 'Wood' },
-  { key: 'stoneYield', resource: 'Stone' },
-  { key: 'manaYield', resource: 'Mana' },
+  { key: 'baseYieldGold', resource: 'Gold' },
+  { key: 'baseYieldFood', resource: 'Food' },
+  { key: 'baseYieldWood', resource: 'Wood' },
+  { key: 'baseYieldStone', resource: 'Stone' },
+  { key: 'baseYieldMana', resource: 'Mana' },
 ];
 
 interface BuildingRowProps {
@@ -132,9 +132,9 @@ export function BuildingRow({
             </div>
           </div>
 
-          {buildingType.prerequisiteBuildingName && !hasPrerequisite && (
+          {buildingType.unlockedByBuildingName && !hasPrerequisite && (
             <div className="text-xs text-ember-400 mt-0.5">
-              Requires: {buildingType.prerequisiteBuildingName}
+              Requires: {buildingType.unlockedByBuildingName}
             </div>
           )}
 

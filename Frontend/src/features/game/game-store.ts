@@ -229,10 +229,19 @@ export const useGameStore = create<GameState>((set, get) => ({
       mapWidth: snapshot.mapWidth,
       mapHeight: snapshot.mapHeight,
       gameOver: null,
-      currentPhase: null,
-      actionPoints: null,
-      maxActionPoints: null,
-      declaredAttacks: [],
+      currentPhase: (snapshot.currentPhase as GamePhase) ?? null,
+      actionPoints: snapshot.remainingActionPoints ?? null,
+      // NOTE: maxActionPoints is set to remaining AP on reconnect — may be less than true max.
+      // Corrected when next TurnStarted fires (see handleTurnStarted).
+      // Adding MaxActionPoints to GameStateDto would fix this edge case.
+      maxActionPoints: snapshot.remainingActionPoints ?? null,
+      declaredAttacks: (snapshot.declaredAttacks ?? []).map((da) => ({
+        attackId: da.attackId,
+        targetTileId: da.targetTileId,
+        riskedTileId: da.riskedTileId,
+        attackerKingdomId: da.attackerKingdomId,
+        defenderKingdomId: da.defenderKingdomId,
+      })),
       activeBattle: null,
       battleReadiness: new Map(),
       lineupReadiness: new Map(),

@@ -9,9 +9,20 @@ export interface GameStateSnapshot {
   mapWidth: number;
   mapHeight: number;
   currentTurnKingdomId: string | null;
+  currentPhase: string | null;
+  remainingActionPoints: number | null;
+  declaredAttacks: SnapshotDeclaredAttack[];
   tiles: SnapshotTile[];
   kingdoms: SnapshotKingdom[];
   armies: SnapshotArmy[];
+}
+
+export interface SnapshotDeclaredAttack {
+  attackId: string;
+  targetTileId: string;
+  riskedTileId: string;
+  attackerKingdomId: string;
+  defenderKingdomId: string;
 }
 
 export interface SnapshotTile {
@@ -29,7 +40,7 @@ export interface SnapshotKingdom {
   id: string;
   name: string;
   userId: string | null;
-  factionTypeId: string;
+  factionTypeId: string | null;
   factionName: string | null;
   status: string;
   resources: { resourceType: string; amount: number }[];

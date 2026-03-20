@@ -15,7 +15,7 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
   const kingdoms = useGameStore((s) => s.kingdoms);
   const tiles = useGameStore((s) => s.tiles);
   const setBuildMode = useGameStore((s) => s.setBuildMode);
-  const unitTypes = useGameStore((s) => s.unitTypes);
+  const armyTypes = useGameStore((s) => s.armyTypes);
 
   const [activeTab, setActiveTab] = useState<'buildings' | 'military'>('buildings');
 
@@ -30,30 +30,30 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
   const existingBuilding = selectedTile?.buildings[0] ?? null;
   const isCastleTile = selectedTile?.isCastle === true;
   const hasMilitaryTab = existingBuilding !== null
-    && unitTypes.some((ut) => ut.producedByBuildingTypeIds.includes(existingBuilding.buildingTypeId));
+    && armyTypes.some((at) => at.requiredBuildingTypeId === existingBuilding.buildingTypeId);
 
   function canAfford(bt: BuildingTypeRef): boolean {
-    if (bt.goldCost > 0 && (resources['Gold'] ?? 0) < bt.goldCost) return false;
-    if (bt.woodCost > 0 && (resources['Wood'] ?? 0) < bt.woodCost) return false;
-    if (bt.stoneCost > 0 && (resources['Stone'] ?? 0) < bt.stoneCost) return false;
-    if (bt.manaCost > 0 && (resources['Mana'] ?? 0) < bt.manaCost) return false;
+    if (bt.costGold > 0 && (resources['Gold'] ?? 0) < bt.costGold) return false;
+    if (bt.costWood > 0 && (resources['Wood'] ?? 0) < bt.costWood) return false;
+    if (bt.costStone > 0 && (resources['Stone'] ?? 0) < bt.costStone) return false;
+    if (bt.costMana > 0 && (resources['Mana'] ?? 0) < bt.costMana) return false;
     return true;
   }
 
   function getInsufficientResources(bt: BuildingTypeRef): string[] {
     const insufficient: string[] = [];
-    if (bt.goldCost > 0 && (resources['Gold'] ?? 0) < bt.goldCost) insufficient.push('Gold');
-    if (bt.woodCost > 0 && (resources['Wood'] ?? 0) < bt.woodCost) insufficient.push('Wood');
-    if (bt.stoneCost > 0 && (resources['Stone'] ?? 0) < bt.stoneCost) insufficient.push('Stone');
-    if (bt.manaCost > 0 && (resources['Mana'] ?? 0) < bt.manaCost) insufficient.push('Mana');
+    if (bt.costGold > 0 && (resources['Gold'] ?? 0) < bt.costGold) insufficient.push('Gold');
+    if (bt.costWood > 0 && (resources['Wood'] ?? 0) < bt.costWood) insufficient.push('Wood');
+    if (bt.costStone > 0 && (resources['Stone'] ?? 0) < bt.costStone) insufficient.push('Stone');
+    if (bt.costMana > 0 && (resources['Mana'] ?? 0) < bt.costMana) insufficient.push('Mana');
     return insufficient;
   }
 
   function hasPrerequisite(bt: BuildingTypeRef): boolean {
-    if (!bt.prerequisiteBuildingTypeId) return true;
+    if (!bt.unlockedByBuildingTypeId) return true;
     for (const tile of tiles.values()) {
       if (tile.kingdomId !== myKingdomId) continue;
-      if (tile.buildings.some((b) => b.buildingTypeId === bt.prerequisiteBuildingTypeId)) {
+      if (tile.buildings.some((b) => b.buildingTypeId === bt.unlockedByBuildingTypeId)) {
         return true;
       }
     }
@@ -73,7 +73,7 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
   const displayedBuildings = isCastleTile
     ? []
     : existingBuilding
-      ? buildingTypes.filter((bt) => bt.prerequisiteBuildingTypeId === existingBuilding.buildingTypeId)
+      ? buildingTypes.filter((bt) => bt.unlockedByBuildingTypeId === existingBuilding.buildingTypeId)
       : buildingTypes.filter((bt) => bt.tier === 1);
 
   function handleSelect(typeId: string) {
