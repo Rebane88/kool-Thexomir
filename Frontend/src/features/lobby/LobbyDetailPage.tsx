@@ -4,6 +4,7 @@ import { useAuthStore } from '@/features/auth/auth-store';
 import { createGameHubConnection } from '@/lib/signalr-client';
 import type * as signalR from '@microsoft/signalr';
 import { Panel, Button, Badge, Modal, FogBackground } from '@/shared/ui';
+import bgLobbyPng from '@/assets/images/bg-lobby.png';
 import { CrownIcon, ScrollIcon } from '@/assets/icons';
 import { getLobby, selectFaction, leaveLobby, startGame } from './lobby-api';
 import type { LobbyResponse } from './lobby-types';
@@ -184,7 +185,7 @@ export function LobbyDetailPage() {
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center px-4 py-8 bg-ash-950">
-      <FogBackground />
+      <FogBackground backgroundImage={bgLobbyPng} />
 
       <div className="relative z-10 max-w-xl w-full">
         {!lobby ? (

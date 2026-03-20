@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Panel, Button, Input, FogBackground } from '@/shared/ui';
 import { createLobby, joinLobby } from './lobby-api';
+import bgLobbyPng from '@/assets/images/bg-lobby.png';
 
 export function LobbyHomePage() {
   const navigate = useNavigate();
@@ -53,7 +54,7 @@ export function LobbyHomePage() {
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center px-4 py-8 bg-ash-950">
-      <FogBackground />
+      <FogBackground backgroundImage={bgLobbyPng} />
 
       <div className="relative z-10 max-w-md w-full">
         <div className="text-center mb-6">

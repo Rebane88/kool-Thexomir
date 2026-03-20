@@ -1,73 +1,73 @@
 /**
- * SVG building icon loading and rasterization pipeline.
+ * PNG building icon loading and rasterization pipeline.
  *
- * All 19 building SVG icons are imported statically via Vite and can be
+ * All 19 building PNG icons are imported statically via Vite and can be
  * pre-rasterized to offscreen canvases for fast drawImage() blitting
  * during the render loop.
  */
 
-import castleSvg from '../../../assets/building-icons/castle.svg';
-import farmSvg from '../../../assets/building-icons/farm.svg';
-import windmillSvg from '../../../assets/building-icons/windmill.svg';
-import granarySvg from '../../../assets/building-icons/granary.svg';
-import lumberCampSvg from '../../../assets/building-icons/lumber-camp.svg';
-import sawmillSvg from '../../../assets/building-icons/sawmill.svg';
-import timberHallSvg from '../../../assets/building-icons/timber-hall.svg';
-import quarrySvg from '../../../assets/building-icons/quarry.svg';
-import masonSvg from '../../../assets/building-icons/mason.svg';
-import stoneworksSvg from '../../../assets/building-icons/stoneworks.svg';
-import marketSvg from '../../../assets/building-icons/market.svg';
-import tradingPostSvg from '../../../assets/building-icons/trading-post.svg';
-import bankSvg from '../../../assets/building-icons/bank.svg';
-import shrineSvg from '../../../assets/building-icons/shrine.svg';
-import wizardTowerSvg from '../../../assets/building-icons/wizard-tower.svg';
-import arcaneSanctumSvg from '../../../assets/building-icons/arcane-sanctum.svg';
-import barracksSvg from '../../../assets/building-icons/barracks.svg';
-import stablesSvg from '../../../assets/building-icons/stables.svg';
-import warAcademySvg from '../../../assets/building-icons/war-academy.svg';
+import castlePng from '@/assets/images/building-castle.png';
+import farmPng from '@/assets/images/building-farm.png';
+import windmillPng from '@/assets/images/building-windmill.png';
+import granaryPng from '@/assets/images/building-granary.png';
+import lumberCampPng from '@/assets/images/building-lumber-camp.png';
+import sawmillPng from '@/assets/images/building-sawmill.png';
+import timberHallPng from '@/assets/images/building-timber-hall.png';
+import quarryPng from '@/assets/images/building-quarry.png';
+import masonPng from '@/assets/images/building-mason.png';
+import stoneworksPng from '@/assets/images/building-stoneworks.png';
+import marketPng from '@/assets/images/building-market.png';
+import tradingPostPng from '@/assets/images/building-trading-post.png';
+import bankPng from '@/assets/images/building-bank.png';
+import shrinePng from '@/assets/images/building-shrine.png';
+import wizardTowerPng from '@/assets/images/building-wizard-tower.png';
+import arcaneSanctumPng from '@/assets/images/building-arcane-sanctum.png';
+import barracksPng from '@/assets/images/building-barracks.png';
+import stablesPng from '@/assets/images/building-stables.png';
+import warAcademyPng from '@/assets/images/building-war-academy.png';
 
 /**
- * Map of backend building names to their Vite-resolved SVG URLs.
+ * Map of backend building names to their Vite-resolved PNG URLs.
  * Keys must exactly match BuildingType.Name values from the backend seeder.
  */
-export const BUILDING_ICON_IMPORTS: Record<string, string> = {
-  'Castle': castleSvg,
-  'Farm': farmSvg,
-  'Windmill': windmillSvg,
-  'Granary': granarySvg,
-  'Lumber Camp': lumberCampSvg,
-  'Sawmill': sawmillSvg,
-  'Timber Hall': timberHallSvg,
-  'Quarry': quarrySvg,
-  'Mason': masonSvg,
-  'Stoneworks': stoneworksSvg,
-  'Market': marketSvg,
-  'Trading Post': tradingPostSvg,
-  'Bank': bankSvg,
-  'Shrine': shrineSvg,
-  'Wizard Tower': wizardTowerSvg,
-  'Arcane Sanctum': arcaneSanctumSvg,
-  'Barracks': barracksSvg,
-  'Stables': stablesSvg,
-  'War Academy': warAcademySvg,
+export const BUILDING_PNG_IMPORTS: Record<string, string> = {
+  'Castle': castlePng,
+  'Farm': farmPng,
+  'Windmill': windmillPng,
+  'Granary': granaryPng,
+  'Lumber Camp': lumberCampPng,
+  'Sawmill': sawmillPng,
+  'Timber Hall': timberHallPng,
+  'Quarry': quarryPng,
+  'Mason': masonPng,
+  'Stoneworks': stoneworksPng,
+  'Market': marketPng,
+  'Trading Post': tradingPostPng,
+  'Bank': bankPng,
+  'Shrine': shrinePng,
+  'Wizard Tower': wizardTowerPng,
+  'Arcane Sanctum': arcaneSanctumPng,
+  'Barracks': barracksPng,
+  'Stables': stablesPng,
+  'War Academy': warAcademyPng,
 };
 
 /** Icon display size in logical pixels within a hex tile */
 export const ICON_RENDER_SIZE = 22;
 
 /**
- * Load a single SVG URL and rasterize it to a DPI-aware offscreen canvas.
+ * Load a single image URL and rasterize it to a DPI-aware offscreen canvas.
  *
- * @param url - Resolved SVG URL (from Vite import)
+ * @param url - Resolved image URL (from Vite import)
  * @param size - Logical pixel size (square)
- * @returns Canvas with the SVG rendered at devicePixelRatio scale
+ * @returns Canvas with the image rendered at devicePixelRatio scale
  */
-export async function loadSvgIcon(url: string, size: number): Promise<HTMLCanvasElement> {
+export async function loadIcon(url: string, size: number): Promise<HTMLCanvasElement> {
   const img = new Image();
 
   await new Promise<void>((resolve, reject) => {
     img.onload = () => resolve();
-    img.onerror = () => reject(new Error(`Failed to load SVG icon: ${url}`));
+    img.onerror = () => reject(new Error(`Failed to load icon: ${url}`));
     img.src = url;
   });
 
@@ -86,7 +86,7 @@ export async function loadSvgIcon(url: string, size: number): Promise<HTMLCanvas
 }
 
 /**
- * Load and rasterize all building SVG icons in parallel.
+ * Load and rasterize all building PNG icons in parallel.
  *
  * @param onProgress - Optional callback invoked after each icon loads
  * @returns Map of building name to pre-rasterized canvas
@@ -94,13 +94,13 @@ export async function loadSvgIcon(url: string, size: number): Promise<HTMLCanvas
 export async function loadAllBuildingIcons(
   onProgress?: (loaded: number, total: number) => void,
 ): Promise<Map<string, HTMLCanvasElement>> {
-  const entries = Object.entries(BUILDING_ICON_IMPORTS);
+  const entries = Object.entries(BUILDING_PNG_IMPORTS);
   const total = entries.length;
   let loaded = 0;
 
   const results = await Promise.all(
     entries.map(async ([name, url]) => {
-      const canvas = await loadSvgIcon(url, ICON_RENDER_SIZE);
+      const canvas = await loadIcon(url, ICON_RENDER_SIZE);
       loaded++;
       onProgress?.(loaded, total);
       return [name, canvas] as const;

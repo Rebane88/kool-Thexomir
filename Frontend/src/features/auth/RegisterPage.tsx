@@ -5,6 +5,7 @@ import { API_BASE_URL } from '@/lib/constants';
 import type { LoginResponse, ProblemDetails } from '@/shared/types/api';
 import { Button, Panel, Input, FogBackground } from '@/shared/ui';
 import { EyeIcon, EyeOffIcon } from '@/assets/icons';
+import bgAuthPng from '@/assets/images/bg-auth.png';
 
 function validateRegisterForm(
   email: string,
@@ -128,7 +129,7 @@ export function RegisterPage() {
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center px-4 bg-ash-950">
-      <FogBackground />
+      <FogBackground backgroundImage={bgAuthPng} />
 
       <div className="relative z-10 max-w-md w-full">
         <div className="text-center mb-8">
