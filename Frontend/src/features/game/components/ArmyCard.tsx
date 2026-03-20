@@ -1,5 +1,20 @@
 import type { Army, ArmyTypeRef } from '../types/military-types';
 import { HpBar } from './HpBar';
+import armyWarriorPng from '@/assets/images/army-warrior.png';
+import armyScoutPng from '@/assets/images/army-scout.png';
+import armyKnightPng from '@/assets/images/army-knight.png';
+import armyBerserkerPng from '@/assets/images/army-berserker.png';
+import armyMagePng from '@/assets/images/army-mage.png';
+import armyGuardianPng from '@/assets/images/army-guardian.png';
+
+const ARMY_PORTRAITS: Record<string, string> = {
+  Warrior: armyWarriorPng,
+  Scout: armyScoutPng,
+  Knight: armyKnightPng,
+  Berserker: armyBerserkerPng,
+  Mage: armyMagePng,
+  Guardian: armyGuardianPng,
+};
 
 interface ArmyCardProps {
   army: Army;
@@ -21,8 +36,11 @@ export function ArmyCard({ army, armyType, selected, onClick, compact }: ArmyCar
       className={`bg-ash-800/80 border rounded-lg ${padding} cursor-pointer transition-all ${borderClass}`}
       onClick={onClick}
     >
-      <div className="font-heading text-sm text-parchment-200 mb-1 truncate">
-        {armyType.name}
+      <div className="flex items-center gap-2 mb-1">
+        {ARMY_PORTRAITS[armyType.name] && (
+          <img src={ARMY_PORTRAITS[armyType.name]} alt={armyType.name} className="w-8 h-8 rounded object-cover" />
+        )}
+        <div className="font-heading text-sm text-parchment-200 truncate">{armyType.name}</div>
       </div>
 
       <HpBar currentHP={army.currentHP} maxHP={army.maxHP} className="mb-1" />

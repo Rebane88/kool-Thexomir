@@ -2,6 +2,7 @@ import { useGameStore } from '../game-store';
 import { getKingdomColor } from '../canvas/hex-renderer';
 import { Panel } from '@/shared/ui/Panel';
 import { Badge } from '@/shared/ui/Badge';
+import { FACTION_METADATA } from '../../lobby/faction-constants';
 
 interface StandingsProps {
   open: boolean;
@@ -40,14 +41,23 @@ export function Standings({ open, onClose }: StandingsProps) {
           <span className="font-heading text-gold-400 text-xs tracking-wide uppercase">Active Kingdoms</span>
         </div>
         <div className="space-y-1.5">
-          {active.map((entry, index) => (
-            <div key={entry.kingdom.id} className="flex items-center gap-2 text-xs">
-              <span className="text-parchment-500 w-4">{index + 1}.</span>
-              <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: getKingdomColor(kingdoms, entry.kingdom.id) }} />
-              <span className="text-parchment-200 truncate flex-1">{entry.kingdom.name}</span>
-              <span className="text-parchment-400 tabular-nums">{entry.tileCount} tiles</span>
-            </div>
-          ))}
+          {active.map((entry, index) => {
+            const meta = entry.kingdom.factionTypeId
+              ? FACTION_METADATA[entry.kingdom.factionTypeId.toLowerCase()]
+              : undefined;
+            return (
+              <div key={entry.kingdom.id} className="flex items-center gap-2 text-xs">
+                <span className="text-parchment-500 w-4">{index + 1}.</span>
+                {meta?.crestImage ? (
+                  <img src={meta.crestImage} alt="" className="w-5 h-5 object-contain flex-shrink-0" />
+                ) : (
+                  <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: getKingdomColor(kingdoms, entry.kingdom.id) }} />
+                )}
+                <span className="text-parchment-200 truncate flex-1">{entry.kingdom.name}</span>
+                <span className="text-parchment-400 tabular-nums">{entry.tileCount} tiles</span>
+              </div>
+            );
+          })}
           {active.length === 0 && (
             <span className="text-parchment-500 text-xs italic">None</span>
           )}
@@ -62,14 +72,23 @@ export function Standings({ open, onClose }: StandingsProps) {
             <span className="font-heading text-parchment-500 text-xs tracking-wide uppercase">Fallen Kingdoms</span>
           </div>
           <div className="space-y-1.5">
-            {fallen.map((entry) => (
-              <div key={entry.kingdom.id} className="flex items-center gap-2 text-xs opacity-50">
-                <span className="w-4" />
-                <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 opacity-50" style={{ backgroundColor: getKingdomColor(kingdoms, entry.kingdom.id) }} />
-                <span className="text-parchment-400 truncate flex-1 line-through">{entry.kingdom.name}</span>
-                <Badge variant="danger">Eliminated</Badge>
-              </div>
-            ))}
+            {fallen.map((entry) => {
+              const meta = entry.kingdom.factionTypeId
+                ? FACTION_METADATA[entry.kingdom.factionTypeId.toLowerCase()]
+                : undefined;
+              return (
+                <div key={entry.kingdom.id} className="flex items-center gap-2 text-xs opacity-50">
+                  <span className="w-4" />
+                  {meta?.crestImage ? (
+                    <img src={meta.crestImage} alt="" className="w-5 h-5 object-contain flex-shrink-0 opacity-50" />
+                  ) : (
+                    <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 opacity-50" style={{ backgroundColor: getKingdomColor(kingdoms, entry.kingdom.id) }} />
+                  )}
+                  <span className="text-parchment-400 truncate flex-1 line-through">{entry.kingdom.name}</span>
+                  <Badge variant="danger">Eliminated</Badge>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

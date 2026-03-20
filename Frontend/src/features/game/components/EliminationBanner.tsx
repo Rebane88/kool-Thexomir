@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import eliminationSkullPng from '@/assets/images/elimination-skull.png';
 
 interface EliminationBannerProps {
   kingdomName: string;
@@ -24,9 +25,13 @@ export function EliminationBanner({ kingdomName, onFaded }: EliminationBannerPro
           visible ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        <span className="text-parchment-100 font-heading text-lg font-semibold">
-          {kingdomName} has been eliminated!
-        </span>
+        <div className="flex items-center gap-3">
+          <img src={eliminationSkullPng} alt="" className="w-8 h-8 object-contain" />
+          <span className="text-parchment-100 font-heading text-lg font-semibold">
+            {kingdomName} has been eliminated!
+          </span>
+          <img src={eliminationSkullPng} alt="" className="w-8 h-8 object-contain" />
+        </div>
       </div>
     </div>
   );

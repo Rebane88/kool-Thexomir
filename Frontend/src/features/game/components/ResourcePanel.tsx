@@ -1,20 +1,19 @@
 import { useGameStore } from '../game-store';
 import { useCountingTicker } from '../hooks/useCountingTicker';
-import { GoldIcon, FoodIcon, WoodIcon, StoneIcon, ManaIcon } from '@/assets/icons';
-import type { ComponentType, SVGProps } from 'react';
-
-interface IconProps extends SVGProps<SVGSVGElement> {
-  size?: number;
-}
+import resourceGoldPng from '@/assets/images/resource-gold.png';
+import resourceFoodPng from '@/assets/images/resource-food.png';
+import resourceWoodPng from '@/assets/images/resource-wood.png';
+import resourceStonePng from '@/assets/images/resource-stone.png';
+import resourceManaPng from '@/assets/images/resource-mana.png';
 
 const RESOURCE_ORDER = ['Gold', 'Food', 'Wood', 'Stone', 'Mana'] as const;
 
-const RESOURCE_ICONS: Record<string, ComponentType<IconProps>> = {
-  Gold: GoldIcon,
-  Food: FoodIcon,
-  Wood: WoodIcon,
-  Stone: StoneIcon,
-  Mana: ManaIcon,
+const RESOURCE_PNGS: Record<string, string> = {
+  Gold: resourceGoldPng,
+  Food: resourceFoodPng,
+  Wood: resourceWoodPng,
+  Stone: resourceStonePng,
+  Mana: resourceManaPng,
 };
 
 function ResourceValue({ amount }: { amount: number }) {
@@ -39,12 +38,11 @@ export function ResourcePanel() {
   return (
     <div className="flex items-center gap-4">
       {RESOURCE_ORDER.map((type) => {
-        const Icon = RESOURCE_ICONS[type];
         const count = myKingdom.resources[type] ?? 0;
 
         return (
           <div key={type} className="flex items-center gap-1">
-            <Icon size={16} className="text-gold-400" />
+            <img src={RESOURCE_PNGS[type]} alt={type} className="w-6 h-6 object-contain" />
             <ResourceValue amount={count} />
           </div>
         );

@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useAnimationStore } from '../animation-store';
 import type { GamePhase } from '../types/enums';
+import phaseActionPng from '@/assets/images/phase-action.png';
+import phaseBattlePng from '@/assets/images/phase-battle.png';
+import phaseIncomePng from '@/assets/images/phase-income.png';
+import phaseRoundendPng from '@/assets/images/phase-roundend.png';
 
-const PHASE_BANNER_CONFIG: Record<string, { bg: string; text: string; icon: string; label: string }> = {
-  Action:   { bg: 'from-yellow-900/80 to-yellow-800/60', text: 'text-yellow-300',    icon: '\u2692', label: 'ACTION PHASE' },
-  Battle:   { bg: 'from-red-900/80 to-red-800/60',       text: 'text-red-300',       icon: '\u2694', label: 'BATTLE PHASE' },
-  Income:   { bg: 'from-green-900/80 to-green-800/60',   text: 'text-green-300',     icon: '\u2726', label: 'INCOME PHASE' },
-  RoundEnd: { bg: 'from-stone-900/80 to-stone-800/60',   text: 'text-stone-300',     icon: '\u29D6', label: 'ROUND END' },
+const PHASE_BANNER_CONFIG: Record<string, { bg: string; text: string; iconSrc: string; label: string }> = {
+  Action:   { bg: 'from-yellow-900/80 to-yellow-800/60', text: 'text-yellow-300',  iconSrc: phaseActionPng, label: 'ACTION PHASE' },
+  Battle:   { bg: 'from-red-900/80 to-red-800/60',       text: 'text-red-300',     iconSrc: phaseBattlePng, label: 'BATTLE PHASE' },
+  Income:   { bg: 'from-green-900/80 to-green-800/60',   text: 'text-green-300',   iconSrc: phaseIncomePng, label: 'INCOME PHASE' },
+  RoundEnd: { bg: 'from-stone-900/80 to-stone-800/60',   text: 'text-stone-300',   iconSrc: phaseRoundendPng, label: 'ROUND END' },
 };
 
 export function PhaseBanner() {
@@ -57,9 +61,9 @@ export function PhaseBanner() {
           </div>
         )}
         <div className={`font-heading ${config.text} text-3xl tracking-[0.2em] uppercase flex items-center justify-center gap-4`}>
-          <span className="text-4xl">{config.icon}</span>
+          <img src={config.iconSrc} alt="" className="w-10 h-10 object-contain" />
           <span>{config.label}</span>
-          <span className="text-4xl">{config.icon}</span>
+          <img src={config.iconSrc} alt="" className="w-10 h-10 object-contain" />
         </div>
       </div>
     </div>
