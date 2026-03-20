@@ -19,7 +19,15 @@ export function GameHud({ onStandingsToggle }: GameHudProps) {
     <Panel
       className={`absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 ${isMyTurn ? 'border-gold-500 shadow-ember' : 'border-ash-600'}`}
     >
-      <ResourcePanel />
+      <div className="stone-panel rounded-lg px-3 py-1.5 flex items-center"
+        style={{
+          boxShadow: isMyTurn
+            ? '0 0 8px rgba(217, 119, 6, 0.3), inset 0 1px 0 rgba(201, 168, 76, 0.2)'
+            : undefined,
+        }}
+      >
+        <ResourcePanel />
+      </div>
       <div className="flex flex-col items-center gap-0.5">
         <TurnIndicator />
         <ActionPointsPips />
