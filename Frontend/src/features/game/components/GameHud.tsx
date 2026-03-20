@@ -17,7 +17,11 @@ export function GameHud({ onStandingsToggle }: GameHudProps) {
 
   return (
     <Panel
-      className={`absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 ${isMyTurn ? 'border-gold-500 shadow-ember' : 'border-ash-600'}`}
+      className={`absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 ${isMyTurn ? 'shadow-ember' : 'border-ash-600'}`}
+      style={isMyTurn ? {
+        borderColor: 'var(--faction-color, #c9a84c)',
+        boxShadow: '0 0 12px var(--faction-color-glow, rgba(217, 119, 6, 0.2))',
+      } : undefined}
     >
       <div className="stone-panel rounded-lg px-3 py-1.5 flex items-center"
         style={{

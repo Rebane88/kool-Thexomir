@@ -2,6 +2,13 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type { Kingdom } from './types/kingdom-types';
 import { useParams } from 'react-router';
 import { useGameStore } from './game-store';
+
+const FACTION_HEX_COLORS: Record<string, string> = {
+  'eeeeeeee-0001-0000-0000-000000000001': '#991b1b', // Iron Throne (red-800)
+  'eeeeeeee-0001-0000-0000-000000000002': '#3730a3', // Mage Council (indigo-800)
+  'eeeeeeee-0001-0000-0000-000000000003': '#92400e', // Merchant Republic (amber-800)
+  'eeeeeeee-0001-0000-0000-000000000004': '#166534', // Forest Elves (green-800)
+};
 import { connectToGame, disconnectFromGame } from './game-hub';
 import { useGameCanvas } from './canvas/useGameCanvas';
 import { textureCache } from './canvas/texture-cache';
@@ -64,6 +71,10 @@ export function GamePage() {
 
   const myKingdom = useGameStore((s) => s.myKingdomId ? s.kingdoms.get(s.myKingdomId) : undefined);
   const isEliminated = myKingdom?.status === 'Defeated';
+
+  const factionColor = isMyTurn && myKingdom?.factionTypeId
+    ? FACTION_HEX_COLORS[myKingdom.factionTypeId.toLowerCase()] ?? null
+    : null;
 
   const declareAttackMode = useGameStore((s) => s.declareAttackMode);
   const declareAttackTargetTileKey = useGameStore((s) => s.declareAttackTargetTileKey);
@@ -471,7 +482,13 @@ export function GamePage() {
   }
 
   return (
-    <div className="relative flex flex-col w-full flex-1 min-h-0 overflow-hidden">
+    <div
+      className="relative flex flex-col w-full flex-1 min-h-0 overflow-hidden"
+      style={factionColor ? {
+        '--faction-color': factionColor,
+        '--faction-color-glow': `${factionColor}40`,
+      } as React.CSSProperties : undefined}
+    >
       {isLoading && <LoadingScreen message={connectionStatus === 'connected' ? `Preparing the realm... (${loadProgress.loaded}/${loadProgress.total})` : undefined} />}
       {connectionStatus === 'reconnecting' && <ReconnectBanner />}
       <canvas

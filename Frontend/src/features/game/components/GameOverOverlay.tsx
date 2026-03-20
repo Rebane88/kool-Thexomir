@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router';
-import { Panel } from '@/shared/ui/Panel';
 import { Button } from '@/shared/ui/Button';
 import { Badge } from '@/shared/ui/Badge';
 import { useGameStore } from '../game-store';
 import { getKingdomColor } from '../canvas/hex-renderer';
+import victoryPng from '@/assets/images/gameover-victory.png';
+import defeatPng from '@/assets/images/gameover-defeat.png';
 
 export function GameOverOverlay() {
   const gameOver = useGameStore((s) => s.gameOver);
@@ -24,10 +25,21 @@ export function GameOverOverlay() {
       : 'text-parchment-300';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <Panel className="relative max-w-lg w-full mx-4 p-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Background art */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url(${isWinner ? victoryPng : defeatPng})`,
+        }}
+      />
+      {/* Translucent overlay for readability */}
+      <div className="absolute inset-0 bg-black/60" />
+      {/* Content */}
+      <div className="relative z-10 max-w-lg w-full mx-4 p-8">
         <h1
-          className={`font-heading text-2xl font-bold text-center mb-1 ${titleColor}`}
+          className={`font-heading text-3xl font-bold text-center mb-1 ${titleColor}`}
+          style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}
         >
           {gameOver.winnerKingdomId
             ? isWinner
@@ -36,13 +48,13 @@ export function GameOverOverlay() {
             : 'Game Over'}
         </h1>
 
-        <p className="text-center text-parchment-400 text-sm mb-6">
+        <p className="text-center text-parchment-300 text-sm mb-6" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
           {gameOver.winnerKingdomId
             ? `${winnerName} wins by ${gameOver.winConditionType}`
             : `Game ended - ${gameOver.winConditionType}`}
         </p>
 
-        <div className="space-y-2 mb-6">
+        <div className="bg-black/40 backdrop-blur-sm rounded-lg p-4 space-y-2 mb-6">
           <h2 className="font-heading text-gold-400 text-sm font-semibold">
             Final Standings
           </h2>
@@ -61,9 +73,9 @@ export function GameOverOverlay() {
               return (
                 <div
                   key={entry.kingdomId}
-                  className={`flex items-center gap-3 px-3 py-2 rounded ${isMe ? 'bg-bronze-800/50 border border-bronze-600' : ''} ${entry.status === 'Defeated' ? 'opacity-50' : ''}`}
+                  className={`flex items-center gap-3 px-3 py-2 rounded ${isMe ? 'bg-white/10 border border-white/20' : ''} ${entry.status === 'Defeated' ? 'opacity-50' : ''}`}
                 >
-                  <span className="text-parchment-500 text-sm w-4">
+                  <span className="text-parchment-400 text-sm w-4">
                     {index + 1}.
                   </span>
                   <span
@@ -75,12 +87,12 @@ export function GameOverOverlay() {
                   >
                     {entry.kingdomName}
                     {isMe && (
-                      <span className="text-parchment-500 text-xs ml-1">
+                      <span className="text-parchment-400 text-xs ml-1">
                         (You)
                       </span>
                     )}
                   </span>
-                  <span className="text-parchment-500 text-xs">
+                  <span className="text-parchment-400 text-xs">
                     {entry.tilesOwned} tiles
                   </span>
                   {entry.status === 'Defeated' && (
@@ -94,7 +106,7 @@ export function GameOverOverlay() {
         <div className="flex justify-center">
           <Button onClick={() => navigate('/')}>Return to Lobby</Button>
         </div>
-      </Panel>
+      </div>
     </div>
   );
 }
