@@ -46,9 +46,10 @@ public class HexGridTests
     }
 
     [Theory]
-    [InlineData(2, 4)]
-    [InlineData(4, 6)]
-    public void CalculateRadius_returns_playerCount_plus_2(int playerCount, int expectedRadius)
+    [InlineData(2, 9)]
+    [InlineData(3, 11)]
+    [InlineData(4, 13)]
+    public void CalculateRadius_returns_correct_radius(int playerCount, int expectedRadius)
     {
         HexGridHelper.CalculateRadius(playerCount).ShouldBe(expectedRadius);
     }

@@ -76,7 +76,7 @@ public class GameInitializationServiceTests
             .Callback<Building>(building => _addedBuildings.Add(building))
             .ReturnsAsync((Building b) => b);
 
-        _sut = new GameInitializationService(_unitOfWorkMock.Object);
+        _sut = new GameInitializationService(_unitOfWorkMock.Object, Microsoft.Extensions.Logging.Abstractions.NullLogger<GameInitializationService>.Instance);
     }
 
     // -------------------------------------------------------------------------
@@ -307,9 +307,9 @@ public class GameInitializationServiceTests
         // Act
         await _sut.InitializeGameAsync(GameId);
 
-        // Assert: 2 players -> 16x16 map
-        game.MapWidth.ShouldBe(16);
-        game.MapHeight.ShouldBe(16);
+        // Assert: 2 players -> radius 9 hexagonal map
+        game.MapWidth.ShouldBe(9);
+        game.MapHeight.ShouldBe(0);
     }
 
     [Fact]
@@ -332,8 +332,8 @@ public class GameInitializationServiceTests
         // Act
         await _sut.InitializeGameAsync(GameId);
 
-        // Assert: 16x16 = 256 tiles
-        _addedTiles.Count.ShouldBe(256);
+        // Assert: radius 9 hex grid = 271 tiles
+        _addedTiles.Count.ShouldBe(271);
     }
 
     [Fact]

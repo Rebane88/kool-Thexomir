@@ -11,11 +11,11 @@ interface HexTooltipProps {
 }
 
 const terrainDotColor: Record<string, string> = {
-  grass: 'bg-green-500',
-  water: 'bg-blue-500',
-  mountain: 'bg-stone-500',
+  plains: 'bg-green-500',
   forest: 'bg-green-700',
+  mountain: 'bg-stone-500',
   desert: 'bg-amber-500',
+  'magic grove': 'bg-purple-500',
 };
 
 function getTerrainDotClass(terrainName: string): string {
@@ -37,8 +37,8 @@ export function HexTooltip({ tile, kingdom, armies, position }: HexTooltipProps)
         <div className="text-parchment-400 text-xs">
           {kingdom ? kingdom.name : 'Unowned'}
         </div>
-        {tile.isCapital && (
-          <div className="text-gold-400 text-xs font-heading">Capital</div>
+        {tile.isCastle && (
+          <div className="text-gold-400 text-xs font-heading">Castle</div>
         )}
 
         {hasBuildings && (
@@ -54,17 +54,11 @@ export function HexTooltip({ tile, kingdom, armies, position }: HexTooltipProps)
         )}
 
         {hasArmies && (
-          <>
-            <div className="border-t border-bronze-700/50 mt-1.5 pt-1.5">
-              {armies.map((army) =>
-                army.units.map((u) => (
-                  <div key={`${army.id}-${u.unitTypeId}`} className="text-xs text-parchment-300">
-                    {u.unitTypeName}: {u.quantity}
-                  </div>
-                )),
-              )}
+          <div className="border-t border-bronze-700/50 mt-1.5 pt-1.5">
+            <div className="text-xs text-parchment-400">
+              {armies.length} {armies.length === 1 ? 'army' : 'armies'} in roster
             </div>
-          </>
+          </div>
         )}
       </Tooltip>
     </div>

@@ -33,7 +33,7 @@ public class LobbyServiceTests
         _identityMock.Setup(i => i.GetEmailsAsync(It.IsAny<IEnumerable<Guid>>()))
             .ReturnsAsync(new Dictionary<Guid, string>());
 
-        _sut = new LobbyService(_unitOfWorkMock.Object, _identityMock.Object);
+        _sut = new LobbyService(_unitOfWorkMock.Object, _identityMock.Object, Microsoft.Extensions.Logging.Abstractions.NullLogger<LobbyService>.Instance);
     }
 
     // -------------------------------------------------------------------------
@@ -64,7 +64,7 @@ public class LobbyServiceTests
         Id = id ?? Guid.NewGuid(),
         GameId = gameId,
         AppUserId = userId,
-        FactionTypeId = factionTypeId ?? Guid.Empty,
+        FactionTypeId = factionTypeId,
         Name = string.Empty,
         CreatedAt = createdAt ?? DateTime.UtcNow
     };

@@ -35,10 +35,8 @@ public class DeclaredAttackRepository(AppDbContext context)
 
     public async Task DeleteForGameRoundAsync(Guid gameId, int roundNumber)
     {
-        var attacks = await Context.DeclaredAttacks
+        await Context.DeclaredAttacks
             .Where(d => d.GameId == gameId && d.RoundNumber == roundNumber)
-            .ToListAsync();
-
-        Context.DeclaredAttacks.RemoveRange(attacks);
+            .ExecuteDeleteAsync();
     }
 }

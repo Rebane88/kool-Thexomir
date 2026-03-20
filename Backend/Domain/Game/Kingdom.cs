@@ -16,7 +16,7 @@ public class Kingdom : BaseEntity
 
     public Guid GameId { get; set; }
     public Guid? AppUserId { get; set; }
-    public Guid FactionTypeId { get; set; }
+    public Guid? FactionTypeId { get; set; }
 
     public DateTime? DefeatedAt { get; set; }
     public DateTime JoinedAt { get; set; }

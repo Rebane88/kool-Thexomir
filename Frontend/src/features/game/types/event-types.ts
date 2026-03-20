@@ -8,6 +8,7 @@ export interface GameStateSnapshot {
   winCondition: string;
   mapWidth: number;
   mapHeight: number;
+  mapRadius: number;
   currentTurnKingdomId: string | null;
   currentPhase: string | null;
   remainingActionPoints: number | null;
@@ -23,6 +24,10 @@ export interface SnapshotDeclaredAttack {
   riskedTileId: string;
   attackerKingdomId: string;
   defenderKingdomId: string;
+  attackerArmiesSelected: boolean;
+  defenderArmiesSelected: boolean;
+  attackerLineupConfirmed: boolean;
+  defenderLineupConfirmed: boolean;
 }
 
 export interface SnapshotTile {
@@ -62,7 +67,7 @@ export interface TurnAdvancedEvent {
   currentPhase: string;
   actionPoints: number | null;
   turnDeadline: string | null;
-  incomeApplied: Record<string, number> | null;
+  incomeApplied: Record<string, Record<string, number>> | null;
   battleResults: BattleResolvedEvent[] | null;
   phaseChanged: boolean;
   gameOver: GameOverEvent | null;
@@ -96,6 +101,7 @@ export interface BuildingPlacedEvent {
   resourcesAfter: Record<string, number>;
   claimedTileIds: string[];
   isUpgrade: boolean;
+  actionPointsAfter: number;
 }
 
 // --- Slot machine events ---
@@ -116,6 +122,7 @@ export interface ArmyTrainedEvent {
   currentHP: number;
   maxHP: number;
   resourcesAfter: Record<string, number>;
+  actionPointsAfter: number;
 }
 
 // --- Combat events ---
@@ -125,6 +132,7 @@ export interface AttackDeclaredEvent {
   riskedTileId: string;
   attackerKingdomId: string;
   defenderKingdomId: string;
+  actionPointsAfter: number;
 }
 
 export interface ArmiesSelectedEvent {

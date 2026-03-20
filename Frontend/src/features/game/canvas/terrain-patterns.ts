@@ -23,9 +23,9 @@ const FALLBACK_COLOR = '#333333';
 
 function drawPlainsOverlay(ctx: CanvasRenderingContext2D, size: number): void {
   // Diagonal hatching lines at 45 degrees
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-  ctx.lineWidth = 1;
-  const spacing = 8;
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.lineWidth = 1.5;
+  const spacing = 6;
   ctx.beginPath();
   for (let offset = -size; offset < size * 2; offset += spacing) {
     ctx.moveTo(offset, 0);
@@ -36,9 +36,9 @@ function drawPlainsOverlay(ctx: CanvasRenderingContext2D, size: number): void {
 
 function drawForestOverlay(ctx: CanvasRenderingContext2D, size: number): void {
   // Small triangle/tree shapes scattered in a grid
-  ctx.fillStyle = 'rgba(0,0,0,0.15)';
-  const spacing = 10;
-  const triSize = 4;
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  const spacing = 8;
+  const triSize = 5;
   for (let y = spacing / 2; y < size; y += spacing) {
     for (let x = spacing / 2; x < size; x += spacing) {
       ctx.beginPath();
@@ -53,10 +53,10 @@ function drawForestOverlay(ctx: CanvasRenderingContext2D, size: number): void {
 
 function drawMountainOverlay(ctx: CanvasRenderingContext2D, size: number): void {
   // Small inverted-V peak shapes
-  ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-  ctx.lineWidth = 1;
-  const spacing = 8;
-  const peakHeight = 5;
+  ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+  ctx.lineWidth = 1.5;
+  const spacing = 7;
+  const peakHeight = 6;
   for (let y = spacing; y < size; y += spacing) {
     for (let x = spacing / 2; x < size; x += spacing) {
       ctx.beginPath();
@@ -70,9 +70,9 @@ function drawMountainOverlay(ctx: CanvasRenderingContext2D, size: number): void 
 
 function drawDesertOverlay(ctx: CanvasRenderingContext2D, size: number): void {
   // Stippled dots in a semi-random but deterministic pattern
-  ctx.fillStyle = 'rgba(0,0,0,0.1)';
-  const spacing = 6;
-  const radius = 1.5;
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  const spacing = 5;
+  const radius = 2;
   for (let y = spacing / 2; y < size; y += spacing) {
     for (let x = spacing / 2; x < size; x += spacing) {
       // Deterministic offset based on position for natural look
@@ -87,9 +87,9 @@ function drawDesertOverlay(ctx: CanvasRenderingContext2D, size: number): void {
 
 function drawMagicGroveOverlay(ctx: CanvasRenderingContext2D, size: number): void {
   // Small 4-pointed star/sparkle shapes
-  ctx.fillStyle = 'rgba(255,255,255,0.15)';
-  const spacing = 10;
-  const arm = 3;
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  const spacing = 8;
+  const arm = 4;
   const center = 1;
   for (let y = spacing / 2; y < size; y += spacing) {
     for (let x = spacing / 2; x < size; x += spacing) {

@@ -39,7 +39,7 @@ export function CombatSlotReel({ spinning, symbols, targetIndex, label, onStoppe
     if (targetIndex === null || phase !== 'spinning') return;
 
     const targetOffset = (symbols.length + targetIndex) * SYMBOL_HEIGHT;
-    setTransition('transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)');
+    setTransition('transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)');
     setOffset(targetOffset);
     setPhase('stopping');
   }, [targetIndex, phase, symbols.length]);
@@ -52,7 +52,7 @@ export function CombatSlotReel({ spinning, symbols, targetIndex, label, onStoppe
       setPhase('done');
       setTransition('');
       onStoppedRef.current?.();
-    }, 500);
+    }, 900);
 
     return () => clearTimeout(timer);
   }, [phase]);

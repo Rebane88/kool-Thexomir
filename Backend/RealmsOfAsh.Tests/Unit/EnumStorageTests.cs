@@ -27,17 +27,6 @@ public class EnumStorageTests
         return File.ReadAllText(file!);
     }
 
-    private static string LoadV6Migration()
-    {
-        Directory.Exists(MigrationsDir).ShouldBeTrue($"Migrations folder not found at: {MigrationsDir}");
-
-        var file = Directory.GetFiles(MigrationsDir, "*V6_EntityModelOverhaul.cs")
-            .FirstOrDefault(f => !f.EndsWith(".Designer.cs"));
-
-        (file is not null).ShouldBeTrue("V6_EntityModelOverhaul migration file not found in Migrations folder");
-        return File.ReadAllText(file!);
-    }
-
     [Fact]
     public void Game_Status_enum_column_is_stored_as_text_in_migration()
     {
@@ -65,40 +54,6 @@ public class EnumStorageTests
     {
         var migration = LoadInitialCreateMigration();
         migration.ShouldContain("ResourceBonusType = table.Column<string>(type: \"text\"");
-    }
-
-    [Fact]
-    public void V6_EGamePhase_column_is_stored_as_text()
-    {
-        var migration = LoadV6Migration();
-        // CurrentPhase is added as AddColumn<string>(type: "text")
-        migration.ShouldContain("\"CurrentPhase\"");
-        // Verify it's stored as text by checking the AddColumn call
-        migration.ShouldContain("name: \"CurrentPhase\"");
-    }
-
-    [Fact]
-    public void V6_EEventType_column_is_stored_as_text()
-    {
-        var migration = LoadV6Migration();
-        // EventType is renamed from Action (which was already text)
-        migration.ShouldContain("newName: \"EventType\"");
-    }
-
-    [Fact]
-    public void V6_EKingdomStatus_column_is_stored_as_text()
-    {
-        var migration = LoadV6Migration();
-        // Status column on Kingdoms (replacing IsEliminated bool)
-        migration.ShouldContain("Status");
-    }
-
-    [Fact]
-    public void V6_EBattleOutcome_column_is_stored_as_text()
-    {
-        var migration = LoadV6Migration();
-        // Outcome column on Battles
-        migration.ShouldContain("Outcome");
     }
 
     [Fact]

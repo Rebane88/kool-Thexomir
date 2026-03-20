@@ -2,8 +2,18 @@ namespace Domain.Map;
 
 public static class HexGridHelper
 {
-    /// <summary>Hex radius = playerCount + 2. Ensures ~30 tiles per player.</summary>
-    public static int CalculateRadius(int playerCount) => playerCount + 2;
+    /// <summary>
+    /// Map radius by player count. Produces comparable tile counts to the old rectangular grids:
+    /// 2 players: radius 9 → 271 tiles (was 256), 3 players: radius 11 → 397 (was 400), 4 players: radius 13 → 547 (was 576).
+    /// </summary>
+    public static int CalculateRadius(int playerCount) => playerCount switch
+    {
+        2 => 9,
+        3 => 11,
+        4 => 13,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerCount),
+            $"Player count must be 2, 3, or 4. Got {playerCount}.")
+    };
 
     /// <summary>Generate all axial coordinates for a hexagonal-shaped grid of given radius.</summary>
     public static List<(int q, int r)> GenerateHexGrid(int radius)

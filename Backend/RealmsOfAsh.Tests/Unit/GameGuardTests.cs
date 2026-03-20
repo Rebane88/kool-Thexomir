@@ -22,7 +22,7 @@ public class GameGuardTests
     {
         _unitOfWorkMock.Setup(u => u.Games).Returns(_gamesMock.Object);
         _unitOfWorkMock.Setup(u => u.Kingdoms).Returns(_kingdomsMock.Object);
-        _sut = new GameGuard(_unitOfWorkMock.Object);
+        _sut = new GameGuard(_unitOfWorkMock.Object, Microsoft.Extensions.Logging.Abstractions.NullLogger<GameGuard>.Instance);
     }
 
     private Game CreateValidGame() => new()

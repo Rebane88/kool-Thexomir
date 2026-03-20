@@ -1,34 +1,16 @@
 # Systems Reference — Win Conditions
 
-> Exact rules for each win condition and how victory is checked.
+> Win condition rules and victory processing.
 
 ---
 
 ## Overview
 
-Win condition is set by the game creator in the lobby and stored as `Game.WinCondition`. It cannot be changed after the game starts.
+The only win condition is **Elimination**. Last kingdom standing wins. Max 4 players per game.
 
-Victory is checked at the end of the Income Phase each turn (after resource generation, upkeep, and events).
+Victory is checked at the end of the Income Phase each round (after resource generation and upkeep).
 
----
-
-## Domination
-
-**Trigger field:** `Game.DominationThreshold` (required when WinCondition = Domination)
-
-**Win condition:** First kingdom to own `DominationThreshold`% or more of all tiles on the map wins.
-
-```
-ownedTiles = count of tiles where OwnerKingdomId = this kingdom
-totalTiles = Game.MapWidth × Game.MapHeight
-ownershipPercent = (ownedTiles / totalTiles) × 100
-
-if ownershipPercent >= Game.DominationThreshold → this kingdom wins
-```
-
-**⚠️ OPEN QUESTION:** What is the recommended default DominationThreshold? Suggest 60% as a starting point — high enough to require real conquest but not so high the game drags. Host can configure.
-
-**⚠️ OPEN QUESTION:** Does Domination threshold count barbarian-owned tiles in `totalTiles`? Current assumption: yes, all tiles count. If barbarian tiles are excluded, expansion is harder to calculate accurately.
+**Max round limit:** If the game reaches **100 rounds** without a winner, the game ends in a **draw** (admin-editable). `Game.WinnerKingdomId = null`.
 
 ---
 
@@ -36,10 +18,10 @@ if ownershipPercent >= Game.DominationThreshold → this kingdom wins
 
 **Win condition:** Last kingdom with `Status = Active` wins.
 
-A kingdom is eliminated when it has zero owned tiles — `Status` is set to `Defeated` during the Income Phase win condition check.
+A kingdom is eliminated when their **Castle is destroyed** (their castle tile is captured by an opponent).
 
 ```
-if count of tiles where OwnerKingdomId = this kingdom == 0
+if kingdom's castle tile is captured
   → Kingdom.Status = Defeated
   → broadcast KingdomDefeated
 
@@ -47,32 +29,33 @@ if count of Active kingdoms == 1
   → that kingdom wins
 ```
 
-**⚠️ OPEN QUESTION:** If the last two kingdoms are defeated simultaneously in the same turn (e.g. both lose their last tile in the same battle resolution), who wins? Options: draw, or check alphabetically/by TurnOrder. Needs tiebreak rule.
+### Castle Destruction
+
+- The castle is destroyed when the tile it sits on is captured through combat
+- Castle battles are 5v5 (instead of standard 3v3)
+- Once a castle is destroyed, it **cannot be rebuilt**
+- All armies owned by the defeated kingdom are **deleted**
+- All buildings on the defeated kingdom's tiles are **destroyed**
+- All tiles owned by the defeated kingdom become **unowned** — other players can expand into them via building
+
+### Simultaneous Defeat
+
+If two kingdoms lose their castles in the same combat phase (both attacked each other's castle), **both are eliminated**. If they are the last two kingdoms, the game ends in a **draw** — no winner.
+
+```
+if count of Active kingdoms == 0
+  → Game ends in a draw (Game.WinnerKingdomId = null)
+```
 
 ---
 
-## Score
+## Game Modes
 
-**Trigger fields:** `Game.MaxTurns` (required when WinCondition = Score)
+### Free-for-All (2–4 players)
+Standard game. Every player for themselves. Last one standing wins.
 
-**Win condition:** After `MaxTurns` turns, the kingdom with the highest score wins.
-
-### Score Formula
-
-**⚠️ OPEN QUESTION:** The exact score formula is not yet defined. Needs to include military, economic, and territory components. Suggested formula:
-
-```
-score = (ownedTiles × 10)
-      + (totalUnitStrength × 2)
-      + (totalResourceIncome × 5)
-      + (buildingCount × 15)
-```
-
-All weights are placeholder — tune after playtesting.
-
-**⚠️ OPEN QUESTION:** Is the score visible to all players in real time, or revealed only at game end? Recommend visible — creates interesting strategic tension around score racing.
-
-**⚠️ OPEN QUESTION:** Is there a tiebreak if two kingdoms have identical scores at MaxTurns? Suggested tiebreak: most tiles owned. If still tied, higher total resource income.
+### 2v2 Team Mode (Future)
+Two teams of two. A team wins when both opposing castles are destroyed. Deferred — design later.
 
 ---
 
@@ -84,19 +67,19 @@ When a win condition is met:
 2. Set `Game.WinnerKingdomId` = winning kingdom
 3. Set `Game.FinishedAt = now`
 4. Broadcast `GameOver` SignalR event to all clients
-5. No further turns can be taken
-
-**⚠️ OPEN QUESTION:** What happens to players who are still active when the game ends via Score or Domination? They simply stop being able to take actions. Confirm no cleanup needed.
+5. No further rounds can be taken
 
 ---
 
-## Kingdom Defeat (All Modes)
+## Kingdom Defeat
 
-Regardless of win condition, a kingdom is defeated when it loses its last tile:
+When a kingdom is eliminated:
 
 1. `Kingdom.Status = Defeated`
 2. `Kingdom.DefeatedAt = now`
-3. All remaining armies and units owned by that kingdom — **⚠️ OPEN QUESTION:** Are they deleted, or do they remain as neutral entities? Current assumption: deleted. Confirm.
-4. TurnLog entry: `EventType = KingdomDefeated`
-5. SignalR broadcasts `KingdomDefeated`
-6. Defeated kingdom is skipped in all future turn orders
+3. All armies owned by the kingdom are **deleted**
+4. All buildings on the kingdom's tiles are **destroyed**
+5. All tiles owned by the kingdom become **unowned** — other players can expand into them via building
+6. TurnLog entry: `EventType = KingdomDefeated`
+7. SignalR broadcasts `KingdomDefeated`
+8. Defeated kingdom is skipped in all future action phases

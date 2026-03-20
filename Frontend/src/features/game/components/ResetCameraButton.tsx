@@ -8,7 +8,7 @@ export function ResetCameraButton({ onReset }: ResetCameraButtonProps) {
       type="button"
       onClick={onReset}
       title="Reset camera (Home)"
-      className="absolute bottom-4 right-4 w-9 h-9 flex items-center justify-center rounded-md bg-black/40 hover:bg-black/60 text-parchment/70 hover:text-parchment transition-colors border border-parchment/20"
+      className="absolute bottom-[52px] left-4 z-20 w-9 h-9 flex items-center justify-center rounded-md bg-black/40 hover:bg-black/60 text-parchment/70 hover:text-parchment transition-colors border border-parchment/20"
     >
       <svg
         width="16"

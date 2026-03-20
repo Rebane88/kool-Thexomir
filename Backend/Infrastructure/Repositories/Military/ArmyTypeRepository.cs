@@ -8,7 +8,7 @@ public class ArmyTypeRepository(AppDbContext context)
 {
     public async Task<IEnumerable<ArmyType>> GetAllWithRequiredBuildingAsync()
     {
-        return await context.ArmyTypes
+        return await Context.ArmyTypes
             .Include(at => at.RequiredBuildingType)
             .ToListAsync();
     }

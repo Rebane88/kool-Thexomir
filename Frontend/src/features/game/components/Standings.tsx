@@ -28,7 +28,7 @@ export function Standings({ open, onClose }: StandingsProps) {
     .sort((a, b) => a.kingdom.name.localeCompare(b.kingdom.name));
 
   return (
-    <Panel className="absolute top-14 right-4 z-30 w-64 p-4">
+    <Panel className="absolute top-14 left-4 z-40 w-64 p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-heading text-gold-400 text-sm font-bold">Standings</h3>
         <button onClick={onClose} className="text-parchment-400 hover:text-parchment-200 text-xs px-1" aria-label="Close standings">X</button>

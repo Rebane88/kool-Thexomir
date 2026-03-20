@@ -4,6 +4,7 @@ using Application.Contracts;
 using Application.Services.Combat;
 using Application.Services.Combat.DTOs;
 using Application.Services.GameHub;
+using Application.Services.Turn;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -18,6 +19,7 @@ namespace API.ApiControllers.Combat;
 [Authorize]
 public class CombatController(
     ICombatService combatService,
+    ITurnService turnService,
     IHubContext<GameHub, IGameClient> hubContext,
     IGameLockManager gameLockManager) : ControllerBase
 {
@@ -82,6 +84,38 @@ public class CombatController(
 
         await hubContext.Clients.Group($"game:{gameId}")
             .LineupSet(result.Value!);
+
+        // Check if all lineups are set — if so, resolve battles and advance phases
+        var allReady = await combatService.AreAllLineupsSetAsync(gameId);
+        if (allReady)
+        {
+            var advanceResult = await turnService.ResolveAndAdvanceAsync(
+                gameId,
+                onRoundResolved: async (round, battleId) =>
+                    await hubContext.Clients.Group($"game:{gameId}").BattleRoundResolved(round),
+                onBattleResolved: async (battleResult) =>
+                    await hubContext.Clients.Group($"game:{gameId}").BattleResolved(battleResult));
+
+            if (advanceResult.IsSuccess)
+            {
+                await hubContext.Clients.Group($"game:{gameId}")
+                    .TurnAdvanced(advanceResult.Value!);
+
+                if (advanceResult.Value!.PhaseChanged)
+                {
+                    await hubContext.Clients.Group($"game:{gameId}")
+                        .PhaseChanged(new Application.Services.Turn.DTOs.PhaseChangedDto
+                        {
+                            Phase = advanceResult.Value!.CurrentPhase,
+                            PreviousPhase = "Battle",
+                            RoundNumber = advanceResult.Value!.RoundNumber
+                        });
+                }
+
+                if (advanceResult.Value!.GameOver is not null)
+                    await hubContext.Clients.Group($"game:{gameId}").GameOver(advanceResult.Value!.GameOver);
+            }
+        }
 
         return Ok(result.Value);
     }

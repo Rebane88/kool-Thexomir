@@ -1,136 +1,200 @@
 # Systems Reference — Turn Structure
 
-> This document defines the exact sequence of events within a single turn. Refer here when implementing turn processing logic.
+> This document defines the exact sequence of events within a single game round. A round consists of all players taking their action phase, followed by a shared combat phase, then income.
 
 ---
 
-## Turn Phases (In Order)
+## Round Phases (In Order)
 
 ```
-1. Turn Start
-2. Action Phase        ← only the active player acts
-3. Resolution Phase    ← battles resolve
-4. Income Phase        ← resources generated, upkeep paid, events fire
-5. Turn End
+1. Action Phase         ← each player takes their turn sequentially
+2. Battle Phase         ← army selection → lineup order → resolve → playback
+3. Income Phase         ← resources generated, upkeep paid for ALL players
+4. Round End            ← win conditions checked, round number advances
 ```
 
 ---
 
-## Phase 1 — Turn Start
+## Phase 1 — Action Phase (Sequential, Per Player)
 
-- Server sets `Game.CurrentTurnKingdomId` to the active kingdom
-- If `Game.TurnTimeLimit` is set, calculate `Game.TurnDeadline = now + TurnTimeLimit`
-- SignalR broadcasts `TurnChanged` event to all connected clients
-- A `TurnLog` entry is created with `EventType = TurnStarted`
+Each player takes their turn one at a time. On your turn, you have a pool of **action points** to spend. The base action count is configurable (admin-editable). Future mechanics may modify a player's action count (buildings, factions, etc.).
 
-**⚠️ OPEN QUESTION:** What happens if `TurnDeadline` is reached and the player has not ended their turn? Does the server auto-end it? If so, which server process handles this check — a background job, or on the next incoming request?
+Each turn has a **time limit** (configurable per game lobby). If the timer expires, the turn auto-ends and unspent actions are lost.
 
----
+### Available Actions (Each Costs 1 Action Unless Noted)
 
-## Phase 2 — Action Phase
+| Action | Description | Validation |
+|--------|-------------|------------|
+| Build | Place a tier 1 building on an owned empty tile | Tile must be owned, no existing building, have resources |
+| Upgrade | Upgrade existing building to next tier | Building must exist, next tier must exist, have resources |
+| Train Army | Train a new army (added to global roster) | Must have required military building, have resources |
+| Declare Attack | Declare an attack on an enemy border tile | Target tile must border your territory, pick your tile to risk (must be adjacent to target) |
 
-The active player may perform any number of the following actions in any order via REST API calls. No other players may take actions during this phase.
+### Building Expansion
 
-### Available Actions
+When a building is placed on a tile, all **adjacent unowned tiles** automatically become part of your kingdom. This is the primary expansion mechanic — armies do not claim territory.
 
-| Action | Endpoint (TBD) | Cost | Validation |
-|--------|---------------|------|------------|
-| Claim tile | POST /tiles/{id}/claim | Gold | Must be adjacent to owned tile, tile must be unclaimed and have no barbarian army |
-| Construct building | POST /tiles/{id}/buildings | Resources | Tile must be owned, no existing building, unlock prereq met |
-| Upgrade building | PUT /buildings/{id}/upgrade | Resources | Next tier must exist, prereq building on same tile |
-| Recruit unit | POST /armies/{id}/units | Resources | Required building must exist on the tile the army is on |
-| Move army | POST /armies/{id}/move | — | Destination must be owned tile or adjacent enemy tile |
-| Attack | POST /armies/{id}/attack | — | Target tile must be adjacent, must be enemy-owned |
+- Only unowned tiles are claimed (never steals from other players)
+- Upgrading a building does NOT trigger additional tile claiming
 
-**⚠️ OPEN QUESTION:** Is there an action limit per turn (e.g. 5 actions max)? Or unlimited? Decision pending — see open-questions.md.
+### Declaring an Attack
 
-**⚠️ OPEN QUESTION:** Can a player attack multiple different tiles in one turn, or only one attack per turn?
+When declaring an attack, the player must:
 
-**⚠️ OPEN QUESTION:** Can the same army both move AND attack in one turn, or does moving use up the attack?
+1. Select a **target tile** (enemy tile bordering their territory)
+2. Select their **risked tile** (own tile adjacent to the target — this is what they lose if they lose the battle)
+
+The player must have **at least 1 army** in their roster to declare an attack. Army selection itself does NOT happen here — it happens in the Battle Phase after all action phases are complete.
+
+The attack is queued — it does not resolve until the Battle Phase.
+
+**Tile Locking:** Once an attack is declared, both the target tile and the risked tile are **locked** for the rest of the round. No other attack can involve either tile (as target or as risk). This prevents conflicting claims on the same tiles.
+
+**Visibility:** All players can see that an attack was declared, which tile is targeted, and which tile is at risk.
 
 ### Action Logging
 
 Every action creates a `TurnLog` entry with the appropriate `EventType`, human-readable `Description`, and JSON `Metadata`.
 
----
+### Turn Timer
 
-## Phase 3 — Resolution Phase
-
-Triggered immediately when an attack action is taken (not batched to end of turn).
-
-- Combat formula is evaluated (see combat-system.md)
-- `Battle` record is created
-- Units are destroyed (hard deleted), casualties recorded on `Battle`
-- If attacker wins: `Tile.OwnerKingdomId` → attacker's KingdomId, `TileChangedOwner = true`
-- If defender wins: tile ownership unchanged
-- Surviving defender units remain on tile; surviving attacker units retreat if they lost
-
-**Retreat rules:**
-- Surviving attacker units after a loss move back to the tile they attacked from
-- Surviving defender units after a win stay on the tile
-- **⚠️ OPEN QUESTION:** What if the attacker's original tile was captured by someone else during the same turn? Where do retreating units go? Define fallback tile logic.
-- **⚠️ OPEN QUESTION:** What if the defender loses and has no adjacent owned tile to retreat to? Are units destroyed? Captured?
-
-### Barbarian Outcome
-
-- If defending barbarian army is defeated: `Tile.OwnerKingdomId` remains null (does not transfer to attacker)
-- Tile becomes claimable normally on the attacker's next action
+Each player's action phase is time-limited (configurable per lobby). When the timer expires:
+- Turn auto-ends
+- Unspent action points are lost
+- Any partially configured attack declarations are cancelled
 
 ---
 
-## Phase 4 — Income Phase
+## Phase 2 — Battle Phase (All Players Involved in Battles)
 
-Runs automatically after the player clicks End Turn. Processes in this exact order:
+If no attacks were declared this round, this phase is skipped entirely. Otherwise it proceeds in 4 steps:
+
+### Step 1 — Army Selection (Simultaneous, Hidden)
+
+All players involved in battles select their armies at the same time:
+
+- For each battle, both attacker and defender pick armies from their global roster:
+  - Up to **3 armies** for standard battles
+  - Up to **5 armies** if either the target or risked tile contains a castle
+- Players can commit fewer armies than the max if they don't have enough (even 1 is valid)
+- If a player has **0 available armies**, they enter the battle with nothing and **automatically lose** (combat ends immediately when one side has 0 armies)
+- Each army can only be committed to **one battle per round**
+- Selections are **hidden** from the opponent during this step
+- **Time limit** applies (configurable). If time expires, armies are auto-selected (strongest first by Attack stat)
+
+### Step 2 — Army Reveal
+
+Once both sides have selected (or time expires), selections are **revealed** to both sides. Both players can now see:
+- Which army types the opponent selected
+- Current HP of each opponent army
+
+### Step 3 — Lineup Order (Simultaneous, Hidden)
+
+Both sides set the **order** of their committed armies (which army fights first, second, third, etc.):
+
+- Lineups are set **simultaneously** — order is hidden from the opponent
+- **Time limit** applies (configurable, D-36: 20s base + 5s per battle). If time expires, order defaults to the order armies were selected
+
+### Step 4 — Combat Resolution & Playback
+
+All battles are resolved server-side instantly once lineups are locked. Results are then played back one battle at a time for all players to watch.
+
+**Resolution:** For each battle, the round-by-round combat system resolves (see combat-system.md):
+
+1. Each side's first army in the lineup enters the fight
+2. Rounds play out: initiative roll → damage roll → chip damage
+3. When an army dies, the next in lineup replaces it
+4. Combat ends when one side has no armies left
+5. If both sides' last armies die in the same round, the side that won the initiative roll that round wins
+
+**Battle Results:**
+
+- **Attacker wins:** Attacker gains the defender's targeted tile. Building on captured tile is **destroyed**. Attacker keeps their risked tile.
+- **Defender wins:** Defender gains the attacker's risked tile. Building on taken tile is **destroyed**. Defender keeps their targeted tile.
+
+**Post-battle army state:**
+- Armies that died during combat are permanently destroyed (removed from roster)
+- Surviving armies return to the player's global roster with their current (damaged) HP — they heal during Income Phase Step 3
+
+**Battle Playback:**
+- Battles play back one at a time for ALL players to watch (no skipping)
+- Playback order does not affect outcomes (all battles are pre-resolved)
+- Each round shows: armies involved, initiative roll result, damage dealt, chip damage dealt, HP remaining
+
+Players not involved in any battles wait during this phase.
+
+---
+
+## Phase 3 — Income Phase (Simultaneous, All Players)
+
+Runs automatically after the combat phase. Processes for ALL kingdoms at the same time in this order:
 
 ### Step 1 — Resource Generation
 
-For each owned tile with a building:
+For each kingdom, for each owned tile with a building:
 ```
 yield = BuildingType.BaseYield
       × TerrainType.ResourceMultiplier (if terrain matches BonusResourceType)
-      × FactionType.ResourceProductionBonus (if faction's BonusResourceType matches, or null = all)
+      × FactionType.ResourceProductionModifier (applies to all building yields)
 ```
 Add yield to `KingdomResource.Amount` for the matching resource type.
 
-**⚠️ OPEN QUESTION:** Do tiles without buildings generate any base resources, or only tiles with buildings?
+Tiles without buildings generate no resources.
 
-### Step 2 — Upkeep Collection
+Newly captured tiles (from this round's combat) are included — they generate income if they still have a building. (Note: captured tiles have their buildings destroyed, so they won't generate income until rebuilt.)
 
-For each unit owned by the kingdom:
-- Deduct `UnitType.UpkeepGold` from Gold
-- Deduct `UnitType.UpkeepFood` from Food
+### Step 2 — Army Upkeep
 
-If Gold or Food would go below 0:
-- Collect what is available (floor at 0)
-- Disband (delete) units starting from most expensive upkeep first until the kingdom can afford remaining upkeep
-- Log each disbanded unit as a `TurnLog` entry
+For each army in the kingdom's global roster:
+- Deduct army type's upkeep costs from resources
 
-**⚠️ OPEN QUESTION:** Define "most expensive" — is it UpkeepGold, UpkeepFood, or combined? What is the tiebreak order?
+If resources would go below 0:
+- Floor at 0
+- Disband armies starting from most expensive upkeep first until affordable
+- Log each disbanded army
 
-### Step 3 — GameEvent Check
+Upkeep values are admin-editable per army type (can be set to 0).
 
-**⚠️ OPEN QUESTION:** Random events are not yet implemented. Placeholder for when they are. See open-questions.md for event design decisions needed.
+### Step 3 — Army Healing
+
+All armies in every kingdom's roster heal a flat percentage of their max HP:
+
+```
+army.currentHP = min(army.currentHP + (army.maxHP × healPercent), army.maxHP)
+```
+
+The heal percentage is a global game setting (admin-editable). Suggested starting value: 5–10% per round.
+
+This applies to all surviving armies in the roster — including those that fought this round. Dead armies (0 HP) are permanently destroyed during combat and removed from the roster before this phase runs. They cannot be healed.
 
 ### Step 4 — Win Condition Check
 
 After all income is processed:
 - Check if any kingdom meets the active win condition (see win-conditions.md)
-- If a kingdom is defeated (0 tiles): set `Kingdom.Status = Defeated`, `Kingdom.DefeatedAt = now`, log `KingdomDefeated` TurnLog entry, broadcast `KingdomDefeated` SignalR event
-- If game is won: set `Game.Status = Finished`, `Game.WinnerKingdomId`, `Game.FinishedAt = now`, broadcast `GameOver` SignalR event
+- Castle destruction during combat is checked — if a kingdom lost their castle tile, they are **eliminated**
+- If a kingdom is eliminated: set `Kingdom.Status = Defeated`, broadcast `KingdomDefeated` event
+- If game is won: set `Game.Status = Finished`, broadcast `GameOver` event
 
 ---
 
-## Phase 5 — Turn End
+## Phase 4 — Round End
 
-- Advance `Game.TurnNumber` by 1
-- Set `Game.CurrentTurnKingdomId` to the next kingdom in TurnOrder sequence
-- Skip any kingdoms with `Status = Defeated`
-- Create `TurnLog` entry with `EventType = TurnEnded`
-- Begin Phase 1 for the next kingdom
+- Advance `Game.RoundNumber` by 1
+- Reset all per-round flags (armies available for battle, etc.)
+- Create `TurnLog` entry with `EventType = RoundEnded`
+- Begin Phase 1 for the next round
 
-**Turn order wrapping:** After the last kingdom in TurnOrder takes their turn, wrap back to TurnOrder = 1.
+---
 
-**⚠️ OPEN QUESTION:** Barbarian kingdom has TurnOrder = 0 and never takes a turn. Ensure turn order logic explicitly skips `IsBarbarianCamp = true` kingdoms at all times.
+## Terminology
+
+| Term | Meaning |
+|------|---------|
+| **Round** | One full cycle of all phases (action → battle → income → end) |
+| **Turn** | One player's action phase within a round |
+| **Action Point** | Currency spent to perform actions during a turn |
+| **Battle** | A single combat encounter between two players' army pools |
+| **Lineup** | The order a player assigns to their armies for a battle |
 
 ---
 
@@ -138,13 +202,21 @@ After all income is processed:
 
 | EventType | When Created |
 |-----------|-------------|
-| TurnStarted | Phase 1 |
-| TileClaimed | Action Phase — tile claim |
+| RoundStarted | Beginning of Phase 1 |
+| TurnStarted | When a player's action phase begins |
 | BuildingConstructed | Action Phase — build |
-| UnitRecruited | Action Phase — recruit |
-| ArmyMoved | Action Phase — move |
-| BattleOccurred | Resolution Phase |
+| BuildingUpgraded | Action Phase — upgrade |
+| ArmyTrained | Action Phase — train |
+| AttackDeclared | Action Phase — declare attack |
+| ArmySelected | Battle Phase Step 1 — army selection |
+| LineupSet | Battle Phase Step 3 — army order set |
+| BattleResolved | Battle Phase Step 4 — battle result |
+| TileCaptured | Battle Phase Step 4 — tile ownership changed |
+| BuildingDestroyed | Battle Phase Step 4 — building on captured tile razed |
 | ResourcesEarned | Income Phase Step 1 |
 | UpkeepPaid | Income Phase Step 2 |
+| ArmyDisbanded | Income Phase Step 2 — upkeep failure |
+| ArmyHealed | Income Phase Step 3 |
 | KingdomDefeated | Income Phase Step 4 |
-| TurnEnded | Phase 5 |
+| GameOver | Income Phase Step 4 — win condition met |
+| RoundEnded | Phase 4 |

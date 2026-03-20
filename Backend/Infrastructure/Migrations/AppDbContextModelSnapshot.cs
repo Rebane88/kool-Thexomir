@@ -347,7 +347,7 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("DefeatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("FactionTypeId")
+                    b.Property<Guid?>("FactionTypeId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("GameId")
@@ -748,12 +748,6 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ArmyDestroyedId");
-
-                    b.HasIndex("AttackerArmyId");
-
-                    b.HasIndex("DefenderArmyId");
-
                     b.HasIndex("BattleId", "RoundNumber")
                         .IsUnique();
 
@@ -769,6 +763,9 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("AttackerKingdomId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("AttackerLineupConfirmed")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("AttackerSelectedArmyIds")
                         .HasColumnType("text");
 
@@ -777,6 +774,9 @@ namespace Infrastructure.Migrations
 
                     b.Property<Guid>("DefenderKingdomId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("DefenderLineupConfirmed")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("DefenderSelectedArmyIds")
                         .HasColumnType("text");
@@ -1172,8 +1172,7 @@ namespace Infrastructure.Migrations
                     b.HasOne("Domain.Factions.FactionType", "FactionType")
                         .WithMany("Kingdoms")
                         .HasForeignKey("FactionTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Domain.Game.Game", "Game")
                         .WithMany("Kingdoms")
@@ -1334,36 +1333,13 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Military.BattleRound", b =>
                 {
-                    b.HasOne("Domain.Military.Army", "ArmyDestroyed")
-                        .WithMany()
-                        .HasForeignKey("ArmyDestroyedId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Domain.Military.Army", "AttackerArmy")
-                        .WithMany()
-                        .HasForeignKey("AttackerArmyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Domain.Military.Battle", "Battle")
                         .WithMany("BattleRounds")
                         .HasForeignKey("BattleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Military.Army", "DefenderArmy")
-                        .WithMany()
-                        .HasForeignKey("DefenderArmyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ArmyDestroyed");
-
-                    b.Navigation("AttackerArmy");
-
                     b.Navigation("Battle");
-
-                    b.Navigation("DefenderArmy");
                 });
 
             modelBuilder.Entity("Domain.Military.DeclaredAttack", b =>

@@ -123,27 +123,29 @@ public class EntityRelationshipTests(DatabaseFixture fixture)
     }
 
     [Fact]
-    public void BattleRound_has_AttackerArmyId_FK()
+    public void BattleRound_has_no_AttackerArmyId_FK()
     {
+        // Army IDs in BattleRound are historical references — armies may be destroyed during combat
         using var ctx = BuildContext();
         var brType = ctx.Model.FindEntityType(typeof(BattleRound));
         brType.ShouldNotBeNull();
 
         var fk = brType!.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == "AttackerArmyId"));
-        fk.ShouldNotBeNull();
+        fk.ShouldBeNull();
     }
 
     [Fact]
-    public void BattleRound_has_DefenderArmyId_FK()
+    public void BattleRound_has_no_DefenderArmyId_FK()
     {
+        // Army IDs in BattleRound are historical references — armies may be destroyed during combat
         using var ctx = BuildContext();
         var brType = ctx.Model.FindEntityType(typeof(BattleRound));
         brType.ShouldNotBeNull();
 
         var fk = brType!.GetForeignKeys()
             .FirstOrDefault(f => f.Properties.Any(p => p.Name == "DefenderArmyId"));
-        fk.ShouldNotBeNull();
+        fk.ShouldBeNull();
     }
 
     [Fact]

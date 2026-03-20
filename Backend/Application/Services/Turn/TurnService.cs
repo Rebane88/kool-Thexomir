@@ -8,10 +8,11 @@ using Domain.Game;
 using Domain.Map;
 using Domain.Military;
 using Domain.Resources;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Services.Turn;
 
-public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatService combatService) : ITurnService
+public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatService combatService, ILogger<TurnService> logger) : ITurnService
 {
     public async Task<Result<TurnAdvancedDto>> EndTurnAsync(
         Guid gameId,
@@ -19,18 +20,29 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
         Func<BattleRoundResultDto, string, Task> onRoundResolved,
         Func<BattleResultDto, Task> onBattleResolved)
     {
+        logger.LogInformation("[EndTurn] Game={GameId} User={UserId}", gameId, userId);
+
         // 1. Validate game/kingdom access (not ValidateActionAsync -- ending turn is free)
         var guardResult = await gameGuard.ValidateAsync(gameId, userId);
         if (!guardResult.IsSuccess)
+        {
+            logger.LogWarning("[EndTurn] Guard failed: {Error}", guardResult.Error);
             return Result<TurnAdvancedDto>.Fail(guardResult.Error!);
+        }
 
         var game = guardResult.Value!.Game;
         var kingdom = guardResult.Value!.Kingdom;
 
+        logger.LogInformation("[EndTurn] Kingdom={KingdomName} (Id={KingdomId}, TurnOrder={TurnOrder}) Phase={Phase} Round={Round}",
+            kingdom.Name, kingdom.Id, kingdom.TurnOrder, game.CurrentPhase, game.RoundNumber);
+
         // 2. Validate end-turn rules
         var validationError = TurnRules.ValidateEndTurn(game.CurrentPhase, game.CurrentTurnKingdomId, kingdom.Id);
         if (validationError is not null)
+        {
+            logger.LogWarning("[EndTurn] Validation failed: {Error}", validationError);
             return Result<TurnAdvancedDto>.Fail(validationError);
+        }
 
         // 3. Check expired turn (log it but still process -- the turn is ending anyway)
         var wasExpired = TurnRules.IsTurnExpired(game.TurnDeadline);
@@ -42,15 +54,21 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
         // 5. Get all kingdoms for this game
         var kingdoms = await unitOfWork.Kingdoms.GetKingdomsForGameAsync(gameId);
 
+        logger.LogDebug("[EndTurn] Kingdoms: {Kingdoms}",
+            string.Join(", ", kingdoms.Select(k => $"{k.Name}(Order={k.TurnOrder}, Status={k.Status})")));
+
         // 6. Find next active kingdom
         var nextKingdom = TurnRules.GetNextActiveKingdom(kingdoms, kingdom.TurnOrder);
+
+        logger.LogInformation("[EndTurn] NextKingdom={NextKingdom}",
+            nextKingdom is not null ? $"{nextKingdom.Name} (Order={nextKingdom.TurnOrder})" : "NONE (advancing phase)");
 
         TurnAdvancedDto result;
 
         if (nextKingdom is not null)
         {
             // Load faction type for AP calculation
-            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(nextKingdom.FactionTypeId);
+            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(nextKingdom.FactionTypeId!.Value);
             var actionPoints = TurnRules.CalculateActionPoints(game.BaseActionPoints, factionType!.ActionPointModifier);
 
             game.CurrentTurnKingdomId = nextKingdom.Id;
@@ -76,49 +94,118 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
         }
         else
         {
-            // All players done -- advance through phases
-            result = await AdvanceToNextPhaseAsync(game, kingdoms, onRoundResolved, onBattleResolved);
+            // All players done -- check if there are declared attacks
+            var declaredAttacks = await unitOfWork.DeclaredAttacks
+                .GetForGameRoundAsync(gameId, game.RoundNumber);
+
+            if (declaredAttacks.Count > 0)
+            {
+                // Enter Battle phase and STOP — wait for players to select armies & lineups
+                result = await EnterBattlePhaseAsync(game);
+            }
+            else
+            {
+                // No attacks — skip Battle, go straight through Income → RoundEnd → Action
+                result = await AdvanceFromBattleAsync(game, kingdoms, onRoundResolved, onBattleResolved);
+            }
         }
 
         await unitOfWork.CommitAsync();
 
+        logger.LogInformation("[EndTurn] Result: NextKingdom={NextKingdomId} Phase={Phase} Round={Round} PhaseChanged={PhaseChanged}",
+            result.NextKingdomId, result.CurrentPhase, result.RoundNumber, result.PhaseChanged);
+
         return Result<TurnAdvancedDto>.Ok(result);
     }
 
-    private async Task<TurnAdvancedDto> AdvanceToNextPhaseAsync(
-        Game game,
-        List<Kingdom> kingdoms,
-        Func<BattleRoundResultDto, string, Task> onRoundResolved,
-        Func<BattleResultDto, Task> onBattleResolved)
+    /// <summary>
+    /// Enters Battle phase and stops — players must select armies and lineups interactively.
+    /// </summary>
+    private async Task<TurnAdvancedDto> EnterBattlePhaseAsync(Game game)
     {
         var previousPhase = game.CurrentPhase;
-        Dictionary<string, int>? incomeApplied = null;
-        List<BattleResultDto> battleResults = [];
 
         // Clear turn state during non-Action phases
         game.CurrentTurnKingdomId = null;
         game.RemainingActionPoints = null;
         game.TurnDeadline = null;
 
-        // --- Battle Phase ---
         game.CurrentPhase = EGamePhase.Battle;
         await AddTurnLogAsync(game.Id, null, game.RoundNumber, EEventType.PhaseChanged,
             $"Phase changed: {previousPhase} -> {game.CurrentPhase}");
 
-        // Resolve all declared attacks for this round
-        battleResults = await combatService.ResolveBattlesAsync(game);
+        return new TurnAdvancedDto
+        {
+            NextKingdomId = null,
+            RoundNumber = game.RoundNumber,
+            CurrentPhase = game.CurrentPhase.ToString(),
+            PhaseChanged = true
+        };
+    }
 
-        // Broadcast rounds individually before committing, so clients animate in real time
+    public async Task<Result<TurnAdvancedDto>> ResolveAndAdvanceAsync(
+        Guid gameId,
+        Func<BattleRoundResultDto, string, Task> onRoundResolved,
+        Func<BattleResultDto, Task> onBattleResolved)
+    {
+        logger.LogInformation("[ResolveAndAdvance] Game={GameId}", gameId);
+
+        var game = await unitOfWork.Games.GetByIdWithLockAsync(gameId);
+        if (game is null)
+            return Result<TurnAdvancedDto>.Fail("Game not found.");
+        if (game.CurrentPhase != EGamePhase.Battle)
+            return Result<TurnAdvancedDto>.Fail("Game is not in Battle phase.");
+
+        var kingdoms = await unitOfWork.Kingdoms.GetKingdomsForGameAsync(gameId);
+
+        var result = await AdvanceFromBattleAsync(game, kingdoms, onRoundResolved, onBattleResolved);
+
+        await unitOfWork.CommitAsync();
+
+        logger.LogInformation("[ResolveAndAdvance] Result: NextKingdom={NextKingdomId} Phase={Phase} Round={Round}",
+            result.NextKingdomId, result.CurrentPhase, result.RoundNumber);
+
+        return Result<TurnAdvancedDto>.Ok(result);
+    }
+
+    /// <summary>
+    /// Resolves battles (if any), then advances through Income → RoundEnd → Action.
+    /// Called either directly (no attacks) or after all lineups are set (attacks exist).
+    /// </summary>
+    private async Task<TurnAdvancedDto> AdvanceFromBattleAsync(
+        Game game,
+        List<Kingdom> kingdoms,
+        Func<BattleRoundResultDto, string, Task> onRoundResolved,
+        Func<BattleResultDto, Task> onBattleResolved)
+    {
+        Dictionary<Guid, Dictionary<string, int>>? incomeApplied = null;
+
+        // If we haven't entered Battle phase yet (no-attack path), set it briefly for logging
+        if (game.CurrentPhase != EGamePhase.Battle)
+        {
+            var previousPhase = game.CurrentPhase;
+            game.CurrentTurnKingdomId = null;
+            game.RemainingActionPoints = null;
+            game.TurnDeadline = null;
+            game.CurrentPhase = EGamePhase.Battle;
+            await AddTurnLogAsync(game.Id, null, game.RoundNumber, EEventType.PhaseChanged,
+                $"Phase changed: {previousPhase} -> {game.CurrentPhase}");
+        }
+
+        // Resolve all declared attacks for this round
+        var battleResults = await combatService.ResolveBattlesAsync(game);
+
+        // Broadcast rounds individually so clients animate in real time
         foreach (var battleResult in battleResults)
         {
             var battleIdStr = battleResult.BattleId.ToString();
             foreach (var round in battleResult.Rounds)
             {
                 await onRoundResolved(round, battleIdStr);
-                await Task.Delay(2500); // 2.5s per round for playback
+                await Task.Delay(9000); // 9s per round — 3 reels (~1.7s each) + pauses + HP bar + destruction animations
             }
             await onBattleResolved(battleResult);
-            await Task.Delay(1500); // 1.5s pause between battles
+            await Task.Delay(5000); // 5s pause between battles for summary screen
         }
 
         // Check if any kingdom was eliminated -- refresh kingdom statuses
@@ -200,7 +287,7 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
 
         if (firstKingdom is not null && gameOver is null)
         {
-            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(firstKingdom.FactionTypeId);
+            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(firstKingdom.FactionTypeId!.Value);
             actionPoints = TurnRules.CalculateActionPoints(game.BaseActionPoints, factionType!.ActionPointModifier);
 
             game.CurrentTurnKingdomId = firstKingdom.Id;
@@ -223,15 +310,15 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
             ActionPoints = actionPoints,
             TurnDeadline = game.TurnDeadline,
             IncomeApplied = incomeApplied,
-            BattleResults = null, // Battles broadcast individually via BattleRoundResolved/BattleResolved events
+            BattleResults = null,
             PhaseChanged = true,
             GameOver = gameOver
         };
     }
 
-    private async Task<Dictionary<string, int>> ApplyIncomeAsync(Game game, List<Kingdom> kingdoms)
+    private async Task<Dictionary<Guid, Dictionary<string, int>>> ApplyIncomeAsync(Game game, List<Kingdom> kingdoms)
     {
-        var totalIncome = new Dictionary<string, int>();
+        var perKingdomIncome = new Dictionary<Guid, Dictionary<string, int>>();
         var activeKingdoms = kingdoms.Where(k => k.Status == EKingdomStatus.Active).ToList();
 
         foreach (var kingdom in activeKingdoms)
@@ -254,13 +341,14 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
             if (buildingTerrainPairs.Count == 0) continue;
 
             // Load faction type for modifier
-            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId);
+            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId!.Value);
             var income = IncomeCalculator.CalculateKingdomIncome(buildingTerrainPairs, factionType!.ResourceProductionModifier);
 
             if (income.Count == 0) continue;
 
             // Load mutable resources and apply income
             var resources = await unitOfWork.KingdomResources.GetMutableResourcesForKingdomAsync(kingdom.Id);
+            var kingdomIncome = new Dictionary<string, int>();
             foreach (var (resourceType, amount) in income)
             {
                 var resource = resources.FirstOrDefault(r => r.ResourceType == resourceType);
@@ -269,11 +357,10 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
                     resource.Amount += amount;
                 }
 
-                // Accumulate for DTO
-                var key = resourceType.ToString();
-                totalIncome.TryGetValue(key, out var current);
-                totalIncome[key] = current + amount;
+                kingdomIncome[resourceType.ToString()] = amount;
             }
+
+            perKingdomIncome[kingdom.Id] = kingdomIncome;
 
             await AddTurnLogAsync(game.Id, kingdom.Id, game.RoundNumber, EEventType.IncomeReceived,
                 $"Income received: {string.Join(", ", income.Select(kv => $"{kv.Key}: +{kv.Value}"))}");
@@ -285,7 +372,7 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
             var armies = (await unitOfWork.Armies.GetArmiesWithTypeForKingdomAsync(kingdom.Id)).ToList();
             if (armies.Count == 0) continue;
 
-            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId);
+            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId!.Value);
             var healedCount = 0;
 
             foreach (var army in armies.Where(a => a.CurrentHP < a.MaxHP))
@@ -342,7 +429,7 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
             }
         }
 
-        return totalIncome;
+        return perKingdomIncome;
     }
 
     private async Task AddTurnLogAsync(Guid gameId, Guid? kingdomId, int roundNumber, EEventType eventType, string description)

@@ -40,6 +40,7 @@ interface GameState {
   winCondition: string | null;
   mapWidth: number;
   mapHeight: number;
+  mapRadius: number;
   gameOver: GameOverEvent | null;
   lastIncomeApplied: Record<string, number> | null;
 
@@ -120,6 +121,53 @@ interface GameState {
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
 
+/** Derive the correct battle step from server snapshot state */
+function deriveBattleStep(snapshot: GameStateSnapshot): BattleStep | null {
+  if (snapshot.currentPhase !== 'Battle') return null;
+  const attacks = snapshot.declaredAttacks ?? [];
+  if (attacks.length === 0) return null;
+
+  // All lineups confirmed → Resolve
+  const allLineupsConfirmed = attacks.every(
+    (da) => da.attackerLineupConfirmed && da.defenderLineupConfirmed,
+  );
+  if (allLineupsConfirmed) return 'Resolve';
+
+  // All armies selected → SetLineup (skip RevealArmies on reconnect)
+  const allArmiesSelected = attacks.every(
+    (da) => da.attackerArmiesSelected && da.defenderArmiesSelected,
+  );
+  if (allArmiesSelected) return 'SetLineup';
+
+  return 'SelectArmies';
+}
+
+/** Reconstruct army selection readiness from snapshot */
+function deriveBattleReadiness(snapshot: GameStateSnapshot) {
+  const readiness = new Map<string, { attackerReady: boolean; defenderReady: boolean }>();
+  if (snapshot.currentPhase !== 'Battle') return readiness;
+  for (const da of snapshot.declaredAttacks ?? []) {
+    readiness.set(da.attackId, {
+      attackerReady: da.attackerArmiesSelected,
+      defenderReady: da.defenderArmiesSelected,
+    });
+  }
+  return readiness;
+}
+
+/** Reconstruct lineup readiness from snapshot */
+function deriveLineupReadiness(snapshot: GameStateSnapshot) {
+  const readiness = new Map<string, { attackerReady: boolean; defenderReady: boolean }>();
+  if (snapshot.currentPhase !== 'Battle') return readiness;
+  for (const da of snapshot.declaredAttacks ?? []) {
+    readiness.set(da.attackId, {
+      attackerReady: da.attackerLineupConfirmed,
+      defenderReady: da.defenderLineupConfirmed,
+    });
+  }
+  return readiness;
+}
+
 const initialState = {
   tiles: new Map<string, Tile>(),
   tileIdToCoord: new Map<string, string>(),
@@ -133,6 +181,7 @@ const initialState = {
   winCondition: null,
   mapWidth: 0,
   mapHeight: 0,
+  mapRadius: 0,
   gameOver: null,
   lastIncomeApplied: null,
   currentPhase: null as GamePhase | null,
@@ -228,6 +277,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       winCondition: snapshot.winCondition,
       mapWidth: snapshot.mapWidth,
       mapHeight: snapshot.mapHeight,
+      mapRadius: snapshot.mapRadius ?? snapshot.mapWidth,
       gameOver: null,
       currentPhase: (snapshot.currentPhase as GamePhase) ?? null,
       actionPoints: snapshot.remainingActionPoints ?? null,
@@ -242,9 +292,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         attackerKingdomId: da.attackerKingdomId,
         defenderKingdomId: da.defenderKingdomId,
       })),
-      activeBattle: null,
-      battleReadiness: new Map(),
-      lineupReadiness: new Map(),
+      // Derive battle step from server state on reconnect
+      activeBattle: deriveBattleStep(snapshot),
+      // Reconstruct readiness from server state
+      battleReadiness: deriveBattleReadiness(snapshot),
+      lineupReadiness: deriveLineupReadiness(snapshot),
       declareAttackMode: 'idle' as const,
       declareAttackTargetTileId: null,
       declareAttackTargetTileKey: null,
@@ -269,6 +321,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       winCondition: null,
       mapWidth: 0,
       mapHeight: 0,
+      mapRadius: 0,
       gameOver: null,
       lastIncomeApplied: null,
       currentPhase: null,
@@ -416,20 +469,23 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
 
   handleTurnAdvanced: (data) => {
-    const { kingdoms, currentTurnKingdomId, myKingdomId } = get();
-    const isMyIncome = currentTurnKingdomId !== null && currentTurnKingdomId === myKingdomId;
+    const { kingdoms, myKingdomId } = get();
 
     const newKingdoms = new Map(kingdoms);
-    if (currentTurnKingdomId && data.incomeApplied) {
-      const kingdom = newKingdoms.get(currentTurnKingdomId);
-      if (kingdom) {
-        const updatedResources = { ...kingdom.resources };
-        for (const [resourceType, amount] of Object.entries(data.incomeApplied)) {
-          updatedResources[resourceType] = (updatedResources[resourceType] ?? 0) + amount;
+    if (data.incomeApplied) {
+      for (const [kingdomId, income] of Object.entries(data.incomeApplied)) {
+        const kingdom = newKingdoms.get(kingdomId);
+        if (kingdom) {
+          const updatedResources = { ...kingdom.resources };
+          for (const [resourceType, amount] of Object.entries(income)) {
+            updatedResources[resourceType] = (updatedResources[resourceType] ?? 0) + amount;
+          }
+          newKingdoms.set(kingdomId, { ...kingdom, resources: updatedResources });
         }
-        newKingdoms.set(currentTurnKingdomId, { ...kingdom, resources: updatedResources });
       }
     }
+
+    const myIncome = myKingdomId && data.incomeApplied?.[myKingdomId] || null;
 
     set({
       roundNumber: data.roundNumber,
@@ -438,8 +494,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       actionPoints: data.actionPoints ?? get().actionPoints,
       kingdoms: newKingdoms,
       gameOver: data.gameOver ?? get().gameOver,
-      lastIncomeApplied: isMyIncome ? data.incomeApplied : null,
-      declaredAttacks: [],
+      lastIncomeApplied: myIncome,
+      // Don't clear declaredAttacks here — they persist across turn changes within a round.
+      // They're removed individually by handleBattleResolved and cleaned up by acknowledgeBattleSummary.
       battleReadiness: new Map(),
       lineupReadiness: new Map(),
       showBattleSummary: false,
@@ -498,7 +555,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       newKingdoms.set(data.kingdomId, { ...kingdom, resources: { ...data.resourcesAfter } });
     }
 
-    set({ tiles: newTiles, kingdoms: newKingdoms });
+    const apUpdate = data.kingdomId === get().myKingdomId
+      ? { actionPoints: data.actionPointsAfter }
+      : {};
+    set({ tiles: newTiles, kingdoms: newKingdoms, ...apUpdate });
   },
 
   handlePhaseChanged: (data) => {
@@ -567,7 +627,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       newKingdoms.set(data.kingdomId, { ...kingdom, resources: { ...data.resourcesAfter } });
     }
 
-    set({ armies: newArmies, kingdoms: newKingdoms });
+    const apUpdate = data.kingdomId === get().myKingdomId
+      ? { actionPoints: data.actionPointsAfter }
+      : {};
+    set({ armies: newArmies, kingdoms: newKingdoms, ...apUpdate });
   },
 
   handleAttackDeclared: (data) => {
@@ -582,6 +645,9 @@ export const useGameStore = create<GameState>((set, get) => ({
           defenderKingdomId: data.defenderKingdomId,
         },
       ],
+      ...(data.attackerKingdomId === get().myKingdomId
+        ? { actionPoints: data.actionPointsAfter }
+        : {}),
       // Do NOT set activeBattle here — battle step advances when Phase changes to Battle
     });
   },

@@ -10,4 +10,5 @@ public class BuildingPlacedDto
     public Dictionary<string, int> ResourcesAfter { get; set; } = new();
     public List<Guid> ClaimedTileIds { get; set; } = new();
     public bool IsUpgrade { get; set; }
+    public int ActionPointsAfter { get; set; }
 }

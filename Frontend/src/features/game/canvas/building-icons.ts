@@ -52,6 +52,9 @@ export const BUILDING_PNG_IMPORTS: Record<string, string> = {
   'War Academy': warAcademyPng,
 };
 
+/** Icon rasterization size in logical pixels (higher = sharper on tiles) */
+export const ICON_RASTER_SIZE = 48;
+
 /** Icon display size in logical pixels within a hex tile */
 export const ICON_RENDER_SIZE = 22;
 
@@ -100,7 +103,7 @@ export async function loadAllBuildingIcons(
 
   const results = await Promise.all(
     entries.map(async ([name, url]) => {
-      const canvas = await loadIcon(url, ICON_RENDER_SIZE);
+      const canvas = await loadIcon(url, ICON_RASTER_SIZE);
       loaded++;
       onProgress?.(loaded, total);
       return [name, canvas] as const;

@@ -53,7 +53,7 @@ export function LobbyHomePage() {
   };
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-4 py-8 bg-ash-950">
+    <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 bg-ash-950">
       <FogBackground backgroundImage={bgLobbyPng} />
 
       <div className="relative z-10 max-w-md w-full">

@@ -17,6 +17,10 @@ public class DeclaredAttack : BaseEntity
     public string? AttackerSelectedArmyIds { get; set; }
     public string? DefenderSelectedArmyIds { get; set; }
 
+    // Lineup confirmation tracking
+    public bool AttackerLineupConfirmed { get; set; }
+    public bool DefenderLineupConfirmed { get; set; }
+
     // Navigation
     public Domain.Game.Game? Game { get; set; }
     public Kingdom? AttackerKingdom { get; set; }

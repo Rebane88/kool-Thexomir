@@ -30,7 +30,7 @@ export function NavBar() {
   };
 
   return (
-    <nav className="bg-ash-900 border-b border-bronze-700 px-6 py-3 flex items-center justify-between">
+    <nav className="relative z-20 bg-ash-900 border-b border-bronze-700 px-6 py-3 flex items-center justify-between">
       <Link to="/" className="font-heading text-xl font-bold text-gold-500 hover:text-gold-300 transition-colors tracking-wide">
         Realms of Ash
       </Link>

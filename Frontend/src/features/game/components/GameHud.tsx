@@ -2,7 +2,6 @@ import { Panel } from '@/shared/ui/Panel';
 import { useGameStore } from '../game-store';
 import { ResourcePanel } from './ResourcePanel';
 import { TurnIndicator } from './TurnIndicator';
-import { ActionPointsPips } from './ActionPointsPips';
 import { GambleButton } from './GambleButton';
 import { EndTurnButton } from './EndTurnButton';
 
@@ -17,7 +16,7 @@ export function GameHud({ onStandingsToggle }: GameHudProps) {
 
   return (
     <Panel
-      className={`absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2 ${isMyTurn ? 'shadow-ember' : 'border-ash-600'}`}
+      className={`absolute top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-2 ${isMyTurn ? 'shadow-ember' : 'border-ash-600'}`}
       style={isMyTurn ? {
         borderColor: 'var(--faction-color, #c9a84c)',
         boxShadow: '0 0 12px var(--faction-color-glow, rgba(217, 119, 6, 0.2))',
@@ -32,10 +31,7 @@ export function GameHud({ onStandingsToggle }: GameHudProps) {
       >
         <ResourcePanel />
       </div>
-      <div className="flex flex-col items-center gap-0.5">
-        <TurnIndicator />
-        <ActionPointsPips />
-      </div>
+      <TurnIndicator />
       <div className="flex items-center gap-2">
         <GambleButton />
         <button

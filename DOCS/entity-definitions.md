@@ -2,7 +2,7 @@
 
 ## Overview
 
-16 entities total. Identity tables (AppUser extends IdentityUser), lookup/reference tables (TerrainType, BuildingType, UnitType, UnitTypeMatchup, FactionType), and game state tables (Game, Kingdom, Tile, Building, Army, Unit, Battle, KingdomResource, TurnLog, GameEvent).
+14 entities total. Identity tables (AppUser extends IdentityUser), lookup/reference tables (TerrainType, BuildingType, ArmyType, FactionType), and game state tables (Game, Kingdom, Tile, Building, Army, Battle, BattleRound, KingdomResource, TurnLog).
 
 ---
 
@@ -15,7 +15,7 @@ Two roles provided by ASP.NET Core Identity:
 | `Admin` | Manually by server owner | Full CRUD on all reference data via admin panel. Manage users and role assignments. |
 | `Player` | Automatically on registration | Create and join games, play. No access to admin panel. |
 
-All reference table CRUD controllers (BuildingType, UnitType, TerrainType, UnitTypeMatchup, FactionType) are secured with `[Authorize(Roles = "Admin")]`. This gives admins live control over game balance, faction modifiers, and icon URLs without code changes.
+All reference table CRUD controllers (BuildingType, ArmyType, TerrainType, FactionType) are secured with `[Authorize(Roles = "Admin")]`. This gives admins live control over game balance, faction modifiers, and icon URLs without code changes.
 
 ---
 
@@ -53,18 +53,21 @@ Represents a match instance. Covers both the lobby phase and the active game.
 | Id | Guid | PK | |
 | Name | string | required | Lobby name e.g. "Epic Battle #1" |
 | Status | enum | required | Lobby, Active, Finished |
-| WinCondition | enum | required | Domination, Elimination, Score |
-| MaxPlayers | int | required | 2–8, set by creator |
-| TurnNumber | int | required, default 0 | Current turn |
-| CurrentTurnKingdomId | Guid | nullable, FK → Kingdom | Whose turn it is |
+| MaxPlayers | int | required | 2–4 |
+| RoundNumber | int | required, default 0 | Current round |
+| MaxRounds | int | required, default 100 | Game ends in draw if reached |
+| CurrentPhase | enum | required | Action, Battle, Income, RoundEnd |
+| CurrentTurnKingdomId | Guid | nullable, FK → Kingdom | Whose turn it is (Action Phase only) |
 | MapWidth | int | required | Hex grid width |
 | MapHeight | int | required | Hex grid height |
-| DominationThreshold | int | nullable | % of tiles needed (if WinCondition = Domination) |
-| MaxTurns | int | nullable | Max turns (if WinCondition = Score) |
 | TurnTimeLimit | int | nullable | Seconds per turn, null = unlimited |
 | TurnDeadline | DateTime | nullable | When current turn expires |
+| BaseActionPoints | int | required, default 4 | Action points per turn (admin-editable) |
+| HealPercent | decimal | required, default 0.10 | Army heal rate per round (5-10%) |
+| SpinCostGold | int | required, default 30 | Slot machine cost per spin |
+| SlotOutcomeWeights | string | required | JSON array of weights for outcomes [-2,-1,0,+1,+2] e.g. "[5,25,30,25,15]" |
 | CreatedByUserId | Guid | required, FK → AppUser | Game creator |
-| WinnerKingdomId | Guid | nullable, FK → Kingdom | Set when game finishes |
+| WinnerKingdomId | Guid | nullable, FK → Kingdom | Set when game finishes, null = draw |
 | CreatedAt | DateTime | required | |
 | StartedAt | DateTime | nullable | When Status → Active |
 | FinishedAt | DateTime | nullable | When Status → Finished |
@@ -74,19 +77,18 @@ Represents a match instance. Covers both the lobby phase and the active game.
 - One Game → many Tile
 - One Game → many TurnLog
 - One Game → many Battle
-- One Game → many GameEvent
 
 **Business Rules:**
-- TurnDeadline = StartedAt + TurnTimeLimit each time a new turn begins (if TurnTimeLimit is set)
+- TurnDeadline = now + TurnTimeLimit each time a new turn begins (if TurnTimeLimit is set)
 - Game moves to Active when creator starts it (minimum 2 players must have joined)
-- DominationThreshold required if WinCondition = Domination
-- MaxTurns required if WinCondition = Score
+- Game ends in draw if RoundNumber reaches MaxRounds
+- Win condition is always Elimination (lose castle = eliminated, last standing wins)
 
 ---
 
 ## 3. Kingdom
 
-A player's realm within a game. Links an AppUser to a Game. A special barbarian kingdom (IsBarbarianCamp = true) is also created per game to own neutral enemy armies.
+A player's realm within a game. Links an AppUser to a Game.
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
@@ -95,30 +97,28 @@ A player's realm within a game. Links an AppUser to a Game. A special barbarian 
 | Color | string | required | Hex color e.g. "#e63946", unique per game |
 | Status | enum | required | Active, Defeated |
 | TurnOrder | int | required | Sequence position (1st, 2nd, 3rd...) |
-| IsBarbarianCamp | bool | required, default false | True for the neutral barbarian kingdom |
-| FactionTypeId | Guid | nullable, FK → FactionType | null for barbarian kingdom |
-| DefeatedAt | DateTime | nullable | When last tile was lost |
+| FactionTypeId | Guid | required, FK → FactionType | |
+| DefeatedAt | DateTime | nullable | When castle was destroyed |
 | JoinedAt | DateTime | required | When player joined lobby |
-| AppUserId | Guid | nullable, FK → AppUser | null for barbarian kingdom |
+| AppUserId | Guid | required, FK → AppUser | |
 | GameId | Guid | required, FK → Game | |
 
 **Relationships:**
 - One Kingdom → many Tile (owned tiles)
 - One Kingdom → many Building
 - One Kingdom → many Army
-- One Kingdom → many Unit
-- One Kingdom → 5 KingdomResource rows (player kingdoms only)
+- One Kingdom → 5 KingdomResource rows
 - One Kingdom → many TurnLog
 - One Kingdom → many Battle (as attacker or defender)
-- One Kingdom → one FactionType (player kingdoms only)
+- One Kingdom → one FactionType
 
 **Business Rules:**
 - Color must be unique within a Game — enforced at API level on join
-- TurnOrder assigned randomly at game start (barbarian kingdom has TurnOrder = 0, never takes a turn)
-- Status → Defeated when kingdom has no remaining owned tiles
+- FactionTypeId must be unique within a Game — one faction per player
+- TurnOrder assigned randomly at game start
+- Status → Defeated when castle tile is captured
+- On defeat: all armies deleted, all buildings destroyed, all tiles become unowned
 - One player (AppUser) can only have one Kingdom per Game
-- Barbarian kingdom: IsBarbarianCamp = true, AppUserId = null, FactionTypeId = null
-- When a barbarian army is defeated, tile OwnerKingdomId → null (unclaimed, not transferred to attacker directly)
 
 ---
 
@@ -134,19 +134,18 @@ An individual hex cell on the map. Generated at game start.
 | TerrainTypeId | Guid | required, FK → TerrainType | |
 | OwnerKingdomId | Guid | nullable, FK → Kingdom | null = unclaimed |
 | GameId | Guid | required, FK → Game | |
-| HasSettlement | bool | required, default false | Starting tile marker |
+| IsCastle | bool | required, default false | Starting tile with castle |
 | ClaimedAt | DateTime | nullable | When tile was first claimed |
 
 **Relationships:**
 - One Tile → zero or one Building
-- One Tile → zero or one Army (per kingdom)
 - Many Tile → one TerrainType
 - Many Tile → one Game
 
 **Business Rules:**
 - Q + R combination must be unique per Game
-- Tile can only be claimed if adjacent to an already owned tile (checked in API)
-- HasSettlement = true only for the starting tile of each kingdom
+- IsCastle = true only for the starting tile of each kingdom
+- Castle tiles cannot be rebuilt once captured
 - Ownership history is not tracked on Tile — derived from TurnLog instead
 
 ---
@@ -158,44 +157,46 @@ Reference/lookup table. Defines the properties of each terrain type. Seeded at s
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
 | Id | Guid | PK | |
-| Name | string | required, unique | Plains, Forest, Mountain, River, Magic Grove |
-| DefenseBonus | decimal | required | e.g. 0.4 = +40% defense |
-| MovementCost | int | required | 1, 2, or 3 |
-| ResourceMultiplier | decimal | required, default 1.0 | e.g. 1.2 = +20% yield |
+| Name | string | required, unique | Plains, Forest, Mountain, Desert, Magic Grove |
+| ResourceMultiplier | decimal | required, default 1.10 | Yield bonus when terrain matches building |
 | BonusResourceType | string | nullable | Which resource gets multiplier e.g. "Wood" |
 | MapColor | string | required | Hex color for map rendering e.g. "#228B22" |
 | IconUrl | string | nullable | Icon for UI |
 
 **Seeded Data:**
 
-| Name | Defense | Movement | Multiplier | Bonus Resource | Color |
-|------|---------|----------|------------|----------------|-------|
-| Plains | 0.0 | 1 | 1.0 | null | #90EE90 |
-| Forest | 0.2 | 2 | 1.2 | Wood | #228B22 |
-| Mountain | 0.4 | 3 | 1.4 | Stone | #808080 |
-| River | 0.1 | 2 | 1.2 | Gold | #4169E1 |
-| Magic Grove | 0.1 | 1 | 1.3 | Mana | #9B59B6 |
+| Name | Multiplier | Bonus Resource | Color |
+|------|------------|----------------|-------|
+| Plains | 1.10 | Food | #90EE90 |
+| Forest | 1.10 | Wood | #228B22 |
+| Mountain | 1.10 | Stone | #808080 |
+| Desert | 1.10 | Gold | #C2B280 |
+| Magic Grove | 1.10 | Mana | #9B59B6 |
 
 ---
 
 ## 6. BuildingType
 
-Reference/lookup table. Defines all building templates and the unlock tree. Seeded at startup. **Admin editable via admin panel — balance values and icon URLs can be changed live.**
+Reference/lookup table. Defines all building templates and the unlock tree. Seeded at startup. **Admin editable via admin panel.**
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
 | Id | Guid | PK | |
-| Name | string | required, unique | e.g. "Farm", "Windmill" |
-| Tier | int | required | 1, 2, or 3 |
+| Name | string | required, unique | e.g. "Farm", "Windmill", "Castle" |
+| Tier | int | required | 1, 2, or 3 (Castle = special) |
+| Chain | string | required | Food, Wood, Stone, Gold, Mana, Military, Castle |
 | UnlockedByBuildingTypeId | Guid | nullable, FK → BuildingType | Self-referencing unlock chain |
-| ResourceProduced | string | required | e.g. "Food" |
-| BaseYield | int | required | Base amount produced per turn |
+| BaseYieldGold | int | required, default 0 | Gold produced per turn |
+| BaseYieldFood | int | required, default 0 | Food produced per turn |
+| BaseYieldWood | int | required, default 0 | Wood produced per turn |
+| BaseYieldStone | int | required, default 0 | Stone produced per turn |
+| BaseYieldMana | int | required, default 0 | Mana produced per turn |
+| ArmyCapacity | int | required, default 0 | Max armies this building supports (military only) |
 | CostGold | int | required, default 0 | |
 | CostFood | int | required, default 0 | |
 | CostWood | int | required, default 0 | |
 | CostStone | int | required, default 0 | |
 | CostMana | int | required, default 0 | |
-| RequiredTerrain | string | nullable | If restricted to terrain type |
 | IconUrl | string | nullable | |
 | Description | string | nullable | |
 
@@ -209,11 +210,14 @@ Reference/lookup table. Defines all building templates and the unlock tree. Seed
 | Gold | Market | Trading Post | Bank |
 | Mana | Shrine | Wizard Tower | Arcane Sanctum |
 | Military | Barracks | Stables | War Academy |
-| Defense | Palisade | Stone Wall | Fortress |
+
+**Castle:** Special building type, not part of a chain. BaseYieldFood = 10, BaseYieldWood = 10, BaseYieldStone = 10. Cannot be constructed or rebuilt. Placed automatically at game start.
 
 **Business Rules:**
 - A building can only be constructed if its UnlockedByBuildingTypeId building already exists on the same tile
 - One building per tile (enforced via unique constraint on Building.TileId)
+- Military buildings have ArmyCapacity = 3
+- When a tile is captured, the building on it is **destroyed**
 
 ---
 
@@ -227,160 +231,136 @@ An instance of a building placed on a tile in a game.
 | BuildingTypeId | Guid | required, FK → BuildingType | |
 | TileId | Guid | required, unique, FK → Tile | Unique enforces one building per tile |
 | KingdomId | Guid | required, FK → Kingdom | |
-| BuiltOnTurn | int | required | |
+| BuiltOnRound | int | required | |
 | BuiltAt | DateTime | required | |
 
 **Business Rules:**
 - TileId is unique — one building per tile enforced at DB level
 - KingdomId must match the current owner of the Tile
-- When a tile is captured, buildings remain on the tile (new owner benefits from them)
+- When a tile is captured, the building is **destroyed** (hard deleted)
+- Destroying a military building also destroys all armies tied to it
 
 ---
 
-## 8. UnitType
+## 8. ArmyType
 
-Reference/lookup table. Defines all unit templates. Seeded at startup. **Admin editable via admin panel — balance values and icon URLs can be changed live.**
+Reference/lookup table. Defines all army templates. Seeded at startup. **Admin editable via admin panel.**
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
 | Id | Guid | PK | |
-| Name | string | required, unique | Swordsman, Archer, Knight, Mage, Catapult |
-| IsMagical | bool | required | If true, costs and upkeep use Mana |
-| BaseStrength | int | required | Base combat power value |
-| RecruitCostGold | int | required, default 0 | |
-| RecruitCostFood | int | required, default 0 | |
-| RecruitCostWood | int | required, default 0 | |
-| RecruitCostStone | int | required, default 0 | |
-| RecruitCostMana | int | required, default 0 | |
-| UpkeepGold | int | required, default 0 | Cost per turn to maintain |
-| UpkeepFood | int | required, default 0 | Cost per turn to maintain |
-| RequiredBuildingTypeId | Guid | required, FK → BuildingType | Building needed to recruit |
+| Name | string | required, unique | Warrior, Scout, Knight, Berserker, Mage, Guardian |
+| Attack | int | required | Base damage dealt when winning a round |
+| HP | int | required | Health pool — destroyed at 0 |
+| Initiative | int | required | Chance weight for winning the round roll |
+| DamageRangeMin | decimal | required | Min % of effective Attack dealt on hit (e.g. 0.60) |
+| DamageRangeMax | decimal | required | Max % of effective Attack dealt on hit (e.g. 1.00) |
+| ChipDamageRangeMin | decimal | required | Min % of loser's effective Attack dealt back (e.g. 0.00) |
+| ChipDamageRangeMax | decimal | required | Max % of loser's effective Attack dealt back (e.g. 0.15) |
+| SituationalBonusStat | string | nullable | Which stat gets bonus (Attack, HP, Initiative) |
+| SituationalBonusValue | decimal | nullable | Bonus multiplier (e.g. 0.10 = +10%) |
+| SituationalBonusCondition | enum | nullable | Attacking, Defending |
+| TrainingCostGold | int | required, default 0 | |
+| TrainingCostFood | int | required, default 0 | |
+| TrainingCostStone | int | required, default 0 | |
+| TrainingCostMana | int | required, default 0 | |
+| UpkeepGold | int | required, default 0 | Per-round cost |
+| UpkeepFood | int | required, default 0 | Per-round cost |
+| UpkeepMana | int | required, default 0 | Per-round cost |
+| RequiredBuildingTypeId | Guid | required, FK → BuildingType | Military building needed |
 | IconUrl | string | nullable | |
 | Description | string | nullable | |
 
 **Seeded Data:**
 
-| Unit | Strength | Requires | Magical |
-|------|----------|----------|---------|
-| Swordsman | 10 | Barracks | No |
-| Archer | 8 | Barracks | No |
-| Knight | 15 | Stables | No |
-| Mage | 12 | Wizard Tower | Yes |
-| Catapult | 20 | War Academy | No |
+| Type | Atk | HP | Init | Dmg Range | Chip Range | Bonus | Required |
+|------|-----|----|------|-----------|------------|-------|----------|
+| Warrior | 25 | 100 | 50 | 60–100% | 0–15% | +10% Atk defending | Barracks |
+| Scout | 15 | 60 | 70 | 50–80% | 0–10% | None | Barracks |
+| Knight | 35 | 140 | 30 | 60–100% | 0–15% | +10% HP defending | Stables |
+| Berserker | 35 | 60 | 50 | 70–100% | 0–10% | +15% Atk attacking | Stables |
+| Mage | 35 | 60 | 70 | 40–100% | 0–5% | +20% Atk attacking | War Academy |
+| Guardian | 15 | 140 | 30 | 50–90% | 5–25% | +15% Init defending | War Academy |
 
 ---
 
-## 9. UnitTypeMatchup
+## 9. Army
 
-Stores the rock-paper-scissors combat matchup table. Seeded at startup. **Admin editable via admin panel — multipliers can be tuned for balance.**
+A single army entity in a kingdom's global roster. Tied to the military building it was trained from.
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
 | Id | Guid | PK | |
-| AttackerUnitTypeId | Guid | required, FK → UnitType | |
-| DefenderUnitTypeId | Guid | required, FK → UnitType | |
-| DamageMultiplier | decimal | required | 1.25 = strong, 0.75 = weak, 1.0 = neutral |
-
-**Seeded Matchups:**
-
-| Attacker | Defender | Multiplier |
-|----------|----------|------------|
-| Swordsman | Archer | 1.25 |
-| Swordsman | Knight | 0.75 |
-| Swordsman | Mage | 1.25 |
-| Archer | Knight | 1.25 |
-| Archer | Swordsman | 0.75 |
-| Archer | Mage | 0.75 |
-| Knight | Mage | 1.25 |
-| Knight | Swordsman | 1.25 |
-| Knight | Archer | 0.75 |
-| Mage | Archer | 1.25 |
-| Mage | Swordsman | 0.75 |
-| Mage | Knight | 0.75 |
-| Catapult | (all) | 1.0 |
-
-**Business Rules:**
-- If no matchup row exists for a pair, default multiplier = 1.0
-- AttackerUnitTypeId + DefenderUnitTypeId combination must be unique
-
----
-
-## 10. Army
-
-A group of units positioned on a tile. A kingdom can have multiple armies on different tiles.
-
-| Field | Type | Constraints | Notes |
-|-------|------|-------------|-------|
-| Id | Guid | PK | |
+| ArmyTypeId | Guid | required, FK → ArmyType | |
 | KingdomId | Guid | required, FK → Kingdom | |
-| TileId | Guid | required, FK → Tile | |
+| BuildingId | Guid | required, FK → Building | Military building this army is tied to |
+| CurrentHP | int | required | Current health, starts at ArmyType.HP (modified by faction) |
+| MaxHP | int | required | Max health (ArmyType.HP × faction HP modifier) |
 | CreatedAt | DateTime | required | |
-| CreatedOnTurn | int | required | |
+| CreatedOnRound | int | required | |
 
 **Relationships:**
-- One Army → many Unit
-- Unique constraint on (KingdomId + TileId) — one army per kingdom per tile
+- Many Army → one ArmyType
+- Many Army → one Kingdom
+- Many Army → one Building (military building it was trained from)
 
 **Business Rules:**
-- Moving an army onto a tile where the same kingdom already has an army merges them
-- Army is deleted when all its units are destroyed in battle
-- Army can only be on a tile owned by its Kingdom (except during attack resolution)
+- Armies are part of a global roster — not positioned on the map
+- Each army is tied to the military building it was trained from
+- Each military building can support up to 3 armies (BuildingType.ArmyCapacity)
+- If the building is destroyed, all armies tied to it are destroyed
+- Army is hard deleted when destroyed in combat (HP reaches 0)
+- CurrentHP heals each round during Income Phase (Game.HealPercent × MaxHP)
+- effectiveAttack = ArmyType.Attack × (CurrentHP / MaxHP)
 
 ---
 
-## 11. Unit
+## 10. Battle
 
-An individual unit belonging to an army.
-
-| Field | Type | Constraints | Notes |
-|-------|------|-------------|-------|
-| Id | Guid | PK | |
-| UnitTypeId | Guid | required, FK → UnitType | |
-| ArmyId | Guid | required, FK → Army | |
-| KingdomId | Guid | required, FK → Kingdom | |
-| RecruitedAt | DateTime | required | |
-| RecruitedOnTurn | int | required | |
-
-**Business Rules:**
-- Units are deleted (hard delete) when killed in battle — recorded in Battle entity
-- Upkeep is paid per unit per turn during income phase
-- If a kingdom cannot afford upkeep, units are disbanded (deleted) starting from most expensive
-
----
-
-## 12. Battle
-
-A record of combat between two armies. Created when an attack action is taken.
+A record of combat between two sides. Created when a battle is resolved.
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
 | Id | Guid | PK | |
 | GameId | Guid | required, FK → Game | |
-| TurnNumber | int | required | |
+| RoundNumber | int | required | Game round this battle occurred in |
 | AttackerKingdomId | Guid | required, FK → Kingdom | |
 | DefenderKingdomId | Guid | required, FK → Kingdom | |
-| TileId | Guid | required, FK → Tile | Tile being contested |
-| AttackerPowerTotal | decimal | required | Final attacker power after all modifiers |
-| DefenderPowerTotal | decimal | required | Final defender power after all modifiers |
-| AttackerDiceRoll | decimal | required | 0.85–1.15 random roll |
-| DefenderDiceRoll | decimal | required | 0.85–1.15 random roll |
-| AttackerUnitsLost | int | required | |
-| DefenderUnitsLost | int | required | |
+| AttackerTileId | Guid | required, FK → Tile | Tile the attacker risked |
+| DefenderTileId | Guid | required, FK → Tile | Tile the attacker targeted |
 | Outcome | enum | required | AttackerWon, DefenderWon |
-| TileChangedOwner | bool | required | Whether attacker captured the tile |
-| OccurredAt | DateTime | required | |
+| TileCapturedId | Guid | required, FK → Tile | The tile that changed ownership |
+| TileCapturedFromKingdomId | Guid | required, FK → Kingdom | Kingdom that lost the tile |
+| OccurredAt | DateTime | required | Server timestamp |
 
-**Combat Formula:**
-```
-EffectivePower = Σ(unit.BaseStrength × matchupModifier) × terrainBonus × diceRoll
-```
-- matchupModifier from UnitTypeMatchup table
-- terrainBonus from TerrainType.DefenseBonus (defender only)
-- diceRoll = random decimal between 0.85 and 1.15
+**Relationships:**
+- One Battle → many BattleRound
 
 ---
 
-## 13. KingdomResource
+## 11. BattleRound
+
+An individual round within a battle. Records the initiative roll, damage, and chip damage.
+
+| Field | Type | Constraints | Notes |
+|-------|------|-------------|-------|
+| Id | Guid | PK | |
+| BattleId | Guid | required, FK → Battle | |
+| RoundNumber | int | required | Sequential round number within this battle |
+| AttackerArmyId | Guid | required, FK → Army | Attacker's active army this round |
+| DefenderArmyId | Guid | required, FK → Army | Defender's active army this round |
+| InitiativeWinner | enum | required | Attacker, Defender |
+| AttackerInitiativeChance | decimal | required | Calculated % chance for attacker |
+| DefenderInitiativeChance | decimal | required | Calculated % chance for defender |
+| DamageDealt | int | required | Damage applied to the losing army |
+| ChipDamageDealt | int | required | Chip damage applied to the winning army |
+| AttackerArmyHPAfter | int | required | Attacker's active army HP after this round |
+| DefenderArmyHPAfter | int | required | Defender's active army HP after this round |
+| ArmyDestroyedId | Guid | nullable, FK → Army | ID of army destroyed this round (null if none) |
+
+---
+
+## 12. KingdomResource
 
 Tracks current resource amounts per kingdom. Each kingdom has exactly 5 rows (one per resource type).
 
@@ -389,64 +369,72 @@ Tracks current resource amounts per kingdom. Each kingdom has exactly 5 rows (on
 | Id | Guid | PK | |
 | KingdomId | Guid | required, FK → Kingdom | |
 | ResourceType | enum | required | Gold, Food, Wood, Stone, Mana |
-| Amount | decimal | required, default 0 | Current amount held |
+| Amount | int | required, default 0 | Current amount held |
 | UpdatedAt | DateTime | required | Last updated timestamp |
 
 **Business Rules:**
 - KingdomId + ResourceType must be unique (5 rows per kingdom, one per type)
 - Amount cannot go below 0
-- Created with Amount = starting values when Kingdom is created at game start
+- Created with starting values when Kingdom is created at game start (base + faction bonus)
 - Updated every income phase and whenever resources are spent
 
+**Starting Resources (base, admin-editable):**
+
+| Resource | Base Amount |
+|----------|------------|
+| Gold | 150 |
+| Food | 60 |
+| Wood | 50 |
+| Stone | 20 |
+| Mana | 0 |
+
 ---
 
-## 14. TurnLog
+## 13. TurnLog
 
-Records every action and event that occurred during a turn. Acts as the full game history.
+Records every action and event that occurred during a round. Acts as the full game history.
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
 | Id | Guid | PK | |
 | GameId | Guid | required, FK → Game | |
-| KingdomId | Guid | required, FK → Kingdom | Kingdom this event belongs to |
-| TurnNumber | int | required | |
-| EventType | enum | required | TileClaimed, BuildingConstructed, UnitRecruited, ArmyMoved, BattleOccurred, ResourcesEarned, UpkeepPaid, TurnStarted, TurnEnded, KingdomDefeated |
-| Description | string | required | Human readable e.g. "Swordsman army attacked Forest tile at Q3 R5" |
-| Metadata | string | nullable | JSON blob for extra details e.g. BattleId, TileId, amount |
+| KingdomId | Guid | nullable, FK → Kingdom | Kingdom this event belongs to (null for game-wide events) |
+| RoundNumber | int | required | |
+| EventType | enum | required | See EventType list below |
+| Description | string | required | Human readable e.g. "Kingdom trained a Warrior army" |
+| Metadata | string | nullable | JSON blob for extra details |
 | OccurredAt | DateTime | required | |
 
-**Business Rules:**
-- Tile ownership history is derived from TurnLog (EventType = TileClaimed / BattleOccurred) rather than stored on Tile
-- Metadata stores structured JSON for UI to link to related entities e.g. `{"battleId": "...", "tileQ": 3, "tileR": 5}`
+**EventTypes:**
+
+| EventType | When Created |
+|-----------|-------------|
+| RoundStarted | Beginning of Action Phase |
+| TurnStarted | When a player's action phase begins |
+| BuildingConstructed | Action Phase — build |
+| BuildingUpgraded | Action Phase — upgrade |
+| ArmyTrained | Action Phase — train |
+| AttackDeclared | Action Phase — declare attack (tiles only) |
+| SlotMachineSpin | Action Phase — slot machine spin |
+| ArmySelected | Battle Phase — army selection |
+| LineupSet | Battle Phase — army order set |
+| BattleResolved | Battle Phase — battle result |
+| TileCaptured | Battle Phase — tile ownership changed |
+| BuildingDestroyed | Battle Phase — building on captured tile razed |
+| ArmyDestroyed | Battle Phase — army killed, or building destroyed |
+| ResourcesEarned | Income Phase — resource generation |
+| UpkeepPaid | Income Phase — upkeep deducted |
+| ArmyDisbanded | Income Phase — upkeep failure |
+| ArmyHealed | Income Phase — HP restored |
+| KingdomDefeated | Income Phase — castle destroyed |
+| GameOver | Income Phase — win condition met or max rounds |
+| RoundEnded | Round End |
 
 ---
 
-## 15. GameEvent
+## 14. FactionType
 
-Random events that fire during the game affecting kingdoms or tiles.
-
-| Field | Type | Constraints | Notes |
-|-------|------|-------------|-------|
-| Id | Guid | PK | |
-| GameId | Guid | required, FK → Game | |
-| KingdomId | Guid | nullable, FK → Kingdom | null = affects all kingdoms |
-| TileId | Guid | nullable, FK → Tile | null = kingdom-wide effect |
-| TurnNumber | int | required | Turn it fired on |
-| EventType | enum | required | Plague, GoodHarvest, DragonAttack, MagicStorm, GoldRush, Drought |
-| Description | string | required | Human readable description |
-| ResourceEffect | string | nullable | e.g. "Food:-20" or "Gold:+50" |
-| OccurredAt | DateTime | required | |
-
-**Business Rules:**
-- Events fire at the end of the income phase each turn
-- Probability and targeting rules are handled in game logic, not stored in DB
-- KingdomId = null means the event affects all kingdoms in the game equally
-
----
-
-## 16. FactionType
-
-Reference/lookup table. Defines the 4 playable factions with their stat modifiers. Seeded at startup. **Admin editable via admin panel — modifiers and icons can be tuned live.**
+Reference/lookup table. Defines the 4 playable factions with their stat modifiers. Seeded at startup. **Admin editable via admin panel.**
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
@@ -454,31 +442,34 @@ Reference/lookup table. Defines the 4 playable factions with their stat modifier
 | Name | string | required, unique | e.g. "Iron Throne" |
 | Description | string | required | Short gameplay description |
 | Lore | string | nullable | Flavour/story text |
-| ResourceProductionBonus | decimal | required, default 1.0 | Multiplier on resource income |
-| BonusResourceType | string | nullable | Which resource gets the bonus, null = all |
-| UnitStrengthBonus | decimal | required, default 1.0 | Multiplier on unit BaseStrength |
-| BonusUnitType | string | nullable | Which unit type gets the bonus, null = all |
-| BuildingCostModifier | decimal | required, default 1.0 | Multiplier on all building costs |
-| StartingGold | int | required, default 0 | Bonus gold at game start |
-| StartingFood | int | required, default 0 | Bonus food at game start |
-| StartingWood | int | required, default 0 | Bonus wood at game start |
-| StartingStone | int | required, default 0 | Bonus stone at game start |
-| StartingMana | int | required, default 0 | Bonus mana at game start |
+| AttackModifier | decimal | required, default 1.0 | Multiplier on army Attack |
+| HPModifier | decimal | required, default 1.0 | Multiplier on army HP |
+| InitiativeModifier | decimal | required, default 1.0 | Multiplier on army Initiative |
+| ChipDamageModifier | decimal | required, default 1.0 | Multiplier on chip damage ranges |
+| ResourceProductionModifier | decimal | required, default 1.0 | Multiplier on building yields |
+| BuildingCostModifier | decimal | required, default 1.0 | Multiplier on building costs |
+| TrainingCostModifier | decimal | required, default 1.0 | Multiplier on army training costs |
+| ActionPointModifier | int | required, default 0 | Added to base action points (+1, -1) |
+| HealRateModifier | decimal | required, default 1.0 | Multiplier on global heal rate |
+| StartingBonusResource | string | nullable | Which resource gets the starting bonus |
+| StartingBonusAmount | int | required, default 0 | How much extra of that resource |
 | IconUrl | string | nullable | Faction emblem/icon |
 
 **Seeded Data:**
 
-| Faction | Resource Bonus | Unit Bonus | Building Cost | Starting Bonus |
-|---------|---------------|------------|---------------|----------------|
-| Iron Throne | — | +20% all units | +10% (costs more) | +50 Gold |
-| Mage Council | +20% Mana only | +20% Mage only | -10% | +30 Mana |
-| Merchant Republic | +30% Gold only | -10% all units | -20% | +100 Gold |
-| Forest Elves | +20% Food & Wood | — | -10% | +50 Wood |
+| Faction | Atk | HP | Init | Chip | ResProd | BldCost | TrnCost | AP | Heal | Starting |
+|---------|-----|----|------|------|---------|---------|---------|-----|------|----------|
+| Iron Throne | 1.15 | 1.0 | 1.0 | 1.50 | 0.85 | 1.0 | 1.0 | 0 | 1.0 | +50 Gold |
+| Mage Council | 1.0 | 0.85 | 1.20 | 1.0 | 1.0 | 1.0 | 1.0 | +1 | 1.0 | +30 Mana |
+| Merchant Republic | 0.90 | 1.0 | 1.0 | 1.0 | 1.0 | 0.80 | 0.85 | 0 | 1.0 | +100 Gold |
+| Forest Elves | 1.0 | 1.15 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | -1 | 1.50 | +50 Wood |
 
 **Business Rules:**
 - Each faction can only be chosen by one kingdom per game — enforced at API level on join
 - FactionType is picked during lobby join, cannot be changed after game starts
-- Modifiers apply passively every turn — no code changes needed when admin tunes values
+- All modifiers are **multiplicative** (applied as multipliers, not additive)
+- ActionPointModifier is the only additive modifier (added to base action points)
+- Building cost rounding uses **ceil** (round up) to prevent fractional exploits
 
 ---
 
@@ -486,21 +477,25 @@ Reference/lookup table. Defines the 4 playable factions with their stat modifier
 
 | # | Entity | Type | Count |
 |---|--------|------|-------|
-| 1 | AppUser | Identity | 1 |
-| 2 | Game | Game State | 1 |
-| 3 | Kingdom | Game State | 1 per player + 1 barbarian per game |
+| 1 | AppUser | Identity | 1 per registered user |
+| 2 | Game | Game State | 1 per match |
+| 3 | Kingdom | Game State | 1 per player per game |
 | 4 | Tile | Game State | MapWidth × MapHeight per game |
 | 5 | TerrainType | Reference | 5 rows (seeded) |
-| 6 | BuildingType | Reference | 21 rows (seeded) |
+| 6 | BuildingType | Reference | 19 rows (seeded: 18 chain + castle) |
 | 7 | Building | Game State | 0–1 per tile |
-| 8 | UnitType | Reference | 5 rows (seeded) |
-| 9 | UnitTypeMatchup | Reference | ~20 rows (seeded) |
-| 10 | Army | Game State | 0–1 per kingdom per tile |
-| 11 | Unit | Game State | Many per army |
-| 12 | Battle | Game State | One per attack action |
-| 13 | KingdomResource | Game State | 5 per player kingdom |
-| 14 | TurnLog | History | Many per turn per kingdom |
-| 15 | GameEvent | History | 0–N per turn |
-| 16 | FactionType | Reference | 4 rows (seeded) |
+| 8 | ArmyType | Reference | 6 rows (seeded) |
+| 9 | Army | Game State | 0–3 per military building |
+| 10 | Battle | Game State | One per battle resolved |
+| 11 | BattleRound | Game State | Many per battle |
+| 12 | KingdomResource | Game State | 5 per kingdom |
+| 13 | TurnLog | History | Many per round |
+| 14 | FactionType | Reference | 4 rows (seeded) |
 
-**Total: 16 entities** (well above the required minimum of 10)
+**Total: 14 entities**
+
+### Removed Entities (from original design)
+- **UnitType** → replaced by ArmyType (armies are single entities, not squads of units)
+- **UnitTypeMatchup** → removed (no rock-paper-scissors matchups)
+- **Unit** → removed (armies are single entities with their own HP)
+- **GameEvent** → deferred (random events not yet designed)

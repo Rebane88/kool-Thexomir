@@ -8,16 +8,13 @@
 
 Map size is set at lobby creation via `Game.MapWidth` and `Game.MapHeight`.
 
-**⚠️ OPEN QUESTION:** Are there recommended map sizes per player count? Suggested defaults:
+| Players | Size | Total Tiles |
+|---------|------|-------------|
+| 2 | 16 × 16 | 256 |
+| 3 | 20 × 20 | 400 |
+| 4 | 24 × 24 | 576 |
 
-| Players | Suggested Size | Total Tiles |
-|---------|---------------|-------------|
-| 2 | 12 × 12 | 144 |
-| 3–4 | 16 × 16 | 256 |
-| 5–6 | 20 × 20 | 400 |
-| 7–8 | 24 × 24 | 576 |
-
-These are starting suggestions — tune after playtesting.
+Max players is 4 (see D-27). Maps scale so players have room to expand before borders meet.
 
 ---
 
@@ -25,7 +22,12 @@ These are starting suggestions — tune after playtesting.
 
 Tiles use **hex axial coordinates** (Q, R). Q + R combination must be unique per game.
 
-**⚠️ OPEN QUESTION:** Adjacency calculation for hex grids — define the exact offset formula used for axial coordinates. Standard axial neighbors are: (Q±1, R), (Q, R±1), (Q+1, R-1), (Q-1, R+1). Confirm which system is being used so all tile adjacency checks in combat, claiming, and army movement use the same logic.
+Axial neighbors for any tile at (Q, R):
+```
+(Q+1, R), (Q-1, R), (Q, R+1), (Q, R-1), (Q+1, R-1), (Q-1, R+1)
+```
+
+This formula is used consistently everywhere: territory expansion, border detection, attack validation.
 
 ---
 
@@ -33,62 +35,52 @@ Tiles use **hex axial coordinates** (Q, R). Q + R combination must be unique per
 
 Terrain is randomly assigned per tile at generation time using weighted probability.
 
-**⚠️ OPEN QUESTION:** Terrain distribution weights are not defined. Suggested starting weights:
+Weights (admin-editable):
 
-| Terrain | Suggested Weight |
+| Terrain | Weight |
 |---------|-----------------|
 | Plains | 35% |
 | Forest | 25% |
 | Mountain | 20% |
-| River | 12% |
+| Desert | 12% |
 | Magic Grove | 8% |
 
-These create a mostly open map with interesting terrain pockets. Adjust for desired gameplay feel.
+### Anti-Clustering Rule
 
-**⚠️ OPEN QUESTION:** Is terrain purely random per tile, or does generation use noise/clustering to create terrain regions (e.g. mountain ranges, river valleys)? Clustered terrain feels more realistic and strategically meaningful but is more complex to implement. Decide based on development priority.
+Terrain is generated randomly but with a spread constraint: a tile cannot be placed if more than **2 of its 6 neighbors** are already the same terrain type. If violated, reroll until a valid terrain is assigned.
+
+### Starting Area Variety
+
+After generation, validate that within **3 hexes of each starting position**, at least **4 of the 5 terrain types** are present. If not, swap tiles to ensure variety. This guarantees every player has meaningful expansion choices in multiple directions.
 
 ---
 
 ## Player Starting Positions
 
-Each player's starting tile has `HasSettlement = true`.
+Each player starts with:
+- **1 Castle** on their starting tile
+- **6 adjacent tiles** automatically owned (the castle's expansion radius)
+- Starting tile terrain is always **Plains** for fairness
+- No starting armies — players must build military buildings to train armies
 
 **Placement rules:**
-- Players spawn at distributed positions (corners/edges) to ensure fair starting distance
-- **⚠️ OPEN QUESTION:** Exact spawn placement algorithm not defined. For 2 players: opposite corners. For 4 players: 4 corners. For other counts — define a distribution algorithm.
-- Starting tile terrain — **⚠️ OPEN QUESTION:** Is the starting tile always Plains, or random? Recommend Plains to give all players a fair start regardless of RNG.
+- Players spawn at distributed positions to ensure fair starting distance
+- For 2 players: opposite sides of the map
+- For 3 players: triangle formation (3 equidistant points around the map edge)
+- For 4 players: 4 corners
 
-**Starting army:**
-- **⚠️ OPEN QUESTION:** Does each player start with a pre-built army, or must they build a Barracks first before they can recruit? This heavily affects early game pacing. Options:
-  - A) No starting army — first few turns are pure expansion/building
-  - B) 2 Swordsmen on the starting tile — players can immediately contest barbarian tiles
+Starting positions must be on the **edge of the map or within 2–3 tiles of the edge**. Players expand inward, not outward.
 
-**Starting building:**
-- **⚠️ OPEN QUESTION:** Does the starting tile come with a pre-built building (e.g. a Farm), or is it bare? Recommend a pre-built Barracks or Farm to give players immediate agency.
-
----
-
-## Barbarian Placement
-
-After player starting tiles are set:
-
-1. Identify all remaining unclaimed tiles
-2. Randomly select approximately **30%** of them to receive a barbarian army
-3. Create barbarian Army records owned by the barbarian kingdom
-4. Each barbarian army contains **⚠️ OPEN QUESTION: how many Swordsmen?** Suggested: 2–3 Swordsmen per camp to give early armies a challenge without being impassable.
-
-**Barbarian armies are not placed on tiles adjacent to any player's starting tile** — players need at least one free expansion tile before hitting resistance.
-
-**⚠️ OPEN QUESTION:** Should barbarian army size scale with distance from starting positions? Distant tiles could have larger barbarian forces, making deep expansion more dangerous. Adds strategy but more complexity to implement.
+Starting positions must ensure no two players' initial 7-tile territories overlap.
 
 ---
 
 ## Generation Sequence
 
 1. Create all `Tile` records with Q/R coordinates and randomised `TerrainTypeId`
-2. Assign player starting tiles (`HasSettlement = true`, `OwnerKingdomId` = player kingdom)
-3. Create barbarian kingdom
-4. Place barbarian armies on ~30% of non-starting tiles
+2. Override starting tile terrain to Plains
+3. Assign player starting tiles with Castle building
+4. Claim 6 adjacent tiles for each player's starting territory
 5. Initialise `KingdomResource` rows for each player kingdom with starting amounts
 6. Set `Game.Status = Active`, `Game.StartedAt = now`
 7. Broadcast `GameStarted` SignalR event

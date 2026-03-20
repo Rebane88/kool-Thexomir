@@ -4,11 +4,12 @@ using Application.Services.GameInitialization.DTOs;
 using Domain.Game;
 using Domain.Map;
 using Domain.Resources;
+using Microsoft.Extensions.Logging;
 using DomainBuilding = Domain.Buildings.Building;
 
 namespace Application.Services.GameInitialization;
 
-public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializationService
+public class GameInitializationService(IUnitOfWork unitOfWork, ILogger<GameInitializationService> logger) : IGameInitializationService
 {
     public async Task<GameStateDto> InitializeGameAsync(Guid gameId)
     {
@@ -18,16 +19,20 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
         var kingdoms = (await unitOfWork.Kingdoms.GetKingdomsForGameAsync(gameId))
             .OrderBy(k => k.TurnOrder).ToList();
 
+        logger.LogInformation("[InitGame] Game={GameId} Players={Count} TurnOrder: {TurnOrder}",
+            gameId, kingdoms.Count,
+            string.Join(", ", kingdoms.Select(k => $"{k.Name}(Order={k.TurnOrder})")));
+
         var terrainTypes = (await unitOfWork.TerrainTypes.GetAllAsync()).ToList();
 
-        // Determine map size
-        var (width, height) = MapGenerator.GetMapSize(kingdoms.Count);
-        game.MapWidth = width;
-        game.MapHeight = height;
+        // Determine map size (hexagonal grid centered at origin)
+        var mapRadius = HexGridHelper.CalculateRadius(kingdoms.Count);
+        game.MapWidth = mapRadius;
+        game.MapHeight = 0;
 
-        // Generate grid and starting positions
-        var coords = MapGenerator.GenerateRectangularHexGrid(width, height);
-        var startPositions = MapGenerator.CalculateEdgeStartingPositions(width, height, kingdoms.Count);
+        // Generate hex grid and starting positions
+        var coords = HexGridHelper.GenerateHexGrid(mapRadius);
+        var startPositions = HexGridHelper.CalculateStartingPositions(mapRadius, kingdoms.Count);
 
         // Build terrain arrays matching seeder order: Plains, Forest, Mountain, Desert, MagicGrove
         var terrainTypeIds = terrainTypes.Select(t => t.Id).ToArray();
@@ -110,8 +115,11 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
         var firstKingdom = kingdoms.First();
         game.CurrentTurnKingdomId = firstKingdom.Id;
 
-        var firstFaction = await unitOfWork.FactionTypes.GetByIdAsync(firstKingdom.FactionTypeId);
+        var firstFaction = await unitOfWork.FactionTypes.GetByIdAsync(firstKingdom.FactionTypeId!.Value);
         game.RemainingActionPoints = game.BaseActionPoints + (firstFaction?.ActionPointModifier ?? 0);
+
+        logger.LogInformation("[InitGame] Game={GameId} started. FirstTurn={KingdomName} (Id={KingdomId}) AP={AP} Phase={Phase}",
+            gameId, firstKingdom.Name, firstKingdom.Id, game.RemainingActionPoints, game.CurrentPhase);
 
         await unitOfWork.CommitAsync();
 
@@ -131,7 +139,9 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
         foreach (var kingdom in kingdoms)
         {
             var resources = await unitOfWork.KingdomResources.GetResourcesForKingdomAsync(kingdom.Id);
-            var faction = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId);
+            var faction = kingdom.FactionTypeId.HasValue
+                ? await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId.Value)
+                : null;
 
             kingdomDtos.Add(new KingdomDto
             {
@@ -173,7 +183,11 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
             TargetTileId = da.TargetTileId,
             RiskedTileId = da.RiskedTileId,
             AttackerKingdomId = da.AttackerKingdomId,
-            DefenderKingdomId = da.DefenderKingdomId
+            DefenderKingdomId = da.DefenderKingdomId,
+            AttackerArmiesSelected = !string.IsNullOrEmpty(da.AttackerSelectedArmyIds),
+            DefenderArmiesSelected = !string.IsNullOrEmpty(da.DefenderSelectedArmyIds),
+            AttackerLineupConfirmed = da.AttackerLineupConfirmed,
+            DefenderLineupConfirmed = da.DefenderLineupConfirmed
         }).ToList();
 
         return new GameStateDto
@@ -184,6 +198,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
             WinCondition = game.WinCondition.ToString(),
             MapWidth = game.MapWidth,
             MapHeight = game.MapHeight,
+            MapRadius = game.MapWidth,
             CurrentTurnKingdomId = game.CurrentTurnKingdomId,
             CurrentPhase = game.CurrentPhase.ToString(),
             RemainingActionPoints = game.RemainingActionPoints,
@@ -215,7 +230,8 @@ public class GameInitializationService(IUnitOfWork unitOfWork) : IGameInitializa
 
         foreach (var kingdom in kingdoms)
         {
-            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId);
+            if (!kingdom.FactionTypeId.HasValue) continue;
+            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId.Value);
             if (factionType is null) continue;
 
             var resources = ResourceInitializer.CreateStartingResources(

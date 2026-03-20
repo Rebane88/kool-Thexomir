@@ -5,7 +5,7 @@ import { MilitaryPanel } from './MilitaryPanel';
 import type { BuildingTypeRef } from '../types/building-types';
 
 interface BuildingPanelProps {
-  selectedTileKey: string;
+  selectedTileKey: string | null;
 }
 
 export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
@@ -26,9 +26,10 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
   const resources = myKingdom?.resources ?? {};
 
   // Check if military tab should be visible
-  const selectedTile = tiles.get(selectedTileKey);
-  const existingBuilding = selectedTile?.buildings[0] ?? null;
-  const isCastleTile = selectedTile?.isCastle === true;
+  const selectedTile = selectedTileKey ? tiles.get(selectedTileKey) : undefined;
+  const isOwnTile = selectedTile?.kingdomId === myKingdomId;
+  const existingBuilding = (isOwnTile ? selectedTile?.buildings[0] : null) ?? null;
+  const isCastleTile = isOwnTile && selectedTile?.isCastle === true;
   const hasMilitaryTab = existingBuilding !== null
     && armyTypes.some((at) => at.requiredBuildingTypeId === existingBuilding.buildingTypeId);
 
@@ -60,21 +61,23 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
     return false;
   }
 
-  // Context-aware catalog title
+  // Context-aware catalog title & building list
   const existingBuildingName = existingBuilding?.buildingName
     ?? buildingTypes.find((bt) => bt.id === existingBuilding?.buildingTypeId)?.name;
-  const catalogTitle = existingBuilding
-    ? `Upgrade ${existingBuildingName ?? 'Building'}`
-    : 'Build';
 
-  // If castle tile: no building catalog (castle is not upgradable)
-  // If tile has a building: show possible upgrades
-  // If empty tile: show Tier 1 buildings
-  const displayedBuildings = isCastleTile
-    ? []
-    : existingBuilding
-      ? buildingTypes.filter((bt) => bt.unlockedByBuildingTypeId === existingBuilding.buildingTypeId)
-      : buildingTypes.filter((bt) => bt.tier === 1);
+  let catalogTitle: string;
+  let displayedBuildings: BuildingTypeRef[];
+
+  if (isCastleTile) {
+    catalogTitle = 'Castle';
+    displayedBuildings = [];
+  } else if (existingBuilding) {
+    catalogTitle = `Upgrade ${existingBuildingName ?? 'Building'}`;
+    displayedBuildings = buildingTypes.filter((bt) => bt.unlockedByBuildingTypeId === existingBuilding.buildingTypeId);
+  } else {
+    catalogTitle = 'Build';
+    displayedBuildings = buildingTypes.filter((bt) => bt.tier === 1);
+  }
 
   function handleSelect(typeId: string) {
     setBuildMode(buildModeTypeId === typeId ? null : typeId);
@@ -82,7 +85,7 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
 
   const buildingsContent = displayedBuildings.length === 0 ? (
     <div className="text-bronze-400 text-sm px-3 py-4 text-center">
-      {isCastleTile ? 'Castle cannot be upgraded' : existingBuilding ? 'No upgrades available' : 'No buildings available'}
+      {isCastleTile ? 'Castle cannot be upgraded' : existingBuilding ? 'No upgrades available' : 'Select a building, then click a tile to place it'}
     </div>
   ) : (
     <div className="space-y-1">
@@ -97,11 +100,16 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
           onSelect={handleSelect}
         />
       ))}
+      {buildModeTypeId && (
+        <div className="text-bronze-400 text-xs px-3 py-2 text-center italic">
+          Click a highlighted tile to place
+        </div>
+      )}
     </div>
   );
 
   return (
-    <div className="stone-panel absolute top-12 right-0 bottom-0 w-72 z-30 overflow-y-auto p-3">
+    <div className="stone-panel absolute top-14 right-0 bottom-[44px] w-72 z-30 overflow-y-auto p-3">
       {hasMilitaryTab ? (
         <>
           <div className="flex gap-1 mb-3 border-b border-bronze-700">

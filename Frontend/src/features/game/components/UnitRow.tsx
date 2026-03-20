@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ComponentType, SVGProps } from 'react';
-import type { UnitTypeRef } from '../types/military-types';
-import { GoldIcon, FoodIcon, WoodIcon, StoneIcon, ManaIcon } from '@/assets/icons';
+import type { ArmyTypeRef } from '../types/military-types';
+import { GoldIcon, FoodIcon, StoneIcon, ManaIcon } from '@/assets/icons';
 import { Button } from '@/shared/ui/Button';
 import { QuantityStepper } from './QuantityStepper';
 import { ApCostBadge, useCanAffordAp } from './ApCostBadge';
@@ -13,29 +13,27 @@ interface IconProps extends SVGProps<SVGSVGElement> {
 const RESOURCE_ICONS: Record<string, ComponentType<IconProps>> = {
   Gold: GoldIcon,
   Food: FoodIcon,
-  Wood: WoodIcon,
   Stone: StoneIcon,
   Mana: ManaIcon,
 };
 
-const UNIT_COST_RESOURCE_MAP: { key: keyof UnitTypeRef; resource: string }[] = [
-  { key: 'goldCost', resource: 'Gold' },
-  { key: 'foodCost', resource: 'Food' },
-  { key: 'woodCost', resource: 'Wood' },
-  { key: 'stoneCost', resource: 'Stone' },
-  { key: 'manaCost', resource: 'Mana' },
+const ARMY_COST_RESOURCE_MAP: { key: keyof ArmyTypeRef; resource: string }[] = [
+  { key: 'trainingCostGold', resource: 'Gold' },
+  { key: 'trainingCostFood', resource: 'Food' },
+  { key: 'trainingCostStone', resource: 'Stone' },
+  { key: 'trainingCostMana', resource: 'Mana' },
 ];
 
 interface UnitRowProps {
-  unitType: UnitTypeRef;
+  armyType: ArmyTypeRef;
   canAfford: boolean;
   insufficientResources: string[];
   maxAffordable: number;
-  onTrain: (unitTypeId: string, quantity: number) => void;
+  onTrain: (armyTypeId: string, quantity: number) => void;
 }
 
 export function UnitRow({
-  unitType,
+  armyType,
   canAfford,
   insufficientResources,
   maxAffordable,
@@ -56,17 +54,18 @@ export function UnitRow({
     <div className={rowClasses}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <span className="text-parchment-100 font-medium text-sm">{unitType.name}</span>
+          <span className="text-parchment-100 font-medium text-sm">{armyType.name}</span>
           <ApCostBadge cost={1} />
         </div>
-        <span className="text-ember-300 text-xs">{unitType.baseStrength} str</span>
+        <span className="text-ember-300 text-xs">{armyType.attack} atk</span>
       </div>
 
       <div className="flex items-center gap-1.5 mt-1">
-        {UNIT_COST_RESOURCE_MAP.map(({ key, resource }) => {
-          const value = unitType[key] as number;
+        {ARMY_COST_RESOURCE_MAP.map(({ key, resource }) => {
+          const value = armyType[key] as number;
           if (value <= 0) return null;
           const Icon = RESOURCE_ICONS[resource];
+          if (!Icon) return null;
           const isInsufficient = insufficientResources.includes(resource);
           return (
             <span
@@ -92,7 +91,7 @@ export function UnitRow({
             variant="primary"
             size="sm"
             onClick={() => {
-              onTrain(unitType.id, quantity);
+              onTrain(armyType.id, quantity);
               setQuantity(1);
             }}
           >

@@ -47,7 +47,7 @@ public class ArmyService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IArmySe
             return Result<ArmyTrainedDto>.Fail(validationError);
 
         // 8. Load faction type for modifiers
-        var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId);
+        var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId!.Value);
 
         // 9. Get modified training costs
         var costs = ArmyRules.GetModifiedTrainingCosts(armyType, factionType!.TrainingCostModifier);
@@ -108,7 +108,8 @@ public class ArmyService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IArmySe
             KingdomId = kingdom.Id,
             CurrentHP = army.CurrentHP,
             MaxHP = army.MaxHP,
-            ResourcesAfter = resourcesAfter
+            ResourcesAfter = resourcesAfter,
+            ActionPointsAfter = game.RemainingActionPoints ?? 0
         });
     }
 

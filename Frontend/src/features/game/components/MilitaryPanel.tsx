@@ -1,57 +1,56 @@
 import { useGameStore } from '../game-store';
 import { trainArmy } from '../game-api';
 import { UnitRow } from './UnitRow';
-import type { UnitTypeRef } from '../types/military-types';
+import type { ArmyTypeRef } from '../types/military-types';
 
 interface MilitaryPanelProps {
-  selectedTileKey: string;
+  selectedTileKey: string | null;
 }
 
-const RESOURCE_COST_KEYS: { key: keyof UnitTypeRef; resource: string }[] = [
-  { key: 'goldCost', resource: 'Gold' },
-  { key: 'foodCost', resource: 'Food' },
-  { key: 'woodCost', resource: 'Wood' },
-  { key: 'stoneCost', resource: 'Stone' },
-  { key: 'manaCost', resource: 'Mana' },
+const RESOURCE_COST_KEYS: { key: keyof ArmyTypeRef; resource: string }[] = [
+  { key: 'trainingCostGold', resource: 'Gold' },
+  { key: 'trainingCostFood', resource: 'Food' },
+  { key: 'trainingCostStone', resource: 'Stone' },
+  { key: 'trainingCostMana', resource: 'Mana' },
 ];
 
 export function MilitaryPanel({ selectedTileKey }: MilitaryPanelProps) {
-  const unitTypes = useGameStore((s) => s.unitTypes);
+  const armyTypes = useGameStore((s) => s.armyTypes);
   const myKingdomId = useGameStore((s) => s.myKingdomId);
   const kingdoms = useGameStore((s) => s.kingdoms);
   const tiles = useGameStore((s) => s.tiles);
   const gameId = useGameStore((s) => s.gameId);
 
-  const tile = tiles.get(selectedTileKey);
+  const tile = selectedTileKey ? tiles.get(selectedTileKey) : undefined;
   const building = tile?.buildings[0] ?? null;
 
   const trainableUnits = building
-    ? unitTypes.filter((ut) => ut.producedByBuildingTypeIds.includes(building.buildingTypeId))
+    ? armyTypes.filter((at) => at.requiredBuildingTypeId === building.buildingTypeId)
     : [];
 
   const resources = (myKingdomId ? kingdoms.get(myKingdomId)?.resources : undefined) ?? {};
 
-  function canAfford(ut: UnitTypeRef): boolean {
+  function canAfford(at: ArmyTypeRef): boolean {
     for (const { key, resource } of RESOURCE_COST_KEYS) {
-      const cost = ut[key] as number;
+      const cost = at[key] as number;
       if (cost > 0 && (resources[resource] ?? 0) < cost) return false;
     }
     return true;
   }
 
-  function getInsufficientResources(ut: UnitTypeRef): string[] {
+  function getInsufficientResources(at: ArmyTypeRef): string[] {
     const insufficient: string[] = [];
     for (const { key, resource } of RESOURCE_COST_KEYS) {
-      const cost = ut[key] as number;
+      const cost = at[key] as number;
       if (cost > 0 && (resources[resource] ?? 0) < cost) insufficient.push(resource);
     }
     return insufficient;
   }
 
-  function getMaxAffordable(ut: UnitTypeRef): number {
+  function getMaxAffordable(at: ArmyTypeRef): number {
     let maxQty = Infinity;
     for (const { key, resource } of RESOURCE_COST_KEYS) {
-      const cost = ut[key] as number;
+      const cost = at[key] as number;
       if (cost > 0) {
         maxQty = Math.min(maxQty, Math.floor((resources[resource] ?? 0) / cost));
       }
@@ -75,13 +74,13 @@ export function MilitaryPanel({ selectedTileKey }: MilitaryPanelProps) {
 
   return (
     <div>
-      {trainableUnits.map((ut) => (
+      {trainableUnits.map((at) => (
         <UnitRow
-          key={ut.id}
-          unitType={ut}
-          canAfford={canAfford(ut)}
-          insufficientResources={getInsufficientResources(ut)}
-          maxAffordable={getMaxAffordable(ut)}
+          key={at.id}
+          armyType={at}
+          canAfford={canAfford(at)}
+          insufficientResources={getInsufficientResources(at)}
+          maxAffordable={getMaxAffordable(at)}
           onTrain={handleTrain}
         />
       ))}

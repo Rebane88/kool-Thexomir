@@ -23,7 +23,6 @@ import { TERRAIN_BASE_COLORS } from './terrain-patterns';
 import type { MapRenderState } from './types';
 import type { Tile } from '../types/map-types';
 import type { Kingdom } from '../types/kingdom-types';
-import type { Army } from '../types/military-types';
 
 interface CallTracker {
   fillStyleHistory: string[];
@@ -92,7 +91,7 @@ function makeTile(overrides: Partial<Tile> & { coordQ: number; coordR: number })
     terrainTypeId: 't1',
     terrainName: 'Plains',
     kingdomId: null,
-    isCapital: false,
+    isCastle: false,
     buildings: [],
     ...overrides,
   };
@@ -101,7 +100,6 @@ function makeTile(overrides: Partial<Tile> & { coordQ: number; coordR: number })
 function buildState(opts: {
   tiles?: Tile[];
   kingdoms?: Kingdom[];
-  armies?: Army[];
   myKingdomId?: string | null;
 }) {
   const tiles = new Map<string, Tile>();
@@ -115,15 +113,10 @@ function buildState(opts: {
   for (const k of opts.kingdoms ?? []) {
     kingdoms.set(k.id, k);
   }
-  const armies = new Map<string, Army>();
-  for (const a of opts.armies ?? []) {
-    armies.set(a.id, a);
-  }
   return {
     tiles,
     tileIdToCoord,
     kingdoms,
-    armies,
     myKingdomId: opts.myKingdomId ?? null,
     mapRadius: 7,
   };
@@ -134,9 +127,9 @@ const noRender: MapRenderState = { hoveredTileKey: null, selectedTileKey: null, 
 describe('getKingdomColor', () => {
   it('returns indexed color for kingdoms by insertion order', () => {
     const kingdoms = new Map<string, Kingdom>();
-    kingdoms.set('k1', { id: 'k1', name: 'K1', userId: null, factionTypeId: null, factionName: null, isEliminated: false, resources: {} });
-    kingdoms.set('k2', { id: 'k2', name: 'K2', userId: null, factionTypeId: null, factionName: null, isEliminated: false, resources: {} });
-    kingdoms.set('k3', { id: 'k3', name: 'K3', userId: null, factionTypeId: null, factionName: null, isEliminated: false, resources: {} });
+    kingdoms.set('k1', { id: 'k1', name: 'K1', userId: null, factionTypeId: null, factionName: null, status: 'Active', resources: {} });
+    kingdoms.set('k2', { id: 'k2', name: 'K2', userId: null, factionTypeId: null, factionName: null, status: 'Active', resources: {} });
+    kingdoms.set('k3', { id: 'k3', name: 'K3', userId: null, factionTypeId: null, factionName: null, status: 'Active', resources: {} });
 
     expect(getKingdomColor(kingdoms, 'k1')).toBe(KINGDOM_COLORS[0]); // red
     expect(getKingdomColor(kingdoms, 'k2')).toBe(KINGDOM_COLORS[1]); // blue
@@ -166,7 +159,7 @@ describe('drawGameMap', () => {
 
   it('calls textureCache.getBuildingIcon for castle tile', () => {
     const tile = makeTile({ coordQ: 0, coordR: 0, isCastle: true, kingdomId: 'k1' });
-    const kingdom: Kingdom = { id: 'k1', name: 'K1', userId: null, factionTypeId: null, factionName: null, isEliminated: false, resources: {} };
+    const kingdom: Kingdom = { id: 'k1', name: 'K1', userId: null, factionTypeId: null, factionName: null, status: 'Active', resources: {} };
     const state = buildState({ tiles: [tile], kingdoms: [kingdom] });
     drawGameMap(ctx, 800, 600, state, noRender);
     expect(textureCache.getBuildingIcon).toHaveBeenCalledWith('Castle');
@@ -183,24 +176,6 @@ describe('drawGameMap', () => {
     const state = buildState({ tiles: [tile] });
     drawGameMap(ctx, 800, 600, state, noRender);
     expect(textureCache.getBuildingIcon).toHaveBeenCalledWith('Farm');
-  });
-
-  it('draws army unit count badge for tile with army totaling 3 units', () => {
-    const tile = makeTile({ coordQ: 0, coordR: 0 });
-    const army: Army = {
-      id: 'a1',
-      tileId: tile.id,
-      kingdomId: 'k1',
-      units: [
-        { unitTypeId: 'u1', unitTypeName: 'Soldier', quantity: 2 },
-        { unitTypeId: 'u2', unitTypeName: 'Archer', quantity: 1 },
-      ],
-    };
-    const kingdom: Kingdom = { id: 'k1', name: 'K1', userId: null, factionTypeId: null, factionName: null, isEliminated: false, resources: {} };
-    const state = buildState({ tiles: [tile], kingdoms: [kingdom], armies: [army] });
-    drawGameMap(ctx, 800, 600, state, noRender);
-    const armyTextCall = ctx._tracker.fillTextCalls.find(([text]) => text === '3');
-    expect(armyTextCall).toBeDefined();
   });
 
   it('draws thick gold 3px border for selected tile', () => {

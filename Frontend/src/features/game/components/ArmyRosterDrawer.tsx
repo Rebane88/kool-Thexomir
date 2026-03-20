@@ -31,7 +31,7 @@ export function ArmyRosterDrawer() {
     >
       {/* Collapsed bar / header row */}
       <div
-        className="bg-ash-900/95 border-t border-bronze-700 px-4 py-1.5 flex items-center justify-between cursor-pointer"
+        className="bg-ash-900 border-t border-bronze-700 px-4 py-1.5 flex items-center justify-between cursor-pointer"
         onClick={() => setIsOpen((o) => !o)}
       >
         <div className="flex items-center gap-2">
@@ -47,7 +47,7 @@ export function ArmyRosterDrawer() {
       </div>
 
       {/* Expanded army list */}
-      <div className="bg-ash-900/95 border-t border-ash-600 max-h-[200px] overflow-y-hidden">
+      <div className="bg-ash-900 border-t border-ash-600 max-h-[200px] overflow-y-hidden">
         <div className="flex gap-3 px-4 pb-3 pt-2 overflow-x-auto">
           {myArmies.length === 0 ? (
             <div className="text-parchment-500 text-sm py-2">No armies trained yet</div>

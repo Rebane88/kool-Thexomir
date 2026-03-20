@@ -9,10 +9,10 @@
 | Resource | Enum Value | Notes |
 |----------|------------|-------|
 | Gold | Gold | Primary currency — used for almost everything |
-| Food | Food | Army upkeep — armies die without it |
+| Food | Food | Army upkeep — armies disband without it |
 | Wood | Wood | Basic construction |
 | Stone | Stone | Advanced construction |
-| Mana | Mana | Magical units only |
+| Mana | Mana | Magical armies only |
 
 Each kingdom has exactly **5 KingdomResource rows**, one per type. Amount cannot go below 0.
 
@@ -22,10 +22,15 @@ Each kingdom has exactly **5 KingdomResource rows**, one per type. Amount cannot
 
 Each kingdom starts with base resources plus their faction's starting bonus.
 
-**⚠️ OPEN QUESTION:** Base starting resources for all kingdoms (before faction bonus) are not defined. Needs a decision:
-- How much Gold does every player start with?
-- How much Food, Wood, Stone, Mana?
-- Suggested starting point to tune from: Gold 100, Food 50, Wood 30, Stone 10, Mana 0
+Base starting resources (admin-editable):
+
+| Resource | Base Amount |
+|----------|------------|
+| Gold | 150 |
+| Food | 60 |
+| Wood | 50 |
+| Stone | 20 |
+| Mana | 0 |
 
 Faction bonuses are added on top of base:
 
@@ -40,30 +45,29 @@ Faction bonuses are added on top of base:
 
 ## Resource Generation
 
-Resources are generated during the **Income Phase** of each turn (see turn-structure.md).
+Resources are generated during the **Income Phase** (see turn-structure.md). Income runs for ALL kingdoms simultaneously after the combat phase.
 
 ### Formula
 
+For each resource type (Gold, Food, Wood, Stone, Mana), if the building has a non-zero BaseYield for that resource:
+
 ```
-yield = BuildingType.BaseYield
+yield = BuildingType.BaseYield{Resource}
       × terrainMultiplier
       × factionMultiplier
 ```
 
 **terrainMultiplier:**
-- Check if `TerrainType.BonusResourceType` matches `BuildingType.ResourceProduced`
-- If yes: multiply by `TerrainType.ResourceMultiplier`
+- Check if `TerrainType.BonusResourceType` matches the resource being produced
+- If yes: multiply by `TerrainType.ResourceMultiplier` (default: **1.10** — all terrains use the same 10% bonus, admin-editable per terrain)
 - If no match: multiplier = 1.0
 
 **factionMultiplier:**
-- Check `FactionType.BonusResourceType` against `BuildingType.ResourceProduced`
-- If `BonusResourceType = null` (faction bonus applies to all): multiply by `FactionType.ResourceProductionBonus`
-- If `BonusResourceType` matches: multiply by `FactionType.ResourceProductionBonus`
-- If no match: multiplier = 1.0
+- `FactionType.ResourceProductionModifier` — applies globally to all building yields (e.g. Iron Throne = 0.85)
 
-**⚠️ OPEN QUESTION:** Are terrain multiplier and faction multiplier applied multiplicatively (stacked) or additively? Example: Forest Elves (+20% Wood) on a Forest tile (+20% Wood) — is it 1.44x or 1.4x total? Recommend multiplicative for interesting specialisation but needs decision.
+Terrain and faction multipliers are applied **multiplicatively** (stacked). Example: A building on matching terrain with Iron Throne = BaseYield × 1.10 × 0.85.
 
-**⚠️ OPEN QUESTION:** Do tiles without buildings generate any resources at all? Current assumption: no. Plains tiles with no Farm produce nothing.
+Tiles without buildings generate no resources.
 
 ---
 
@@ -75,16 +79,13 @@ Resources are deducted immediately when an action is taken. Server must validate
 
 | Action | Resource Cost Source |
 |--------|---------------------|
-| Claim tile | Fixed Gold cost — **⚠️ OPEN QUESTION: what is the Gold cost to claim a tile?** |
-| Construct building | `BuildingType.CostGold/Food/Wood/Stone/Mana` |
-| Recruit unit | `UnitType.RecruitCostGold/Food/Wood/Stone/Mana` |
+| Build building | `BuildingType.CostGold/Food/Wood/Stone/Mana × FactionType.BuildingCostModifier` |
+| Upgrade building | Same as build (higher tier costs defined on BuildingType) |
+| Train army | `ArmyType.TrainingCostGold/Food/Stone/Mana × FactionType.TrainingCostModifier` |
 
-**Building costs with faction modifier:**
-```
-actualCost = BuildingType.cost × FactionType.BuildingCostModifier
-```
+Building costs with faction modifier are rounded using **ceil** (round up) to prevent exploiting fractional discounts.
 
-Round to nearest integer. **⚠️ OPEN QUESTION:** Round up or round down? Recommend ceil to prevent exploiting small fractional discounts.
+There is no Gold cost to claim tiles — territory expansion happens automatically when building.
 
 ---
 
@@ -92,54 +93,59 @@ Round to nearest integer. **⚠️ OPEN QUESTION:** Round up or round down? Reco
 
 Upkeep is collected during Income Phase Step 2 (after resource generation).
 
-For each unit:
+For each army in the kingdom's global roster:
 ```
-deduct UnitType.UpkeepGold from Gold
-deduct UnitType.UpkeepFood from Food
+deduct ArmyType.UpkeepGold from Gold
+deduct ArmyType.UpkeepFood from Food
 ```
+
+All upkeep values are admin-editable and can be set to 0.
 
 ### Upkeep Failure (Disbanding)
 
 If after collecting upkeep a resource would go below 0:
 
 1. Floor the resource at 0
-2. Identify units the kingdom can no longer afford
-3. Sort by most expensive upkeep first (define in open-questions.md)
-4. Delete units one by one until remaining upkeep fits within available resources
-5. Log each disbanded unit to TurnLog
+2. Identify armies the kingdom can no longer afford
+3. Sort by most expensive upkeep first (combined Gold + Food value)
+4. Disband armies one by one until remaining upkeep fits within available resources
+5. Log each disbanded army to TurnLog
 
-**This means a kingdom that runs out of Food loses its army automatically.** This is intentional — it's the economic pressure mechanic.
+**This means a kingdom that runs out of Food/Gold loses armies automatically.** This is intentional — it's the economic pressure mechanic.
 
 ---
 
 ## Resource Constraints
 
 - Amount can never go below **0** — enforced at DB level and application level
-- Amount has no defined upper cap — **⚠️ OPEN QUESTION:** Should there be a storage cap? E.g. max 500 of any resource without a Granary/Bank. A cap would make late-game resource management more interesting and prevent passive hoarding.
+- No upper storage cap (may be added later if needed for balance)
 - `KingdomResource.UpdatedAt` is updated every time Amount changes
 
 ---
 
 ## Seeded Building Yields
 
-**⚠️ OPEN QUESTION:** Exact BaseYield values per BuildingType are not defined. The schema has `BaseYield` but values need to be decided. Suggested starting values to balance from:
+BaseYield values (all admin-editable):
 
-| Building | Tier | Resource | Suggested BaseYield |
-|----------|------|----------|---------------------|
-| Farm | 1 | Food | 10 |
-| Windmill | 2 | Food | 20 |
-| Granary | 3 | Food | 35 |
-| Lumber Camp | 1 | Wood | 8 |
-| Sawmill | 2 | Wood | 18 |
-| Timber Hall | 3 | Wood | 30 |
-| Quarry | 1 | Stone | 6 |
-| Mason | 2 | Stone | 14 |
-| Stoneworks | 3 | Stone | 25 |
-| Market | 1 | Gold | 12 |
-| Trading Post | 2 | Gold | 25 |
-| Bank | 3 | Gold | 45 |
-| Shrine | 1 | Mana | 5 |
-| Wizard Tower | 2 | Mana | 12 |
-| Arcane Sanctum | 3 | Mana | 22 |
+| Building | Tier | Gold | Food | Wood | Stone | Mana |
+|----------|------|------|------|------|-------|------|
+| Farm | 1 | — | 10 | — | — | — |
+| Windmill | 2 | — | 20 | — | — | — |
+| Granary | 3 | — | 35 | — | — | — |
+| Lumber Camp | 1 | — | — | 8 | — | — |
+| Sawmill | 2 | — | — | 18 | — | — |
+| Timber Hall | 3 | — | — | 30 | — | — |
+| Quarry | 1 | — | — | — | 6 | — |
+| Mason | 2 | — | — | — | 14 | — |
+| Stoneworks | 3 | — | — | — | 25 | — |
+| Market | 1 | 12 | — | — | — | — |
+| Trading Post | 2 | 25 | — | — | — | — |
+| Bank | 3 | 45 | — | — | — | — |
+| Shrine | 1 | — | — | — | — | 5 |
+| Wizard Tower | 2 | — | — | — | — | 12 |
+| Arcane Sanctum | 3 | — | — | — | — | 22 |
+| Castle | — | — | 10 | 10 | 10 | — |
 
-These are placeholders — tune after playtesting.
+### Slot Machine Spin Cost
+
+Each slot machine spin costs **30 Gold** (see D-30).

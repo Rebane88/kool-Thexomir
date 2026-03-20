@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MilitaryPanel } from './MilitaryPanel';
 import { useGameStore } from '../game-store';
-import type { UnitTypeRef } from '../types/military-types';
+import type { ArmyTypeRef } from '../types/military-types';
 import type { Tile } from '../types/map-types';
 import type { Kingdom } from '../types/kingdom-types';
 
@@ -10,19 +10,29 @@ vi.mock('../game-api', () => ({
   trainArmy: vi.fn(() => Promise.resolve()),
 }));
 
-function makeUnitType(overrides: Partial<UnitTypeRef> = {}): UnitTypeRef {
+function makeArmyType(overrides: Partial<ArmyTypeRef> = {}): ArmyTypeRef {
   return {
-    id: 'ut-1',
-    name: 'Swordsmen',
-    baseStrength: 10,
-    goldCost: 50,
-    foodCost: 20,
-    woodCost: 0,
-    stoneCost: 0,
-    manaCost: 0,
-    upkeep: 5,
-    description: null,
-    producedByBuildingTypeIds: ['barracks-type'],
+    id: 'at-1',
+    name: 'Warrior',
+    attack: 10,
+    hp: 100,
+    initiative: 50,
+    damageRangeMin: 0.8,
+    damageRangeMax: 1.2,
+    chipDamageRangeMin: 0.1,
+    chipDamageRangeMax: 0.2,
+    situationalBonusStat: null,
+    situationalBonusValue: null,
+    situationalBonusCondition: null,
+    trainingCostGold: 50,
+    trainingCostFood: 20,
+    trainingCostStone: 0,
+    trainingCostMana: 0,
+    upkeepGold: 5,
+    upkeepFood: 3,
+    upkeepMana: 0,
+    requiredBuildingTypeId: 'barracks-type',
+    requiredBuildingName: 'Barracks',
     ...overrides,
   };
 }
@@ -35,7 +45,7 @@ function makeTile(overrides: Partial<Tile> = {}): Tile {
     terrainTypeId: 'plains',
     terrainName: 'Plains',
     kingdomId: 'k-1',
-    isCapital: false,
+    isCastle: false,
     buildings: [{ id: 'building-instance-1', buildingTypeId: 'barracks-type', buildingName: 'Barracks' }],
     ...overrides,
   };
@@ -48,14 +58,14 @@ function makeKingdom(overrides: Partial<Kingdom> = {}): Kingdom {
     userId: 'u-1',
     factionTypeId: 'f-1',
     factionName: 'Elves',
-    isEliminated: false,
+    status: 'Active',
     resources: { Gold: 200, Food: 100, Wood: 50, Stone: 50, Mana: 50 },
     ...overrides,
   };
 }
 
 function setupStore(opts: {
-  unitTypes?: UnitTypeRef[];
+  armyTypes?: ArmyTypeRef[];
   tile?: Tile;
   kingdom?: Kingdom;
   gameId?: string;
@@ -68,7 +78,7 @@ function setupStore(opts: {
   kingdoms.set(kingdom.id, kingdom);
 
   useGameStore.setState({
-    unitTypes: opts.unitTypes ?? [makeUnitType()],
+    armyTypes: opts.armyTypes ?? [makeArmyType()],
     myKingdomId: kingdom.id,
     tiles,
     kingdoms,
@@ -84,22 +94,22 @@ describe('MilitaryPanel', () => {
     vi.clearAllMocks();
   });
 
-  it('renders unit types trainable at the selected building', () => {
+  it('renders army types trainable at the selected building', () => {
     setupStore({
-      unitTypes: [
-        makeUnitType({ id: 'ut-1', name: 'Swordsmen' }),
-        makeUnitType({ id: 'ut-2', name: 'Archers', producedByBuildingTypeIds: ['barracks-type'] }),
+      armyTypes: [
+        makeArmyType({ id: 'at-1', name: 'Warrior' }),
+        makeArmyType({ id: 'at-2', name: 'Scout', requiredBuildingTypeId: 'barracks-type' }),
       ],
     });
 
     render(<MilitaryPanel selectedTileKey="0,0" />);
-    expect(screen.getByText('Swordsmen')).toBeTruthy();
-    expect(screen.getByText('Archers')).toBeTruthy();
+    expect(screen.getByText('Warrior')).toBeTruthy();
+    expect(screen.getByText('Scout')).toBeTruthy();
   });
 
   it('dims unaffordable unit rows', () => {
     setupStore({
-      unitTypes: [makeUnitType({ goldCost: 9999 })],
+      armyTypes: [makeArmyType({ trainingCostGold: 9999 })],
       kingdom: makeKingdom({ resources: { Gold: 10, Food: 100 } }),
     });
 
@@ -119,13 +129,13 @@ describe('MilitaryPanel', () => {
 
     expect(trainArmy).toHaveBeenCalledWith('game-1', {
       buildingId: 'building-instance-1',
-      armyTypeId: 'ut-1',
+      armyTypeId: 'at-1',
     });
   });
 
-  it("shows 'No units trainable here' when no unit types match building", () => {
+  it("shows 'No units trainable here' when no army types match building", () => {
     setupStore({
-      unitTypes: [makeUnitType({ producedByBuildingTypeIds: ['other-building-type'] })],
+      armyTypes: [makeArmyType({ requiredBuildingTypeId: 'other-building-type' })],
     });
 
     render(<MilitaryPanel selectedTileKey="0,0" />);

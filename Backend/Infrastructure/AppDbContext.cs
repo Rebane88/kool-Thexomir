@@ -187,25 +187,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .HasForeignKey(b => b.TileCapturedFromKingdomId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // BattleRound: multiple FKs to Army
+        // BattleRound: army columns are historical references (no FK constraints)
+        // Armies may be destroyed during combat, so these are plain Guid columns
         builder.Entity<BattleRound>()
-            .HasOne(br => br.AttackerArmy)
-            .WithMany()
-            .HasForeignKey(br => br.AttackerArmyId)
-            .OnDelete(DeleteBehavior.Restrict);
-
+            .Property(br => br.AttackerArmyId);
         builder.Entity<BattleRound>()
-            .HasOne(br => br.DefenderArmy)
-            .WithMany()
-            .HasForeignKey(br => br.DefenderArmyId)
-            .OnDelete(DeleteBehavior.Restrict);
-
+            .Property(br => br.DefenderArmyId);
         builder.Entity<BattleRound>()
-            .HasOne(br => br.ArmyDestroyed)
-            .WithMany()
-            .HasForeignKey(br => br.ArmyDestroyedId)
-            .IsRequired(false)
-            .OnDelete(DeleteBehavior.Restrict);
+            .Property(br => br.ArmyDestroyedId);
 
         builder.Entity<BattleRound>()
             .Property(br => br.InitiativeWinner)

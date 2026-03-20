@@ -2,10 +2,11 @@ using Application.Contracts;
 using Application.Services.Lobby.DTOs;
 using Base.Contracts;
 using Domain.Game;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Services.Lobby;
 
-public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityService) : ILobbyService
+public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityService, ILogger<LobbyService> logger) : ILobbyService
 {
     private static readonly char[] Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".ToCharArray();
 
@@ -160,7 +161,7 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
         if (playerKingdom is null)
             return Result<bool>.Fail("You are not in this lobby.");
 
-        var takenByOther = kingdoms.Any(k => k.AppUserId != userId && k.FactionTypeId == factionTypeId);
+        var takenByOther = kingdoms.Any(k => k.AppUserId != userId && k.FactionTypeId.HasValue && k.FactionTypeId.Value == factionTypeId);
         if (takenByOther)
             return Result<bool>.Fail("That faction is already taken by another player.");
 
@@ -197,12 +198,24 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
         if (kingdoms.Count < 2)
             return Result<bool>.Fail("At least 2 players are required to start.");
 
-        if (kingdoms.Any(k => k.FactionTypeId == Guid.Empty))
+        if (kingdoms.Any(k => k.FactionTypeId == null))
             return Result<bool>.Fail("All players must select a faction before starting.");
+
+        // Assign turn order before transitioning to InProgress — kingdoms become game players here
+        var orderedKingdoms = kingdoms.OrderBy(k => k.CreatedAt).ThenBy(k => k.Id).ToList();
+        for (int i = 0; i < orderedKingdoms.Count; i++)
+        {
+            orderedKingdoms[i].TurnOrder = i + 1;
+            await unitOfWork.Kingdoms.UpdateAsync(orderedKingdoms[i]);
+        }
 
         game.Status = EGameStatus.InProgress;
         await unitOfWork.Games.UpdateAsync(game);
         await unitOfWork.CommitAsync();
+
+        logger.LogInformation("[StartGame] Game={GameId} started by User={UserId} with {PlayerCount} players. TurnOrder: {TurnOrder}",
+            lobbyId, userId, kingdoms.Count,
+            string.Join(", ", orderedKingdoms.Select(k => $"{k.Name}(Order={k.TurnOrder})")));
 
         return Result<bool>.Ok(true);
     }
@@ -261,8 +274,8 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
             .ToList();
 
         var takenFactionIds = kingdoms
-            .Where(k => k.FactionTypeId != Guid.Empty)
-            .Select(k => k.FactionTypeId)
+            .Where(k => k.FactionTypeId.HasValue)
+            .Select(k => k.FactionTypeId!.Value)
             .ToHashSet();
 
         var factions = allFactions

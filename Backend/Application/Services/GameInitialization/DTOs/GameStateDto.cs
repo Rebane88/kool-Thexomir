@@ -10,6 +10,7 @@ public class GameStateDto
     public string WinCondition { get; set; } = string.Empty;
     public int MapWidth { get; set; }
     public int MapHeight { get; set; }
+    public int MapRadius { get; set; }
     public Guid? CurrentTurnKingdomId { get; set; }
     public string? CurrentPhase { get; set; }
     public int? RemainingActionPoints { get; set; }

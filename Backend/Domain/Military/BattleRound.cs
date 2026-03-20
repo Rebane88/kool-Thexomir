@@ -24,7 +24,4 @@ public class BattleRound : BaseEntity
 
     // Navigation
     public Battle? Battle { get; set; }
-    public Army? AttackerArmy { get; set; }
-    public Army? DefenderArmy { get; set; }
-    public Army? ArmyDestroyed { get; set; }
 }

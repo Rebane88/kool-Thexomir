@@ -60,15 +60,18 @@ export function GamePage() {
   const isDraggingRef = useRef(false);
   const lastDragPosRef = useRef<{ x: number; y: number } | null>(null);
 
+  // Stable ref so draw and pre-declaration effects can call markDirty without
+  // capturing it from useGameCanvas, which would be a TDZ forward reference.
+  const markDirtyRef = useRef<() => void>(() => {});
+
   const myKingdomId = useGameStore((s) => s.myKingdomId);
   const isMyTurn = useGameStore(
     (s) => s.myKingdomId !== null && s.currentTurnKingdomId === s.myKingdomId,
   );
-  const selectedTile = useGameStore((s) => {
-    if (!selectedTileKey) return null;
-    return s.tiles.get(selectedTileKey) ?? null;
-  });
-  const showBuildingPanel = selectedTile !== null && selectedTile.kingdomId === myKingdomId;
+  const currentPhase = useGameStore((s) => s.currentPhase);
+
+  // Building panel shows automatically during your Action phase
+  const showBuildingPanel = isMyTurn && currentPhase === 'Action';
 
   const myKingdom = useGameStore((s) => s.myKingdomId ? s.kingdoms.get(s.myKingdomId) : undefined);
   const isEliminated = myKingdom?.status === 'Defeated';
@@ -131,12 +134,12 @@ export function GamePage() {
       .catch((err) => console.error('Failed to fetch army types:', err));
   }, [gameId, connectionStatus]);
 
-  // Clear build mode when panel hides
+  // Clear build mode when turn ends or phase changes
   useEffect(() => {
-    if (!showBuildingPanel) {
+    if (!isMyTurn || currentPhase !== 'Action') {
       useGameStore.getState().setBuildMode(null);
     }
-  }, [showBuildingPanel]);
+  }, [isMyTurn, currentPhase]);
 
   // Detect newly eliminated kingdoms to show banners
   const prevKingdomsRef = useRef<Map<string, Kingdom>>(new Map());
@@ -183,20 +186,24 @@ export function GamePage() {
       }
       if (newAnims.length > 0) {
         placementAnimationsRef.current = [...placementAnimationsRef.current, ...newAnims];
-        markDirty();
+        markDirtyRef.current();
       }
       prevTiles = state.tiles;
     });
     return unsub;
-  }, [markDirty]);
+  }, []);
 
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
       const state = useGameStore.getState();
+      const selectedBuildingType = state.buildModeTypeId
+        ? state.buildingTypes.find((bt) => bt.id === state.buildModeTypeId)
+        : null;
       const renderState: MapRenderState = {
         hoveredTileKey: hoveredRef.current,
         selectedTileKey: selectedRef.current,
         buildModeTypeId: state.buildModeTypeId,
+        buildModeUpgradesFrom: selectedBuildingType?.unlockedByBuildingTypeId ?? null,
         armyHighlightTileKey: null,
         assetsReady: assetsReadyRef.current,
         declareAttackGlowTileKeys: declareAttackGlowRef.current,
@@ -220,10 +227,9 @@ export function GamePage() {
         {
           tiles: state.tiles,
           kingdoms: state.kingdoms,
-          armies: state.armies,
           tileIdToCoord: state.tileIdToCoord,
           myKingdomId: state.myKingdomId,
-          mapRadius: 0,
+          mapRadius: state.mapRadius,
         },
         renderState,
         { skipClear: true },
@@ -238,13 +244,15 @@ export function GamePage() {
       );
       if (placementAnimationsRef.current.length > 0) {
         // Schedule next frame for animation continuation
-        requestAnimationFrame(() => markDirty());
+        requestAnimationFrame(() => markDirtyRef.current());
       }
     },
-    [markDirty],
+    [],
   );
 
   const { canvasRef, markDirty } = useGameCanvas({ draw });
+  // Wire up the ref so draw and pre-declaration effects resolve to the real markDirty
+  markDirtyRef.current = markDirty;
 
   // Initialize TextureCache when connected
   useEffect(() => {
@@ -321,9 +329,7 @@ export function GamePage() {
       const tile = useGameStore.getState().tiles.get(key);
       const newKey = tile ? key : null;
       setHoveredTileKey(newKey);
-      setTooltipPos(
-        tile ? { x: Math.min(x + 16, rect.width - 200), y: Math.max(y - 8, 8) } : null,
-      );
+      setTooltipPos(tile ? { x: e.clientX, y: e.clientY + 16 } : null);
       markDirty();
     },
     [canvasRef, markDirty, screenToAxial],
@@ -410,15 +416,23 @@ export function GamePage() {
 
       // BUILD MODE INTERCEPT: handle placement instead of selection
       if (state.buildModeTypeId && tile) {
-        if (tile.kingdomId === state.myKingdomId && tile.buildings.length === 0) {
-          const currentGameId = state.gameId;
-          if (currentGameId) {
-            placeBuilding(currentGameId, {
-              tileId: tile.id,
-              buildingTypeId: state.buildModeTypeId,
-            }).catch((err) => {
-              console.error('Failed to place building:', err);
-            });
+        if (tile.kingdomId === state.myKingdomId) {
+          const buildType = state.buildingTypes.find((bt) => bt.id === state.buildModeTypeId);
+          const isUpgrade = buildType?.unlockedByBuildingTypeId != null;
+          const isValidTarget = isUpgrade
+            ? tile.buildings.some((b) => b.buildingTypeId === buildType!.unlockedByBuildingTypeId)
+            : tile.buildings.length === 0;
+
+          if (isValidTarget) {
+            const currentGameId = state.gameId;
+            if (currentGameId) {
+              placeBuilding(currentGameId, {
+                tileId: tile.id,
+                buildingTypeId: state.buildModeTypeId,
+              }).catch((err) => {
+                console.error('Failed to place building:', err);
+              });
+            }
           }
         }
         markDirty();
@@ -578,10 +592,8 @@ export function GamePage() {
           />
         );
       })()}
-      {!isLoading && showBuildingPanel && (
-        <div className={isMyTurn && !isEliminated ? '' : 'opacity-50 pointer-events-none'}>
-          <BuildingPanel selectedTileKey={selectedTileKey!} />
-        </div>
+      {!isLoading && showBuildingPanel && !isEliminated && (
+        <BuildingPanel selectedTileKey={selectedTileKey} />
       )}
       {!isLoading && <ResetCameraButton onReset={handleResetCamera} />}
       {eliminationBanners.map((name, index) => (

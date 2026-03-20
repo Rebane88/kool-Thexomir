@@ -31,6 +31,7 @@ public class TurnServiceTests
     private readonly Mock<IBuildingTypeRepository> _buildingTypesMock = new();
     private readonly Mock<IArmyRepository> _armiesMock = new();
     private readonly Mock<ICombatService> _combatServiceMock = new();
+    private readonly Mock<IDeclaredAttackRepository> _declaredAttacksMock = new();
     private readonly TurnService _sut;
 
     // Fixed IDs
@@ -51,13 +52,18 @@ public class TurnServiceTests
         _unitOfWorkMock.Setup(u => u.KingdomResources).Returns(_resourcesMock.Object);
         _unitOfWorkMock.Setup(u => u.BuildingTypes).Returns(_buildingTypesMock.Object);
         _unitOfWorkMock.Setup(u => u.Armies).Returns(_armiesMock.Object);
+        _unitOfWorkMock.Setup(u => u.DeclaredAttacks).Returns(_declaredAttacksMock.Object);
         _unitOfWorkMock.Setup(u => u.CommitAsync(default)).ReturnsAsync(1);
+
+        // Default: no declared attacks for current round
+        _declaredAttacksMock.Setup(d => d.GetForGameRoundAsync(It.IsAny<Guid>(), It.IsAny<int>()))
+            .ReturnsAsync(new List<DeclaredAttack>());
 
         // Default: no battles resolved
         _combatServiceMock.Setup(c => c.ResolveBattlesAsync(It.IsAny<Game>()))
             .ReturnsAsync(new List<BattleResultDto>());
 
-        _sut = new TurnService(_unitOfWorkMock.Object, _gameGuardMock.Object, _combatServiceMock.Object);
+        _sut = new TurnService(_unitOfWorkMock.Object, _gameGuardMock.Object, _combatServiceMock.Object, Microsoft.Extensions.Logging.Abstractions.NullLogger<TurnService>.Instance);
     }
 
     // -------------------------------------------------------------------------
@@ -417,7 +423,8 @@ public class TurnServiceTests
 
         result.IsSuccess.ShouldBeTrue();
         result.Value!.IncomeApplied.ShouldNotBeNull();
-        result.Value.IncomeApplied!.ShouldContainKey("Gold");
+        result.Value.IncomeApplied!.ShouldContainKey(Kingdom1Id);
+        result.Value.IncomeApplied[Kingdom1Id].ShouldContainKey("Gold");
         resources[0].Amount.ShouldBeGreaterThan(100); // income was added
 
         _turnLogsMock.Verify(t => t.AddAsync(It.Is<TurnLog>(
@@ -697,9 +704,9 @@ public class TurnServiceTests
         var result = await _sut.EndTurnAsync(GameId, UserId, (_, _) => Task.CompletedTask, (_) => Task.CompletedTask);
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value!.BattleResults.ShouldNotBeNull();
-        result.Value.BattleResults!.Count.ShouldBe(1);
-        result.Value.BattleResults[0].Outcome.ShouldBe("AttackerWins");
+        // BattleResults is null in DTO -- battles are broadcast individually via real-time events
+        result.Value!.BattleResults.ShouldBeNull();
+        _combatServiceMock.Verify(c => c.ResolveBattlesAsync(It.IsAny<Game>()), Times.Once);
     }
 
     [Fact]
@@ -739,8 +746,8 @@ public class TurnServiceTests
         result.Value!.GameOver.ShouldNotBeNull();
         result.Value.GameOver!.WinConditionType.ShouldBe("Elimination");
         result.Value.GameOver.WinnerKingdomId.ShouldBe(Kingdom1Id);
-        result.Value.BattleResults.ShouldNotBeNull();
-        result.Value.BattleResults!.Count.ShouldBe(1);
+        // BattleResults is null in DTO -- battles are broadcast individually via real-time events
+        result.Value.BattleResults.ShouldBeNull();
         game.Status.ShouldBe(EGameStatus.Completed);
     }
 }

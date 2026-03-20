@@ -10,4 +10,5 @@ public class ArmyTrainedDto
     public int CurrentHP { get; set; }
     public int MaxHP { get; set; }
     public Dictionary<string, int> ResourcesAfter { get; set; } = new();
+    public int ActionPointsAfter { get; set; }
 }

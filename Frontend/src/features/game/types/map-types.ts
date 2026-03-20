@@ -6,7 +6,6 @@ export interface Tile {
   terrainName: string;
   kingdomId: string | null;
   isCastle: boolean;
-  isCapital: boolean;
   buildings: Building[];
 }
 

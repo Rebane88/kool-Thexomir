@@ -11,7 +11,7 @@ import { drawTerritoryBorders } from './territory-borders';
 import { TERRAIN_BASE_COLORS } from './terrain-patterns';
 import type { Tile } from '../types/map-types';
 import type { Kingdom } from '../types/kingdom-types';
-import type { Army } from '../types/military-types';
+
 
 export interface DrawOptions {
   skipClear?: boolean;
@@ -21,7 +21,6 @@ interface GameMapState {
   tiles: Map<string, Tile>;
   tileIdToCoord: Map<string, string>;
   kingdoms: Map<string, Kingdom>;
-  armies: Map<string, Army>;
   myKingdomId: string | null;
   mapRadius: number;
 }
@@ -66,27 +65,6 @@ function drawFilledHex(
   ctx.stroke();
 }
 
-function drawBadge(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  text: string,
-  textColor: string,
-  bgColor: string,
-): void {
-  const radius = 7;
-  ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
-  ctx.fillStyle = bgColor;
-  ctx.fill();
-
-  ctx.font = 'bold 10px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = textColor;
-  ctx.fillText(text, x, y);
-}
-
 // ---------------------------------------------------------------------------
 // Main draw pipeline
 // ---------------------------------------------------------------------------
@@ -124,20 +102,6 @@ export function drawGameMap(
     size: 30,
     origin: { x: width / 2, y: height / 2 },
   };
-
-  // 3. Build armies by coord lookup
-  const armiesByCoord = new Map<string, Army[]>();
-  for (const army of state.armies.values()) {
-    const coord = state.tileIdToCoord.get(army.tileId);
-    if (coord) {
-      const existing = armiesByCoord.get(coord);
-      if (existing) {
-        existing.push(army);
-      } else {
-        armiesByCoord.set(coord, [army]);
-      }
-    }
-  }
 
   // Pre-compute centers and corners for each tile
   const tileRenderData = new Map<string, { center: Point2D; corners: Point2D[] }>();
@@ -182,38 +146,46 @@ export function drawGameMap(
 
   // Layer 2.5: Build mode overlays
   if (renderState.buildModeTypeId) {
+    const isUpgradeMode = renderState.buildModeUpgradesFrom !== null;
+
     for (const [key, tile] of state.tiles) {
       // Only overlay player's own tiles
       if (tile.kingdomId !== state.myKingdomId) continue;
 
       const data = tileRenderData.get(key)!;
 
-      // Invalid: tile already has a building (backend enforces ONE building per tile)
-      if (tile.buildings.length > 0) {
-        drawHexPath(ctx, data.corners);
-        ctx.fillStyle = 'rgba(220, 38, 38, 0.25)';
-        ctx.fill();
-      } else {
-        // Valid: owned tile with no building -- green border only (no fill)
+      const isValidTarget = isUpgradeMode
+        ? tile.buildings.some((b) => b.buildingTypeId === renderState.buildModeUpgradesFrom)
+        : tile.buildings.length === 0;
+
+      if (isValidTarget) {
+        // Valid target -- green border
         drawHexPath(ctx, data.corners);
         ctx.strokeStyle = 'rgba(34, 197, 94, 0.7)';
         ctx.lineWidth = 2;
         ctx.stroke();
+      } else {
+        // Invalid target -- red overlay
+        drawHexPath(ctx, data.corners);
+        ctx.fillStyle = 'rgba(220, 38, 38, 0.25)';
+        ctx.fill();
       }
     }
 
     // Hover highlight on valid tile: bold green fill
     if (renderState.hoveredTileKey) {
       const hoveredTile = state.tiles.get(renderState.hoveredTileKey);
-      if (
-        hoveredTile &&
-        hoveredTile.kingdomId === state.myKingdomId &&
-        hoveredTile.buildings.length === 0
-      ) {
-        const data = tileRenderData.get(renderState.hoveredTileKey)!;
-        drawHexPath(ctx, data.corners);
-        ctx.fillStyle = 'rgba(34, 197, 94, 0.35)';
-        ctx.fill();
+      if (hoveredTile && hoveredTile.kingdomId === state.myKingdomId) {
+        const isHoverValid = isUpgradeMode
+          ? hoveredTile.buildings.some((b) => b.buildingTypeId === renderState.buildModeUpgradesFrom)
+          : hoveredTile.buildings.length === 0;
+
+        if (isHoverValid) {
+          const data = tileRenderData.get(renderState.hoveredTileKey)!;
+          drawHexPath(ctx, data.corners);
+          ctx.fillStyle = 'rgba(34, 197, 94, 0.35)';
+          ctx.fill();
+        }
       }
     }
   }
@@ -274,50 +246,12 @@ export function drawGameMap(
     if (buildingName) {
       const icon = textureCache.getBuildingIcon(buildingName);
       if (icon) {
-        const iconLogicalSize = 22; // matches ICON_RENDER_SIZE
+        const iconLogicalSize = 32;
         const drawX = center.x - iconLogicalSize / 2;
         const drawY = center.y - iconLogicalSize / 2;
 
-        if (tile.kingdomId) {
-          // Draw tinted icon using temp canvas compositing
-          const tintColor = getKingdomColor(state.kingdoms, tile.kingdomId);
-          const temp = document.createElement('canvas');
-          temp.width = icon.width;
-          temp.height = icon.height;
-          const tctx = temp.getContext('2d')!;
-          tctx.drawImage(icon, 0, 0);
-          tctx.globalCompositeOperation = 'source-atop';
-          tctx.fillStyle = tintColor;
-          tctx.globalAlpha = 0.4;
-          tctx.fillRect(0, 0, temp.width, temp.height);
-          ctx.drawImage(temp, 0, 0, temp.width, temp.height, drawX, drawY, iconLogicalSize, iconLogicalSize);
-        } else {
-          ctx.drawImage(icon, 0, 0, icon.width, icon.height, drawX, drawY, iconLogicalSize, iconLogicalSize);
-        }
-      }
-    }
-
-    // Army unit count badge (top-left)
-    const tileArmies = armiesByCoord.get(key);
-    if (tileArmies && tileArmies.length > 0) {
-      let totalUnits = 0;
-      let armyKingdomId = tileArmies[0].kingdomId;
-      for (const army of tileArmies) {
-        for (const unit of army.units) {
-          totalUnits += unit.quantity;
-        }
-        armyKingdomId = army.kingdomId;
-      }
-      if (totalUnits > 0) {
-        const armyColor = getKingdomColor(state.kingdoms, armyKingdomId);
-        drawBadge(
-          ctx,
-          center.x - layout.size * 0.3,
-          center.y - layout.size * 0.35,
-          totalUnits.toString(),
-          armyColor,
-          'rgba(0, 0, 0, 0.7)',
-        );
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(icon, 0, 0, icon.width, icon.height, drawX, drawY, iconLogicalSize, iconLogicalSize);
       }
     }
   }

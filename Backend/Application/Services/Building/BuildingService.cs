@@ -69,7 +69,7 @@ public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBu
             return Result<BuildingPlacedDto>.Fail(validationError);
 
         // 6. Load faction type
-        var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId);
+        var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId!.Value);
 
         // 7. Load mutable resources (tracked entities)
         var resources = await unitOfWork.KingdomResources.GetMutableResourcesForKingdomAsync(kingdom.Id);
@@ -186,7 +186,8 @@ public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBu
             KingdomId = kingdom.Id,
             ResourcesAfter = resourcesAfter,
             ClaimedTileIds = claimedTileIds,
-            IsUpgrade = isUpgrade
+            IsUpgrade = isUpgrade,
+            ActionPointsAfter = game.RemainingActionPoints ?? 0
         });
     }
 }

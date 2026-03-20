@@ -67,7 +67,7 @@ export function BattleResolveStep() {
     useAnimationStore.getState().setCombatSpinResult('initiativeWinner', currentRound.initiativeWinner);
     setTimeout(() => {
       useAnimationStore.getState().setCombatSpinPhase('damage');
-    }, 300);
+    }, 800);
   }, [currentRound]);
 
   const handleDamageStopped = useCallback(() => {
@@ -75,7 +75,7 @@ export function BattleResolveStep() {
     useAnimationStore.getState().setCombatSpinResult('damageDealt', currentRound.damageDealt);
     setTimeout(() => {
       useAnimationStore.getState().setCombatSpinPhase('chipDamage');
-    }, 200);
+    }, 600);
   }, [currentRound]);
 
   const handleChipDamageStopped = useCallback(() => {
@@ -105,12 +105,12 @@ export function BattleResolveStep() {
           setTimeout(() => {
             useAnimationStore.getState().setCombatSpinPhase('done');
             setDestroyedId(null);
-          }, 500);
+          }, 1000);
         } else {
           useAnimationStore.getState().setCombatSpinPhase('done');
         }
-      }, 700); // Match ghost trail duration
-    }, 200);
+      }, 1200); // HP bar animation duration
+    }, 500);
   }, [currentRound]);
 
   // --- Derive display data ---
@@ -192,7 +192,7 @@ export function BattleResolveStep() {
         <div className="flex flex-col items-center gap-2">
           <span className="text-xs text-parchment-400">{attackerKingdomName}</span>
           {attackerArmy && attackerType && (
-            <div className={destroyedId === attackerArmyId ? 'opacity-0 scale-75 transition-all duration-500' : ''}>
+            <div className={destroyedId === attackerArmyId ? 'opacity-0 scale-75 transition-all duration-700' : ''}>
               <ArmyCard
                 army={{ ...attackerArmy, currentHP: attackerHp.current }}
                 armyType={attackerType}
@@ -232,7 +232,7 @@ export function BattleResolveStep() {
         <div className="flex flex-col items-center gap-2">
           <span className="text-xs text-parchment-400">{defenderKingdomName}</span>
           {defenderArmy && defenderType && (
-            <div className={destroyedId === defenderArmyId ? 'opacity-0 scale-75 transition-all duration-500' : ''}>
+            <div className={destroyedId === defenderArmyId ? 'opacity-0 scale-75 transition-all duration-700' : ''}>
               <ArmyCard
                 army={{ ...defenderArmy, currentHP: defenderHp.current }}
                 armyType={defenderType}

@@ -79,6 +79,16 @@ export function BattleRevealStep() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeBattle, gameId]);
 
+  // Auto-advance to SetLineup after cards are revealed
+  useEffect(() => {
+    if (!revealed) return;
+    // Wait for card flip animations to finish, then advance
+    const timer = setTimeout(() => {
+      useGameStore.setState({ activeBattle: 'SetLineup' });
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [revealed]);
+
   return (
     <div className="flex flex-col gap-8 p-6 overflow-y-auto">
       {myBattles.map((battle) => {

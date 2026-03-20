@@ -18,12 +18,13 @@ export function EndTurnButton() {
     (s) => s.myKingdomId !== null && s.currentTurnKingdomId === s.myKingdomId,
   );
 
+  const roundNumber = useGameStore((s) => s.roundNumber);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Reset submitting state when a new turn starts for the player
+  // Reset submitting state when turn or round changes
   useEffect(() => {
     if (isMyTurn) setIsSubmitting(false);
-  }, [isMyTurn]);
+  }, [isMyTurn, roundNumber]);
 
   const label = currentPhase ? PHASE_LABELS[currentPhase] : 'End Turn';
 

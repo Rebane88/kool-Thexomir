@@ -13,7 +13,7 @@ function makeTile(overrides: Partial<Tile> = {}): Tile {
     terrainTypeId: 'plains',
     terrainName: 'Plains',
     kingdomId: null,
-    isCapital: false,
+    isCastle: false,
     buildings: [],
     ...overrides,
   };
@@ -26,7 +26,7 @@ function makeKingdom(overrides: Partial<Kingdom> = {}): Kingdom {
     userId: 'u-1',
     factionTypeId: 'f-1',
     factionName: 'Elves',
-    isEliminated: false,
+    status: 'Active',
     resources: {},
     ...overrides,
   };
@@ -35,12 +35,11 @@ function makeKingdom(overrides: Partial<Kingdom> = {}): Kingdom {
 function makeArmy(overrides: Partial<Army> = {}): Army {
   return {
     id: 'a-1',
-    tileId: 'tile-1',
+    buildingId: 'b-1',
     kingdomId: 'k-1',
-    units: [
-      { unitTypeId: 'ut-1', unitTypeName: 'Swordsmen', quantity: 5 },
-      { unitTypeId: 'ut-2', unitTypeName: 'Archers', quantity: 3 },
-    ],
+    armyTypeId: 'at-1',
+    currentHP: 100,
+    maxHP: 100,
     ...overrides,
   };
 }
@@ -72,28 +71,28 @@ describe('HexTooltip', () => {
     expect(screen.getByText('Unowned')).toBeTruthy();
   });
 
-  it('renders "Capital" text when tile.isCapital is true', () => {
+  it('renders "Castle" text when tile.isCastle is true', () => {
     render(
       <HexTooltip
-        tile={makeTile({ isCapital: true })}
+        tile={makeTile({ isCastle: true })}
         kingdom={null}
         armies={[]}
         position={{ x: 100, y: 100 }}
       />,
     );
-    expect(screen.getByText('Capital')).toBeTruthy();
+    expect(screen.getByText('Castle')).toBeTruthy();
   });
 
-  it('does not render "Capital" when tile.isCapital is false', () => {
+  it('does not render "Castle" when tile.isCastle is false', () => {
     render(
       <HexTooltip
-        tile={makeTile({ isCapital: false })}
+        tile={makeTile({ isCastle: false })}
         kingdom={null}
         armies={[]}
         position={{ x: 100, y: 100 }}
       />,
     );
-    expect(screen.queryByText('Capital')).toBeNull();
+    expect(screen.queryByText('Castle')).toBeNull();
   });
 
   it('renders building names when tile has buildings', () => {
@@ -110,17 +109,16 @@ describe('HexTooltip', () => {
     expect(screen.getByText('Farm')).toBeTruthy();
   });
 
-  it('renders army unit breakdown', () => {
+  it('renders army roster count', () => {
     render(
       <HexTooltip
         tile={makeTile()}
         kingdom={null}
-        armies={[makeArmy()]}
+        armies={[makeArmy(), makeArmy({ id: 'a-2' })]}
         position={{ x: 100, y: 100 }}
       />,
     );
-    expect(screen.getByText('Swordsmen: 5')).toBeTruthy();
-    expect(screen.getByText('Archers: 3')).toBeTruthy();
+    expect(screen.getByText('2 armies in roster')).toBeTruthy();
   });
 
   it('renders Panel component with border class', () => {

@@ -10,7 +10,7 @@ public class TurnAdvancedDto
     public string CurrentPhase { get; set; } = string.Empty;
     public int? ActionPoints { get; set; }
     public DateTime? TurnDeadline { get; set; }
-    public Dictionary<string, int>? IncomeApplied { get; set; }
+    public Dictionary<Guid, Dictionary<string, int>>? IncomeApplied { get; set; }
     public List<BattleResultDto>? BattleResults { get; set; }
     public bool PhaseChanged { get; set; }
     public GameOverDto? GameOver { get; set; }

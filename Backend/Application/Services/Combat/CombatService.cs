@@ -89,7 +89,8 @@ public class CombatService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IComb
             TargetTileId = declaredAttack.TargetTileId,
             RiskedTileId = declaredAttack.RiskedTileId,
             AttackerKingdomId = declaredAttack.AttackerKingdomId,
-            DefenderKingdomId = declaredAttack.DefenderKingdomId
+            DefenderKingdomId = declaredAttack.DefenderKingdomId,
+            ActionPointsAfter = game.RemainingActionPoints ?? 0
         });
     }
 
@@ -116,6 +117,12 @@ public class CombatService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IComb
         bool isDefender = attack.DefenderKingdomId == kingdom.Id;
         if (!isAttacker && !isDefender)
             return Result<BattleSetupDto>.Fail("You are not involved in this battle.");
+
+        // 4b. Guard against re-submission
+        if (isAttacker && !string.IsNullOrEmpty(attack.AttackerSelectedArmyIds))
+            return Result<BattleSetupDto>.Fail("You have already selected armies for this battle.");
+        if (isDefender && !string.IsNullOrEmpty(attack.DefenderSelectedArmyIds))
+            return Result<BattleSetupDto>.Fail("You have already selected armies for this battle.");
 
         // 5. Load target and risked tiles for castle check
         var targetTile = await unitOfWork.Tiles.GetByIdAsync(attack.TargetTileId);
@@ -213,6 +220,12 @@ public class CombatService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IComb
         if (!isAttacker && !isDefender)
             return Result<BattleSetupDto>.Fail("You are not involved in this battle.");
 
+        // 1b. Guard against re-submission
+        if (isAttacker && attack.AttackerLineupConfirmed)
+            return Result<BattleSetupDto>.Fail("You have already confirmed your lineup for this battle.");
+        if (isDefender && attack.DefenderLineupConfirmed)
+            return Result<BattleSetupDto>.Fail("You have already confirmed your lineup for this battle.");
+
         // 2. Validate the lineup contains exactly the same army IDs as the selection
         var selectedIds = ParseArmyIds(isAttacker
             ? attack.AttackerSelectedArmyIds
@@ -229,11 +242,17 @@ public class CombatService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IComb
         if (!selectedSet.SetEquals(lineupSet))
             return Result<BattleSetupDto>.Fail("Lineup must contain the same armies as your selection.");
 
-        // 3. Store lineup order (overwrites selection order)
+        // 3. Store lineup order (overwrites selection order) and mark confirmed
         if (isAttacker)
+        {
             attack.AttackerSelectedArmyIds = string.Join(",", request.ArmyIdsInOrder);
+            attack.AttackerLineupConfirmed = true;
+        }
         else
+        {
             attack.DefenderSelectedArmyIds = string.Join(",", request.ArmyIdsInOrder);
+            attack.DefenderLineupConfirmed = true;
+        }
 
         attack.UpdatedAt = DateTime.UtcNow;
         await unitOfWork.DeclaredAttacks.UpdateAsync(attack);
@@ -246,6 +265,17 @@ public class CombatService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IComb
             ArmiesSelected = request.ArmyIdsInOrder.Count,
             MaxArmies = selectedIds.Count
         });
+    }
+
+    public async Task<bool> AreAllLineupsSetAsync(Guid gameId)
+    {
+        var game = await unitOfWork.Games.GetByIdWithLockAsync(gameId);
+        if (game is null || game.CurrentPhase != EGamePhase.Battle) return false;
+
+        var attacks = await unitOfWork.DeclaredAttacks.GetForGameRoundAsync(gameId, game.RoundNumber);
+        if (attacks.Count == 0) return false;
+
+        return attacks.All(a => a.AttackerLineupConfirmed && a.DefenderLineupConfirmed);
     }
 
     private static List<Guid> ParseArmyIds(string? armyIdsString)
@@ -314,11 +344,11 @@ public class CombatService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IComb
 
         // c. Load attacker kingdom + faction
         var attackerKingdom = await unitOfWork.Kingdoms.GetByIdAsync(attack.AttackerKingdomId);
-        var attackerFaction = await unitOfWork.FactionTypes.GetByIdAsync(attackerKingdom!.FactionTypeId);
+        var attackerFaction = await unitOfWork.FactionTypes.GetByIdAsync(attackerKingdom!.FactionTypeId!.Value);
 
         // d. Load defender kingdom + faction
         var defenderKingdom = await unitOfWork.Kingdoms.GetByIdAsync(attack.DefenderKingdomId);
-        var defenderFaction = await unitOfWork.FactionTypes.GetByIdAsync(defenderKingdom!.FactionTypeId);
+        var defenderFaction = await unitOfWork.FactionTypes.GetByIdAsync(defenderKingdom!.FactionTypeId!.Value);
 
         // e. Determine max armies
         var maxArmies = CombatRules.GetMaxArmies(attack.TargetTile!.IsCastle, attack.RiskedTile!.IsCastle);

@@ -41,6 +41,8 @@ export interface MapRenderState {
   hoveredTileKey: string | null;
   selectedTileKey: string | null;
   buildModeTypeId: string | null;
+  /** When build mode is an upgrade, the building type ID it upgrades from */
+  buildModeUpgradesFrom: string | null;
   armyHighlightTileKey: string | null;
   assetsReady: boolean;
   declareAttackGlowTileKeys: Set<string> | null;

@@ -24,7 +24,11 @@ function createMockSnapshot(): GameStateSnapshot {
     winCondition: 'Elimination',
     mapWidth: 10,
     mapHeight: 8,
+    mapRadius: 9,
     currentTurnKingdomId: 'k-1',
+    currentPhase: 'Action',
+    remainingActionPoints: 4,
+    declaredAttacks: [],
     tiles: [
       {
         id: 'tile-1',
@@ -165,7 +169,7 @@ describe('loadSnapshot', () => {
     expect(useGameStore.getState().myKingdomId).toBeNull();
   });
 
-  it('sets game metadata with roundNumber, mapWidth, mapHeight', () => {
+  it('sets game metadata with roundNumber, mapWidth, mapHeight, mapRadius', () => {
     const snapshot = createMockSnapshot();
     useGameStore.getState().loadSnapshot(snapshot, 'user-1');
 
@@ -177,15 +181,16 @@ describe('loadSnapshot', () => {
     expect(state.winCondition).toBe('Elimination');
     expect(state.mapWidth).toBe(10);
     expect(state.mapHeight).toBe(8);
+    expect(state.mapRadius).toBe(9);
   });
 
-  it('initializes v6.0 phase/AP fields on snapshot load', () => {
+  it('initializes v6.0 phase/AP fields from snapshot', () => {
     const snapshot = createMockSnapshot();
     useGameStore.getState().loadSnapshot(snapshot, 'user-1');
 
     const state = useGameStore.getState();
-    expect(state.currentPhase).toBeNull();
-    expect(state.actionPoints).toBeNull();
+    expect(state.currentPhase).toBe('Action');
+    expect(state.actionPoints).toBe(4);
     expect(state.declaredAttacks).toEqual([]);
     expect(state.activeBattle).toBeNull();
   });
@@ -237,8 +242,9 @@ describe('delta events', () => {
     expect(kingdom.resources.Food).toBe(60); // 50 + 10
   });
 
-  it('handleTurnAdvanced clears declaredAttacks on new turn', () => {
-    // First add a declared attack
+  it('handleTurnAdvanced preserves declaredAttacks across turn changes', () => {
+    // Declared attacks persist across turn changes within a round — they're needed for Battle phase.
+    // They're removed by handleBattleResolved individually during battle resolution.
     useGameStore.getState().handleAttackDeclared({
       attackId: 'atk-1',
       targetTileId: 'tile-2',
@@ -260,7 +266,7 @@ describe('delta events', () => {
       gameOver: null,
     };
     useGameStore.getState().handleTurnAdvanced(event);
-    expect(useGameStore.getState().declaredAttacks).toEqual([]);
+    expect(useGameStore.getState().declaredAttacks.length).toBe(1);
   });
 
   it('handleTurnAdvanced sets gameOver when present', () => {
@@ -665,6 +671,7 @@ describe('resetState', () => {
     expect(state.winCondition).toBeNull();
     expect(state.mapWidth).toBe(0);
     expect(state.mapHeight).toBe(0);
+    expect(state.mapRadius).toBe(0);
     expect(state.gameOver).toBeNull();
     expect(state.currentPhase).toBeNull();
     expect(state.actionPoints).toBeNull();

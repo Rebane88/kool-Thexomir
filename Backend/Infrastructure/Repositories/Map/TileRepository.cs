@@ -37,6 +37,7 @@ public class TileRepository(AppDbContext context)
     {
         return await Context.Set<Tile>()
             .Where(t => t.GameId == gameId)
+            .Include(t => t.TerrainType)
             .Include(t => t.Buildings!)
                 .ThenInclude(b => b.BuildingType)
             .ToListAsync();
