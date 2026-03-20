@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Panel } from '@/shared/ui/Panel';
 import { useGameStore } from '../game-store';
 import { BuildingRow } from './BuildingRow';
 import { MilitaryPanel } from './MilitaryPanel';
@@ -28,9 +27,10 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
 
   // Check if military tab should be visible
   const selectedTile = tiles.get(selectedTileKey);
-  const tileBuilding = selectedTile?.buildings[0] ?? null;
-  const hasMilitaryTab = tileBuilding !== null
-    && unitTypes.some((ut) => ut.producedByBuildingTypeIds.includes(tileBuilding.buildingTypeId));
+  const existingBuilding = selectedTile?.buildings[0] ?? null;
+  const isCastleTile = selectedTile?.isCastle === true;
+  const hasMilitaryTab = existingBuilding !== null
+    && unitTypes.some((ut) => ut.producedByBuildingTypeIds.includes(existingBuilding.buildingTypeId));
 
   function canAfford(bt: BuildingTypeRef): boolean {
     if (bt.goldCost > 0 && (resources['Gold'] ?? 0) < bt.goldCost) return false;
@@ -60,50 +60,56 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
     return false;
   }
 
-  const grouped = new Map<string, BuildingTypeRef[]>();
-  for (const bt of buildingTypes) {
-    const existing = grouped.get(bt.chain) || [];
-    existing.push(bt);
-    grouped.set(bt.chain, existing);
-  }
+  // Context-aware catalog title
+  const existingBuildingName = existingBuilding?.buildingName
+    ?? buildingTypes.find((bt) => bt.id === existingBuilding?.buildingTypeId)?.name;
+  const catalogTitle = existingBuilding
+    ? `Upgrade ${existingBuildingName ?? 'Building'}`
+    : 'Build';
+
+  // If castle tile: no building catalog (castle is not upgradable)
+  // If tile has a building: show possible upgrades
+  // If empty tile: show Tier 1 buildings
+  const displayedBuildings = isCastleTile
+    ? []
+    : existingBuilding
+      ? buildingTypes.filter((bt) => bt.prerequisiteBuildingTypeId === existingBuilding.buildingTypeId)
+      : buildingTypes.filter((bt) => bt.tier === 1);
 
   function handleSelect(typeId: string) {
     setBuildMode(buildModeTypeId === typeId ? null : typeId);
   }
 
-  const buildingsContent = (
-    <>
-      {[...grouped.entries()].map(([chain, types]) => (
-        <div key={chain} className="mb-3">
-          <div className="text-bronze-400 text-xs font-semibold uppercase tracking-wide mb-1 px-3">
-            {chain}
-          </div>
-          {types.map((bt) => (
-            <BuildingRow
-              key={bt.id}
-              buildingType={bt}
-              canAfford={canAfford(bt)}
-              hasPrerequisite={hasPrerequisite(bt)}
-              insufficientResources={getInsufficientResources(bt)}
-              isActive={buildModeTypeId === bt.id}
-              onSelect={handleSelect}
-            />
-          ))}
-        </div>
+  const buildingsContent = displayedBuildings.length === 0 ? (
+    <div className="text-bronze-400 text-sm px-3 py-4 text-center">
+      {isCastleTile ? 'Castle cannot be upgraded' : existingBuilding ? 'No upgrades available' : 'No buildings available'}
+    </div>
+  ) : (
+    <div className="space-y-1">
+      {displayedBuildings.map((bt) => (
+        <BuildingRow
+          key={bt.id}
+          buildingType={bt}
+          canAfford={canAfford(bt)}
+          hasPrerequisite={hasPrerequisite(bt)}
+          insufficientResources={getInsufficientResources(bt)}
+          isActive={buildModeTypeId === bt.id}
+          onSelect={handleSelect}
+        />
       ))}
-    </>
+    </div>
   );
 
   return (
-    <Panel className="absolute top-12 right-0 bottom-0 w-72 z-30 overflow-y-auto p-3 border-l border-bronze-700">
+    <div className="stone-panel absolute top-12 right-0 bottom-0 w-72 z-30 overflow-y-auto p-3">
       {hasMilitaryTab ? (
         <>
           <div className="flex gap-1 mb-3 border-b border-bronze-700">
             <button
               onClick={() => setActiveTab('buildings')}
-              className={`text-sm font-semibold uppercase tracking-wider px-3 py-1.5 ${
+              className={`text-sm font-semibold uppercase tracking-wider px-3 py-1.5 stone-panel-tab ${
                 activeTab === 'buildings'
-                  ? 'border-b-2 border-gold-500 text-parchment-100'
+                  ? 'stone-panel-tab-active'
                   : 'text-bronze-400 hover:text-parchment-200'
               }`}
             >
@@ -111,9 +117,9 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
             </button>
             <button
               onClick={() => setActiveTab('military')}
-              className={`text-sm font-semibold uppercase tracking-wider px-3 py-1.5 ${
+              className={`text-sm font-semibold uppercase tracking-wider px-3 py-1.5 stone-panel-tab ${
                 activeTab === 'military'
-                  ? 'border-b-2 border-gold-500 text-parchment-100'
+                  ? 'stone-panel-tab-active'
                   : 'text-bronze-400 hover:text-parchment-200'
               }`}
             >
@@ -125,11 +131,11 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
       ) : (
         <>
           <h2 className="text-parchment-100 font-heading text-sm font-semibold mb-3 uppercase tracking-wider">
-            Buildings
+            {catalogTitle}
           </h2>
           {buildingsContent}
         </>
       )}
-    </Panel>
+    </div>
   );
 }
