@@ -1,5 +1,5 @@
 import { useGameStore } from '../game-store';
-import { trainTroops } from '../game-api';
+import { trainArmy } from '../game-api';
 import { UnitRow } from './UnitRow';
 import type { UnitTypeRef } from '../types/military-types';
 
@@ -59,13 +59,12 @@ export function MilitaryPanel({ selectedTileKey }: MilitaryPanelProps) {
     return maxQty === Infinity ? 0 : maxQty;
   }
 
-  function handleTrain(unitTypeId: string, quantity: number) {
+  function handleTrain(armyTypeId: string, quantity: number) {
     if (!gameId || !building) return;
-    trainTroops(gameId, {
-      buildingId: building.id,
-      unitTypeId,
-      quantity,
-    }).catch((err) => console.error('Failed to train troops:', err));
+    const promises = Array.from({ length: quantity }, () =>
+      trainArmy(gameId, { buildingId: building!.id, armyTypeId }),
+    );
+    Promise.all(promises).catch((err) => console.error('Failed to train army:', err));
   }
 
   if (trainableUnits.length === 0) {

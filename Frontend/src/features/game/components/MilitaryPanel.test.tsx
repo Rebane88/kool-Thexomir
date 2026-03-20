@@ -7,7 +7,7 @@ import type { Tile } from '../types/map-types';
 import type { Kingdom } from '../types/kingdom-types';
 
 vi.mock('../game-api', () => ({
-  trainTroops: vi.fn(() => Promise.resolve()),
+  trainArmy: vi.fn(() => Promise.resolve()),
 }));
 
 function makeUnitType(overrides: Partial<UnitTypeRef> = {}): UnitTypeRef {
@@ -108,8 +108,8 @@ describe('MilitaryPanel', () => {
     expect(row).toBeTruthy();
   });
 
-  it('calls trainTroops with correct building.id on train click', async () => {
-    const { trainTroops } = await import('../game-api');
+  it('calls trainArmy with correct building.id on train click', async () => {
+    const { trainArmy } = await import('../game-api');
 
     setupStore({});
 
@@ -117,10 +117,9 @@ describe('MilitaryPanel', () => {
     const trainButton = screen.getByText('Train 1');
     fireEvent.click(trainButton);
 
-    expect(trainTroops).toHaveBeenCalledWith('game-1', {
+    expect(trainArmy).toHaveBeenCalledWith('game-1', {
       buildingId: 'building-instance-1',
-      unitTypeId: 'ut-1',
-      quantity: 1,
+      armyTypeId: 'ut-1',
     });
   });
 
