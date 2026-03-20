@@ -34,12 +34,13 @@ describe('EliminationBanner', () => {
   it('starts visible and transitions to hidden', () => {
     render(<EliminationBanner kingdomName="Kingdom Alpha" onFaded={() => {}} />);
 
-    const inner = screen.getByText('Kingdom Alpha has been eliminated!').closest('div')!;
-    expect(inner.className).toContain('opacity-100');
+    const text = screen.getByText('Kingdom Alpha has been eliminated!');
+    const opacityDiv = text.closest('.flex.items-center')!.parentElement!;
+    expect(opacityDiv.className).toContain('opacity-100');
 
     act(() => {
       vi.advanceTimersByTime(4000);
     });
-    expect(inner.className).toContain('opacity-0');
+    expect(opacityDiv.className).toContain('opacity-0');
   });
 });
