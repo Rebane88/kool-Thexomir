@@ -32,7 +32,7 @@ import { SlotMachineOverlay } from './components/SlotMachineOverlay';
 import { ArmyRosterDrawer } from './components/ArmyRosterDrawer';
 import { DeclareAttackPrompt } from './components/DeclareAttackPrompt';
 import { BattleOverlay } from './components/BattleOverlay';
-import type { HexLayoutConfig, MapRenderState } from './canvas/types';
+import type { HexLayoutConfig, MapRenderState, PlacementAnimation } from './canvas/types';
 
 export function GamePage() {
   const { id: gameId } = useParams();
@@ -53,6 +53,7 @@ export function GamePage() {
   selectedRef.current = selectedTileKey;
 
   const declareAttackGlowRef = useRef<Set<string> | null>(null);
+  const placementAnimationsRef = useRef<PlacementAnimation[]>([]);
 
   const cameraRef = useRef<CameraState>({ ...DEFAULT_CAMERA });
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -153,6 +154,42 @@ export function GamePage() {
     return unsub;
   }, []);
 
+  // Detect new building placements to trigger placement animations
+  useEffect(() => {
+    let prevTiles = useGameStore.getState().tiles;
+    const unsub = useGameStore.subscribe((state) => {
+      const newAnims: PlacementAnimation[] = [];
+      for (const [key, tile] of state.tiles) {
+        const prev = prevTiles.get(key);
+        if (!prev) continue;
+        // Detect new building placed on this tile
+        if (tile.buildings.length > prev.buildings.length) {
+          // Find newly claimed tiles (tiles that changed ownership to this kingdom)
+          const claimedTileKeys: string[] = [];
+          if (tile.kingdomId !== null) {
+            for (const [k, t] of state.tiles) {
+              const pt = prevTiles.get(k);
+              if (pt && t.kingdomId === tile.kingdomId && pt.kingdomId !== tile.kingdomId) {
+                claimedTileKeys.push(k);
+              }
+            }
+          }
+          newAnims.push({
+            tileKey: key,
+            startTime: performance.now(),
+            claimedTileKeys,
+          });
+        }
+      }
+      if (newAnims.length > 0) {
+        placementAnimationsRef.current = [...placementAnimationsRef.current, ...newAnims];
+        markDirty();
+      }
+      prevTiles = state.tiles;
+    });
+    return unsub;
+  }, [markDirty]);
+
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
       const state = useGameStore.getState();
@@ -163,6 +200,7 @@ export function GamePage() {
         armyHighlightTileKey: null,
         assetsReady: assetsReadyRef.current,
         declareAttackGlowTileKeys: declareAttackGlowRef.current,
+        placementAnimations: placementAnimationsRef.current,
       };
       const cam = cameraRef.current;
 
@@ -192,8 +230,18 @@ export function GamePage() {
       );
 
       ctx.restore();
+
+      // Prune expired placement animations and schedule continuation
+      const drawNow = performance.now();
+      placementAnimationsRef.current = placementAnimationsRef.current.filter(
+        (a) => drawNow - a.startTime < 600,
+      );
+      if (placementAnimationsRef.current.length > 0) {
+        // Schedule next frame for animation continuation
+        requestAnimationFrame(() => markDirty());
+      }
     },
-    [],
+    [markDirty],
   );
 
   const { canvasRef, markDirty } = useGameCanvas({ draw });

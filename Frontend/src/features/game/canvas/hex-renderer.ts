@@ -345,4 +345,55 @@ export function drawGameMap(
       ctx.stroke();
     }
   }
+
+  // === Layer 6: Placement animations ===
+  const now = performance.now();
+
+  for (const anim of renderState.placementAnimations) {
+    const elapsed = now - anim.startTime;
+    if (elapsed > 600) continue; // expired
+
+    const data = tileRenderData.get(anim.tileKey);
+    if (data) {
+      // Icon fade/scale-in (0-400ms): draw a bright highlight circle over the placed tile
+      if (elapsed < 400) {
+        const t = elapsed / 400;
+        const eased = t * t * (3 - 2 * t); // smoothstep
+        ctx.save();
+        ctx.globalAlpha = eased;
+        const scale = 0.4 + 0.6 * eased; // scale from 0.4 to 1.0
+        const cx = data.center.x;
+        const cy = data.center.y;
+        ctx.translate(cx, cy);
+        ctx.scale(scale, scale);
+        ctx.translate(-cx, -cy);
+
+        // Draw a bright highlight circle to emphasize the placement
+        ctx.fillStyle = 'rgba(201, 168, 76, 0.3)';
+        ctx.beginPath();
+        ctx.arc(cx, cy, layout.size * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    // Territory ripple (0-600ms): expanding circle at claimed tile centers
+    for (const claimedKey of anim.claimedTileKeys) {
+      const claimedData = tileRenderData.get(claimedKey);
+      if (!claimedData) continue;
+      const t = Math.min(elapsed / 600, 1);
+      const eased = t * t * (3 - 2 * t);
+      const radius = eased * layout.size * 1.5;
+      const alpha = (1 - eased) * 0.4;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = '#c9a84c';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(claimedData.center.x, claimedData.center.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
 }

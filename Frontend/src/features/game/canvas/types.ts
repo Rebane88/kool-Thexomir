@@ -30,6 +30,12 @@ export const KINGDOM_COLORS: string[] = [
   '#8b6640', // K8: Brown
 ];
 
+export interface PlacementAnimation {
+  tileKey: string;
+  startTime: number;
+  claimedTileKeys: string[];
+}
+
 /** State passed from GamePage to the draw function for hover/selection */
 export interface MapRenderState {
   hoveredTileKey: string | null;
@@ -38,4 +44,5 @@ export interface MapRenderState {
   armyHighlightTileKey: string | null;
   assetsReady: boolean;
   declareAttackGlowTileKeys: Set<string> | null;
+  placementAnimations: PlacementAnimation[];
 }
