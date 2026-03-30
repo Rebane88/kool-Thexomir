@@ -60,6 +60,7 @@ public class SlotMachineService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : 
         // 9. Return result
         return Result<SpinResultDto>.Ok(new SpinResultDto
         {
+            KingdomId = kingdom.Id,
             Outcome = outcome,
             ActionPointsAfter = game.RemainingActionPoints ?? 0,
             GoldAfter = (int)gold.Amount,

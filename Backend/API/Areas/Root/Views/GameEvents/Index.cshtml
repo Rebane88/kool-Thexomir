@@ -1,0 +1,43 @@
+@model IEnumerable<Domain.Game.GameEvent>
+@inject IStringLocalizer<Common> Localizer
+@{
+    ViewData["Title"] = Localizer["GameEvents_Title"].Value;
+}
+
+<div class="page-header">
+    <h1>@Localizer["GameEvents_Title"]</h1>
+    <a asp-action="Create" class="btn-admin btn-primary-admin">@Localizer["GameEvents_Add"]</a>
+</div>
+
+<div class="admin-card" style="padding:0; overflow:hidden;">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>@Localizer["Field_Name"]</th>
+                <th>@Localizer["Field_Description"]</th>
+                <th>@Localizer["GameEvents_ResourceEffect"]</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td style="font-weight:500;">@item.Name</td>
+                    <td style="color:#71717a;">@(item.Description ?? "—")</td>
+                    <td>@item.ResourceEffect</td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn-admin">@Localizer["Form_Edit"]</a>
+                            <form method="post" asp-action="Delete" asp-route-id="@item.Id" class="d-inline"
+                                  onsubmit="return confirm('@Localizer["GameEvents_ConfirmDelete"]')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-admin btn-danger-admin">@Localizer["Form_Delete"]</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

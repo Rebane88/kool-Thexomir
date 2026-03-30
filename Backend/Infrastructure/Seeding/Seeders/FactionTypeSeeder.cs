@@ -26,8 +26,8 @@ public class FactionTypeSeeder : ISeeder
             {
                 Id = IronThroneId,
                 Name = new LangStr("Iron Throne"),
-                Description = "Masters of war. Superior attack power and chip damage, but reduced resource production.",
-                Lore = "Forged in centuries of conquest, the Iron Throne rules through military supremacy.",
+                Description = new LangStr("Masters of war. Superior attack power and chip damage, but reduced resource production.", "en"),
+                Lore = new LangStr("Forged in centuries of conquest, the Iron Throne rules through military supremacy.", "en"),
                 AttackModifier = 1.15m,
                 HPModifier = 1.0m,
                 InitiativeModifier = 1.0m,
@@ -45,8 +45,8 @@ public class FactionTypeSeeder : ISeeder
             {
                 Id = MageCouncilId,
                 Name = new LangStr("Mage Council"),
-                Description = "Arcane masters. Higher initiative and an extra action point, but reduced army HP.",
-                Lore = "The Mage Council channels ancient arcane knowledge to dominate through superior tactics.",
+                Description = new LangStr("Arcane masters. Higher initiative and an extra action point, but reduced army HP.", "en"),
+                Lore = new LangStr("The Mage Council channels ancient arcane knowledge to dominate through superior tactics.", "en"),
                 AttackModifier = 1.0m,
                 HPModifier = 0.85m,
                 InitiativeModifier = 1.20m,
@@ -64,8 +64,8 @@ public class FactionTypeSeeder : ISeeder
             {
                 Id = MerchantRepublicId,
                 Name = new LangStr("Merchant Republic"),
-                Description = "Economic powerhouse. Cheaper buildings and training, but weaker in combat.",
-                Lore = "Trade routes spanning the known world fuel the Merchant Republic's endless coffers.",
+                Description = new LangStr("Economic powerhouse. Cheaper buildings and training, but weaker in combat.", "en"),
+                Lore = new LangStr("Trade routes spanning the known world fuel the Merchant Republic's endless coffers.", "en"),
                 AttackModifier = 0.90m,
                 HPModifier = 1.0m,
                 InitiativeModifier = 1.0m,
@@ -83,8 +83,8 @@ public class FactionTypeSeeder : ISeeder
             {
                 Id = ForestElvesId,
                 Name = new LangStr("Forest Elves"),
-                Description = "Resilient defenders. Higher HP and healing rate, but one fewer action point.",
-                Lore = "Ancient guardians of the deep forests, the Elves endure through patience and regeneration.",
+                Description = new LangStr("Resilient defenders. Higher HP and healing rate, but one fewer action point.", "en"),
+                Lore = new LangStr("Ancient guardians of the deep forests, the Elves endure through patience and regeneration.", "en"),
                 AttackModifier = 1.0m,
                 HPModifier = 1.15m,
                 InitiativeModifier = 1.0m,

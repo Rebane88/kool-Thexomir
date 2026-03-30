@@ -1,0 +1,38 @@
+@inject IStringLocalizer<Common> Localizer
+@{
+    ViewData["Title"] = Localizer["GameEvents_Create"].Value;
+}
+
+<div class="page-header">
+    <h1>@Localizer["GameEvents_Create"]</h1>
+</div>
+
+<div class="admin-card">
+    <form method="post" asp-action="Create" class="admin-form">
+        @Html.AntiForgeryToken()
+        <div class="row g-3">
+
+            <div class="col-12">
+                <label class="form-label">@Localizer["Field_Name"]</label>
+                <input type="text" name="Name" class="form-control" required />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["GameEvents_ResourceEffect"]</label>
+                <input type="number" name="ResourceEffect" class="form-control" step="0.01" value="0" required />
+                <div class="form-text">@Localizer["GameEvents_ResourceEffectHint"]</div>
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">@Localizer["Field_Description"]</label>
+                <textarea name="Description" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="col-12 d-flex gap-2 mt-2">
+                <button type="submit" class="btn-admin btn-primary-admin">@Localizer["Form_Create"]</button>
+                <a asp-action="Index" class="btn-admin">@Localizer["Form_Cancel"]</a>
+            </div>
+
+        </div>
+    </form>
+</div>

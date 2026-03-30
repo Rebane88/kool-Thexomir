@@ -28,7 +28,10 @@ public class BuildingTypesController : ReferenceDataBaseController<BuildingType>
         entity.BaseYieldStone = int.TryParse(form["BaseYieldStone"].ToString(), out var ys) ? ys : 0;
         entity.BaseYieldMana = int.TryParse(form["BaseYieldMana"].ToString(), out var ym) ? ym : 0;
         entity.ArmyCapacity = int.TryParse(form["ArmyCapacity"].ToString(), out var ac) ? ac : 0;
-        entity.Description = form["Description"].ToString() is { Length: > 0 } desc ? desc : null;
+        if (form["DescriptionEn"].ToString() is { Length: > 0 } descEn)
+            entity.Description.SetTranslation(descEn, "en");
+        if (form["DescriptionEt"].ToString() is { Length: > 0 } descEt)
+            entity.Description.SetTranslation(descEt, "et");
         entity.IconUrl = form["IconUrl"].ToString() is { Length: > 0 } icon ? icon : null;
 
         var prereqStr = form["UnlockedByBuildingTypeId"].ToString();
@@ -39,6 +42,7 @@ public class BuildingTypesController : ReferenceDataBaseController<BuildingType>
     {
         entity.Id,
         NameEn = entity.Name.Translate("en") ?? string.Empty,
+        NameEt = entity.Name.Translate("et") ?? string.Empty,
         entity.Tier,
         entity.Chain,
         entity.CostGold,
@@ -52,7 +56,8 @@ public class BuildingTypesController : ReferenceDataBaseController<BuildingType>
         entity.BaseYieldStone,
         entity.BaseYieldMana,
         entity.ArmyCapacity,
-        entity.Description,
+        DescriptionEn = entity.Description.Translate("en") ?? string.Empty,
+        DescriptionEt = entity.Description.Translate("et") ?? string.Empty,
         entity.IconUrl,
         UnlockedByBuildingTypeId = entity.UnlockedByBuildingTypeId?.ToString() ?? string.Empty
     };

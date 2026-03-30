@@ -1,94 +1,115 @@
 @model dynamic
+@inject IStringLocalizer<Common> Localizer
 @{
-    ViewData["Title"] = "Edit Building Type";
+    ViewData["Title"] = Localizer["BuildingTypes_Edit"].Value;
 }
 
-<h2>Edit Building Type</h2>
-<hr />
+<div class="page-header">
+    <h1>@Localizer["BuildingTypes_Edit"]</h1>
+</div>
 
-<form method="post" asp-action="Edit" asp-route-id="@Model.Id">
-    <input type="hidden" name="Id" value="@Model.Id" />
-    <div class="row g-3" style="max-width: 700px;">
+<div class="admin-card">
+    <form method="post" asp-action="Edit" asp-route-id="@Model.Id" class="admin-form">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <div class="row g-3">
 
-        <div class="col-12">
-            <label class="form-label fw-semibold">Name (English)</label>
-            <input type="text" name="NameEn" class="form-control" value="@Model.NameEn" required />
-        </div>
+            <div class="col-12"><div class="form-section-label">@Localizer["Field_Name"]</div></div>
 
-        <div class="col-md-4">
-            <label class="form-label">Tier</label>
-            <input type="number" name="Tier" class="form-control" value="@Model.Tier" required />
-        </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Name"] (EN)</label>
+                <input type="text" name="NameEn" class="form-control" value="@Model.NameEn" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Name"] (ET)</label>
+                <input type="text" name="NameEt" class="form-control" value="@Model.NameEt" />
+            </div>
 
-        <div class="col-md-8">
-            <label class="form-label">Chain</label>
-            <input type="text" name="Chain" class="form-control" value="@Model.Chain" />
-        </div>
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["BuildingTypes_Tier"]</label>
+                <input type="number" name="Tier" class="form-control" value="@Model.Tier" required />
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">@Localizer["BuildingTypes_Chain"]</label>
+                <input type="text" name="Chain" class="form-control" value="@Model.Chain" />
+            </div>
 
-        <div class="col-12"><hr class="my-1" /><small class="text-muted">Costs</small></div>
+            <div class="col-12"><div class="form-section-label">@Localizer["BuildingTypes_Costs"]</div></div>
 
-        <div class="col-md-3">
-            <label class="form-label">Gold</label>
-            <input type="number" name="GoldCost" class="form-control" value="@Model.GoldCost" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Wood</label>
-            <input type="number" name="WoodCost" class="form-control" value="@Model.WoodCost" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Stone</label>
-            <input type="number" name="StoneCost" class="form-control" value="@Model.StoneCost" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Mana</label>
-            <input type="number" name="ManaCost" class="form-control" value="@Model.ManaCost" />
-        </div>
+            <div class="col">
+                <label class="form-label">@Localizer["BuildingTypes_Gold"]</label>
+                <input type="number" name="CostGold" class="form-control" value="@Model.CostGold" />
+            </div>
+            <div class="col">
+                <label class="form-label">@Localizer["BuildingTypes_Food"]</label>
+                <input type="number" name="CostFood" class="form-control" value="@Model.CostFood" />
+            </div>
+            <div class="col">
+                <label class="form-label">@Localizer["BuildingTypes_Wood"]</label>
+                <input type="number" name="CostWood" class="form-control" value="@Model.CostWood" />
+            </div>
+            <div class="col">
+                <label class="form-label">@Localizer["BuildingTypes_Stone"]</label>
+                <input type="number" name="CostStone" class="form-control" value="@Model.CostStone" />
+            </div>
+            <div class="col">
+                <label class="form-label">@Localizer["BuildingTypes_Mana"]</label>
+                <input type="number" name="CostMana" class="form-control" value="@Model.CostMana" />
+            </div>
 
-        <div class="col-12"><hr class="my-1" /><small class="text-muted">Yields (per turn)</small></div>
+            <div class="col-12"><div class="form-section-label">@Localizer["BuildingTypes_BaseYields"]</div></div>
 
-        <div class="col-md-4">
-            <label class="form-label">Food Yield</label>
-            <input type="number" name="FoodYield" class="form-control" value="@Model.FoodYield" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Wood Yield</label>
-            <input type="number" name="WoodYield" class="form-control" value="@Model.WoodYield" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Stone Yield</label>
-            <input type="number" name="StoneYield" class="form-control" value="@Model.StoneYield" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Gold Yield</label>
-            <input type="number" name="GoldYield" class="form-control" value="@Model.GoldYield" />
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Mana Yield</label>
-            <input type="number" name="ManaYield" class="form-control" value="@Model.ManaYield" />
-        </div>
+            <div class="col">
+                <label class="form-label">@Localizer["BuildingTypes_Gold"]</label>
+                <input type="number" name="BaseYieldGold" class="form-control" value="@Model.BaseYieldGold" />
+            </div>
+            <div class="col">
+                <label class="form-label">@Localizer["BuildingTypes_Food"]</label>
+                <input type="number" name="BaseYieldFood" class="form-control" value="@Model.BaseYieldFood" />
+            </div>
+            <div class="col">
+                <label class="form-label">@Localizer["BuildingTypes_Wood"]</label>
+                <input type="number" name="BaseYieldWood" class="form-control" value="@Model.BaseYieldWood" />
+            </div>
+            <div class="col">
+                <label class="form-label">@Localizer["BuildingTypes_Stone"]</label>
+                <input type="number" name="BaseYieldStone" class="form-control" value="@Model.BaseYieldStone" />
+            </div>
+            <div class="col">
+                <label class="form-label">@Localizer["BuildingTypes_Mana"]</label>
+                <input type="number" name="BaseYieldMana" class="form-control" value="@Model.BaseYieldMana" />
+            </div>
 
-        <div class="col-12"><hr class="my-1" /></div>
+            <div class="col-12"><div class="form-section-label">@Localizer["BuildingTypes_Other"]</div></div>
 
-        <div class="col-12">
-            <label class="form-label">Description</label>
-            <textarea name="Description" class="form-control" rows="2">@Model.Description</textarea>
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["BuildingTypes_ArmyCapacity"]</label>
+                <input type="number" name="ArmyCapacity" class="form-control" value="@Model.ArmyCapacity" />
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">@Localizer["BuildingTypes_UnlockedBy"]</label>
+                <input type="text" name="UnlockedByBuildingTypeId" class="form-control"
+                       value="@Model.UnlockedByBuildingTypeId" placeholder="@Localizer["Field_Optional"]" />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Description"] (EN)</label>
+                <textarea name="DescriptionEn" class="form-control" rows="2">@Model.DescriptionEn</textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Description"] (ET)</label>
+                <textarea name="DescriptionEt" class="form-control" rows="2">@Model.DescriptionEt</textarea>
+            </div>
+            <div class="col-12">
+                <label class="form-label">@Localizer["Field_IconUrl"]</label>
+                <input type="text" name="IconUrl" class="form-control" value="@Model.IconUrl" placeholder="@Localizer["Field_Optional"]" />
+            </div>
+
+            <div class="col-12 d-flex gap-2 mt-2">
+                <button type="submit" class="btn-admin btn-primary-admin">@Localizer["Form_Save"]</button>
+                <a asp-action="Index" class="btn-admin">@Localizer["Form_Cancel"]</a>
+            </div>
+
         </div>
-
-        <div class="col-md-6">
-            <label class="form-label">Icon URL</label>
-            <input type="text" name="IconUrl" class="form-control" value="@Model.IconUrl" />
-        </div>
-
-        <div class="col-md-6">
-            <label class="form-label">Prerequisite Building Type ID</label>
-            <input type="text" name="PrerequisiteBuildingTypeId" class="form-control"
-                   value="@Model.PrerequisiteBuildingTypeId" placeholder="Leave blank if none" />
-        </div>
-
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-            <a asp-action="Index" class="btn btn-outline-secondary ms-2">Cancel</a>
-        </div>
-
-    </div>
-</form>
+    </form>
+</div>

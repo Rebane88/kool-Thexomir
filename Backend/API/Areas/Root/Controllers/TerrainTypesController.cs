@@ -19,14 +19,17 @@ public class TerrainTypesController : ReferenceDataBaseController<TerrainType>
         entity.ResourceBonusType = Enum.TryParse<ETerrainResourceBonus>(
             form["ResourceBonusType"].ToString(), out var rbt) ? rbt : ETerrainResourceBonus.None;
         entity.MapColor = form["MapColor"].ToString() is { Length: > 0 } mc ? mc : string.Empty;
+        entity.IconUrl = form["IconUrl"].ToString() is { Length: > 0 } icon ? icon : null;
     }
 
     protected override object ToViewModel(TerrainType entity) => new
     {
         entity.Id,
         NameEn = entity.Name.Translate("en") ?? string.Empty,
+        NameEt = entity.Name.Translate("et") ?? string.Empty,
         entity.ResourceMultiplier,
         entity.ResourceBonusType,
-        entity.MapColor
+        entity.MapColor,
+        entity.IconUrl
     };
 }

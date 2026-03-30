@@ -1,0 +1,140 @@
+@using Domain.Military
+@inject IStringLocalizer<Common> Localizer
+@{
+    ViewData["Title"] = Localizer["ArmyTypes_Create"].Value;
+}
+
+<div class="page-header">
+    <h1>@Localizer["ArmyTypes_Create"]</h1>
+</div>
+
+<div class="admin-card">
+    <form method="post" asp-action="Create" class="admin-form">
+        @Html.AntiForgeryToken()
+        <div class="row g-3">
+
+            <div class="col-12"><div class="form-section-label">@Localizer["Field_Name"]</div></div>
+
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Name"] (EN)</label>
+                <input type="text" name="NameEn" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Name"] (ET)</label>
+                <input type="text" name="NameEt" class="form-control" />
+            </div>
+
+            <div class="col-12"><div class="form-section-label">@Localizer["ArmyTypes_CombatStats"]</div></div>
+
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["ArmyTypes_Attack"]</label>
+                <input type="number" name="Attack" class="form-control" value="0" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["ArmyTypes_HP"]</label>
+                <input type="number" name="HP" class="form-control" value="0" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["ArmyTypes_Initiative"]</label>
+                <input type="number" name="Initiative" class="form-control" value="0" required />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">@Localizer["ArmyTypes_DamageMin"]</label>
+                <input type="number" name="DamageRangeMin" class="form-control" step="0.01" value="0" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">@Localizer["ArmyTypes_DamageMax"]</label>
+                <input type="number" name="DamageRangeMax" class="form-control" step="0.01" value="0" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">@Localizer["ArmyTypes_ChipDmgMin"]</label>
+                <input type="number" name="ChipDamageRangeMin" class="form-control" step="0.01" value="0" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">@Localizer["ArmyTypes_ChipDmgMax"]</label>
+                <input type="number" name="ChipDamageRangeMax" class="form-control" step="0.01" value="0" required />
+            </div>
+
+            <div class="col-12"><div class="form-section-label">@Localizer["ArmyTypes_SituationalBonus"]</div></div>
+
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["ArmyTypes_BonusStat"]</label>
+                <input type="text" name="SituationalBonusStat" class="form-control" placeholder="e.g. Attack" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["ArmyTypes_BonusValue"]</label>
+                <input type="number" name="SituationalBonusValue" class="form-control" step="0.01" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["ArmyTypes_Condition"]</label>
+                <select name="SituationalBonusCondition" class="form-select">
+                    <option value="">None</option>
+                    @foreach (var value in Enum.GetValues<ESituationalBonusCondition>())
+                    {
+                        <option value="@value">@value</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-12"><div class="form-section-label">@Localizer["ArmyTypes_TrainingCosts"]</div></div>
+
+            <div class="col-md-3">
+                <label class="form-label">@Localizer["BuildingTypes_Gold"]</label>
+                <input type="number" name="TrainingCostGold" class="form-control" value="0" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">@Localizer["BuildingTypes_Food"]</label>
+                <input type="number" name="TrainingCostFood" class="form-control" value="0" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">@Localizer["BuildingTypes_Stone"]</label>
+                <input type="number" name="TrainingCostStone" class="form-control" value="0" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">@Localizer["BuildingTypes_Mana"]</label>
+                <input type="number" name="TrainingCostMana" class="form-control" value="0" />
+            </div>
+
+            <div class="col-12"><div class="form-section-label">@Localizer["ArmyTypes_Upkeep"]</div></div>
+
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["BuildingTypes_Gold"]</label>
+                <input type="number" name="UpkeepGold" class="form-control" value="0" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["BuildingTypes_Food"]</label>
+                <input type="number" name="UpkeepFood" class="form-control" value="0" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["BuildingTypes_Mana"]</label>
+                <input type="number" name="UpkeepMana" class="form-control" value="0" />
+            </div>
+
+            <div class="col-12"><div class="form-section-label">@Localizer["BuildingTypes_Other"]</div></div>
+
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["ArmyTypes_RequiredBuildingTypeId"]</label>
+                <input type="text" name="RequiredBuildingTypeId" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_IconUrl"]</label>
+                <input type="text" name="IconUrl" class="form-control" placeholder="@Localizer["Field_Optional"]" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Description"] (EN)</label>
+                <textarea name="DescriptionEn" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Description"] (ET)</label>
+                <textarea name="DescriptionEt" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="col-12 d-flex gap-2 mt-2">
+                <button type="submit" class="btn-admin btn-primary-admin">@Localizer["Form_Create"]</button>
+                <a asp-action="Index" class="btn-admin">@Localizer["Form_Cancel"]</a>
+            </div>
+
+        </div>
+    </form>
+</div>

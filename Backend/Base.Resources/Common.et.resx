@@ -11,6 +11,8 @@
     <resheader name="writer">
         <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
     </resheader>
+
+    <!-- Validation errors -->
     <data name="ErrorMessage_MaxLength" xml:space="preserve">
         <value>Väli {0} ei saa olla pikem kui '{1}'.</value>
     </data>
@@ -65,6 +67,8 @@
     <data name="ErrorMessage_NotValidPhone" xml:space="preserve">
         <value>Väli {0} ei ole valiidne telefoninumber.</value>
     </data>
+
+    <!-- Form buttons -->
     <data name="Form_Cancel" xml:space="preserve">
         <value>Katkesta</value>
     </data>
@@ -98,7 +102,479 @@
     <data name="Form_Actions" xml:space="preserve">
         <value>Tegevused</value>
     </data>
-    <data name="test" xml:space="preserve">
-        <value>fff</value>
+
+    <!-- Layout / Sidebar -->
+    <data name="Nav_Dashboard" xml:space="preserve">
+        <value>Töölaud</value>
+    </data>
+    <data name="Nav_Management" xml:space="preserve">
+        <value>Haldus</value>
+    </data>
+    <data name="Nav_ReferenceData" xml:space="preserve">
+        <value>Alusandmed</value>
+    </data>
+    <data name="Nav_Users" xml:space="preserve">
+        <value>Kasutajad</value>
+    </data>
+    <data name="Nav_Games" xml:space="preserve">
+        <value>Mängud</value>
+    </data>
+    <data name="Nav_FactionTypes" xml:space="preserve">
+        <value>Fraktsioonitüübid</value>
+    </data>
+    <data name="Nav_TerrainTypes" xml:space="preserve">
+        <value>Maastikutüübid</value>
+    </data>
+    <data name="Nav_BuildingTypes" xml:space="preserve">
+        <value>Ehitustüübid</value>
+    </data>
+    <data name="Nav_ArmyTypes" xml:space="preserve">
+        <value>Väetüübid</value>
+    </data>
+    <data name="Nav_GameEvents" xml:space="preserve">
+        <value>Mängusündmused</value>
+    </data>
+    <data name="Nav_SignOut" xml:space="preserve">
+        <value>Logi välja</value>
+    </data>
+
+    <!-- Login -->
+    <data name="Login_Title" xml:space="preserve">
+        <value>Administraatori sisselogimine</value>
+    </data>
+    <data name="Login_Email" xml:space="preserve">
+        <value>E-post</value>
+    </data>
+    <data name="Login_Password" xml:space="preserve">
+        <value>Parool</value>
+    </data>
+    <data name="Login_SignIn" xml:space="preserve">
+        <value>Logi sisse</value>
+    </data>
+
+    <!-- Dashboard -->
+    <data name="Dashboard_Title" xml:space="preserve">
+        <value>Töölaud</value>
+    </data>
+    <data name="Dashboard_UsersDesc" xml:space="preserve">
+        <value>Halda kontosid, määra rolle, lukusta kasutajaid.</value>
+    </data>
+    <data name="Dashboard_GamesDesc" xml:space="preserve">
+        <value>Vaata aktiivseid mänge. Sulge kinni jäänud fuajeed.</value>
+    </data>
+    <data name="Dashboard_RefDataDesc" xml:space="preserve">
+        <value>Seadista mängutüüpe ja tasakaaluväärtusi.</value>
+    </data>
+    <data name="Dashboard_Manage" xml:space="preserve">
+        <value>Halda</value>
+    </data>
+    <data name="Dashboard_View" xml:space="preserve">
+        <value>Vaata</value>
+    </data>
+    <data name="Dashboard_Factions" xml:space="preserve">
+        <value>Fraktsioonid</value>
+    </data>
+    <data name="Dashboard_Terrain" xml:space="preserve">
+        <value>Maastik</value>
+    </data>
+    <data name="Dashboard_Buildings" xml:space="preserve">
+        <value>Ehitised</value>
+    </data>
+    <data name="Dashboard_Armies" xml:space="preserve">
+        <value>Väed</value>
+    </data>
+    <data name="Dashboard_Events" xml:space="preserve">
+        <value>Sündmused</value>
+    </data>
+
+    <!-- Users page -->
+    <data name="Users_Email" xml:space="preserve">
+        <value>E-post</value>
+    </data>
+    <data name="Users_Username" xml:space="preserve">
+        <value>Kasutajanimi</value>
+    </data>
+    <data name="Users_Roles" xml:space="preserve">
+        <value>Rollid</value>
+    </data>
+    <data name="Users_Status" xml:space="preserve">
+        <value>Staatus</value>
+    </data>
+    <data name="Users_Registered" xml:space="preserve">
+        <value>Registreeritud</value>
+    </data>
+    <data name="Users_None" xml:space="preserve">
+        <value>Puudub</value>
+    </data>
+    <data name="Users_Locked" xml:space="preserve">
+        <value>Lukustatud</value>
+    </data>
+    <data name="Users_Active" xml:space="preserve">
+        <value>Aktiivne</value>
+    </data>
+    <data name="Users_AddAdmin" xml:space="preserve">
+        <value>Lisa admin</value>
+    </data>
+    <data name="Users_RemoveAdmin" xml:space="preserve">
+        <value>Eemalda admin</value>
+    </data>
+    <data name="Users_Unlock" xml:space="preserve">
+        <value>Ava lukust</value>
+    </data>
+    <data name="Users_Lock" xml:space="preserve">
+        <value>Lukusta</value>
+    </data>
+
+    <!-- Games page -->
+    <data name="Games_ActiveGames" xml:space="preserve">
+        <value>Aktiivsed mängud</value>
+    </data>
+    <data name="Games_NoActiveGames" xml:space="preserve">
+        <value>Hetkel aktiivseid mänge ei ole.</value>
+    </data>
+    <data name="Games_LobbyCode" xml:space="preserve">
+        <value>Fuajee kood</value>
+    </data>
+    <data name="Games_Host" xml:space="preserve">
+        <value>Võõrustaja</value>
+    </data>
+    <data name="Games_Players" xml:space="preserve">
+        <value>Mängijad</value>
+    </data>
+    <data name="Games_Status" xml:space="preserve">
+        <value>Staatus</value>
+    </data>
+    <data name="Games_Lobby" xml:space="preserve">
+        <value>Fuajee</value>
+    </data>
+    <data name="Games_InProgress" xml:space="preserve">
+        <value>Käimas</value>
+    </data>
+    <data name="Games_Created" xml:space="preserve">
+        <value>Loodud</value>
+    </data>
+    <data name="Games_ForceClose" xml:space="preserve">
+        <value>Sundsulge</value>
+    </data>
+    <data name="Games_ForceCloseTitle" xml:space="preserve">
+        <value>Mängu sundsulgemine</value>
+    </data>
+    <data name="Games_ForceCloseWarning" xml:space="preserve">
+        <value>See muudab mängu oleku lõpetatuks. Seda ei saa tagasi võtta.</value>
+    </data>
+    <data name="Games_YesForceClose" xml:space="preserve">
+        <value>Jah, sundsulge</value>
+    </data>
+    <data name="Games_Unknown" xml:space="preserve">
+        <value>Tundmatu</value>
+    </data>
+
+    <!-- Shared field labels -->
+    <data name="Field_Name" xml:space="preserve">
+        <value>Nimi</value>
+    </data>
+    <data name="Field_Translations" xml:space="preserve">
+        <value>Tõlked</value>
+    </data>
+    <data name="Field_Description" xml:space="preserve">
+        <value>Kirjeldus</value>
+    </data>
+    <data name="Field_Lore" xml:space="preserve">
+        <value>Taustalugu</value>
+    </data>
+    <data name="Field_IconUrl" xml:space="preserve">
+        <value>Ikooni URL</value>
+    </data>
+    <data name="Field_None" xml:space="preserve">
+        <value>Puudub</value>
+    </data>
+    <data name="Field_Optional" xml:space="preserve">
+        <value>Valikuline</value>
+    </data>
+
+    <!-- Faction Types -->
+    <data name="FactionTypes_Title" xml:space="preserve">
+        <value>Fraktsioonitüübid</value>
+    </data>
+    <data name="FactionTypes_Create" xml:space="preserve">
+        <value>Loo fraktsioonitüüp</value>
+    </data>
+    <data name="FactionTypes_Edit" xml:space="preserve">
+        <value>Muuda fraktsioonitüüpi</value>
+    </data>
+    <data name="FactionTypes_Add" xml:space="preserve">
+        <value>Lisa fraktsioonitüüp</value>
+    </data>
+    <data name="FactionTypes_CombatModifiers" xml:space="preserve">
+        <value>Lahingumuutjad</value>
+    </data>
+    <data name="FactionTypes_Attack" xml:space="preserve">
+        <value>Rünnak</value>
+    </data>
+    <data name="FactionTypes_HP" xml:space="preserve">
+        <value>Elupunktid</value>
+    </data>
+    <data name="FactionTypes_Initiative" xml:space="preserve">
+        <value>Initsiatiiv</value>
+    </data>
+    <data name="FactionTypes_ChipDamage" xml:space="preserve">
+        <value>Lisakahju</value>
+    </data>
+    <data name="FactionTypes_EconomyModifiers" xml:space="preserve">
+        <value>Majandusmuutjad</value>
+    </data>
+    <data name="FactionTypes_ResourceProduction" xml:space="preserve">
+        <value>Ressursitootmine</value>
+    </data>
+    <data name="FactionTypes_BuildingCost" xml:space="preserve">
+        <value>Ehituskulu</value>
+    </data>
+    <data name="FactionTypes_TrainingCost" xml:space="preserve">
+        <value>Treeningukulu</value>
+    </data>
+    <data name="FactionTypes_ActionPointModifier" xml:space="preserve">
+        <value>Tegevuspunkti muutja</value>
+    </data>
+    <data name="FactionTypes_ActionPointHint" xml:space="preserve">
+        <value>Liitev (nt +1)</value>
+    </data>
+    <data name="FactionTypes_HealRate" xml:space="preserve">
+        <value>Tervenemiskiirus</value>
+    </data>
+    <data name="FactionTypes_StartingBonus" xml:space="preserve">
+        <value>Algusbonus</value>
+    </data>
+    <data name="FactionTypes_BonusResource" xml:space="preserve">
+        <value>Boonusressurss</value>
+    </data>
+    <data name="FactionTypes_BonusAmount" xml:space="preserve">
+        <value>Boonuse kogus</value>
+    </data>
+    <data name="FactionTypes_Flavor" xml:space="preserve">
+        <value>Maitse</value>
+    </data>
+    <data name="FactionTypes_Atk" xml:space="preserve">
+        <value>Rnk</value>
+    </data>
+    <data name="FactionTypes_Init" xml:space="preserve">
+        <value>Init</value>
+    </data>
+    <data name="FactionTypes_ChipDmg" xml:space="preserve">
+        <value>Lisakahju</value>
+    </data>
+    <data name="FactionTypes_ResProd" xml:space="preserve">
+        <value>Res tootm</value>
+    </data>
+    <data name="FactionTypes_BldCost" xml:space="preserve">
+        <value>Ehi kulu</value>
+    </data>
+    <data name="FactionTypes_TrainCost" xml:space="preserve">
+        <value>Tree kulu</value>
+    </data>
+    <data name="FactionTypes_AP" xml:space="preserve">
+        <value>TP</value>
+    </data>
+    <data name="FactionTypes_Heal" xml:space="preserve">
+        <value>Terv</value>
+    </data>
+    <data name="FactionTypes_Bonus" xml:space="preserve">
+        <value>Boonus</value>
+    </data>
+    <data name="FactionTypes_ConfirmDelete" xml:space="preserve">
+        <value>Kustuta see fraktsioonitüüp?</value>
+    </data>
+
+    <!-- Building Types -->
+    <data name="BuildingTypes_Title" xml:space="preserve">
+        <value>Ehitustüübid</value>
+    </data>
+    <data name="BuildingTypes_Create" xml:space="preserve">
+        <value>Loo ehitustüüp</value>
+    </data>
+    <data name="BuildingTypes_Edit" xml:space="preserve">
+        <value>Muuda ehitustüüpi</value>
+    </data>
+    <data name="BuildingTypes_Add" xml:space="preserve">
+        <value>Lisa ehitustüüp</value>
+    </data>
+    <data name="BuildingTypes_Tier" xml:space="preserve">
+        <value>Tase</value>
+    </data>
+    <data name="BuildingTypes_Chain" xml:space="preserve">
+        <value>Ahel</value>
+    </data>
+    <data name="BuildingTypes_Costs" xml:space="preserve">
+        <value>Kulud</value>
+    </data>
+    <data name="BuildingTypes_BaseYields" xml:space="preserve">
+        <value>Baastoodang (käigu kohta)</value>
+    </data>
+    <data name="BuildingTypes_Gold" xml:space="preserve">
+        <value>Kuld</value>
+    </data>
+    <data name="BuildingTypes_Food" xml:space="preserve">
+        <value>Toit</value>
+    </data>
+    <data name="BuildingTypes_Wood" xml:space="preserve">
+        <value>Puit</value>
+    </data>
+    <data name="BuildingTypes_Stone" xml:space="preserve">
+        <value>Kivi</value>
+    </data>
+    <data name="BuildingTypes_Mana" xml:space="preserve">
+        <value>Mana</value>
+    </data>
+    <data name="BuildingTypes_ArmyCapacity" xml:space="preserve">
+        <value>Väemaht</value>
+    </data>
+    <data name="BuildingTypes_UnlockedBy" xml:space="preserve">
+        <value>Avab (Ehitustüübi ID)</value>
+    </data>
+    <data name="BuildingTypes_Other" xml:space="preserve">
+        <value>Muu</value>
+    </data>
+    <data name="BuildingTypes_ArmyCap" xml:space="preserve">
+        <value>Väemaht</value>
+    </data>
+    <data name="BuildingTypes_ConfirmDelete" xml:space="preserve">
+        <value>Kustuta see ehitustüüp?</value>
+    </data>
+
+    <!-- Army Types -->
+    <data name="ArmyTypes_Title" xml:space="preserve">
+        <value>Väetüübid</value>
+    </data>
+    <data name="ArmyTypes_Create" xml:space="preserve">
+        <value>Loo väetüüp</value>
+    </data>
+    <data name="ArmyTypes_Edit" xml:space="preserve">
+        <value>Muuda väetüüpi</value>
+    </data>
+    <data name="ArmyTypes_Add" xml:space="preserve">
+        <value>Lisa väetüüp</value>
+    </data>
+    <data name="ArmyTypes_CombatStats" xml:space="preserve">
+        <value>Lahingustatistika</value>
+    </data>
+    <data name="ArmyTypes_Attack" xml:space="preserve">
+        <value>Rünnak</value>
+    </data>
+    <data name="ArmyTypes_HP" xml:space="preserve">
+        <value>Elupunktid</value>
+    </data>
+    <data name="ArmyTypes_Initiative" xml:space="preserve">
+        <value>Initsiatiiv</value>
+    </data>
+    <data name="ArmyTypes_DamageMin" xml:space="preserve">
+        <value>Kahju min</value>
+    </data>
+    <data name="ArmyTypes_DamageMax" xml:space="preserve">
+        <value>Kahju maks</value>
+    </data>
+    <data name="ArmyTypes_ChipDmgMin" xml:space="preserve">
+        <value>Lisakahju min</value>
+    </data>
+    <data name="ArmyTypes_ChipDmgMax" xml:space="preserve">
+        <value>Lisakahju maks</value>
+    </data>
+    <data name="ArmyTypes_SituationalBonus" xml:space="preserve">
+        <value>Situatsiooniline boonus</value>
+    </data>
+    <data name="ArmyTypes_BonusStat" xml:space="preserve">
+        <value>Boonuse stat</value>
+    </data>
+    <data name="ArmyTypes_BonusValue" xml:space="preserve">
+        <value>Boonuse väärtus</value>
+    </data>
+    <data name="ArmyTypes_Condition" xml:space="preserve">
+        <value>Tingimus</value>
+    </data>
+    <data name="ArmyTypes_TrainingCosts" xml:space="preserve">
+        <value>Treeningkulud</value>
+    </data>
+    <data name="ArmyTypes_Upkeep" xml:space="preserve">
+        <value>Ülalpidamine (käigu kohta)</value>
+    </data>
+    <data name="ArmyTypes_RequiredBuildingTypeId" xml:space="preserve">
+        <value>Nõutav ehitustüübi ID</value>
+    </data>
+    <data name="ArmyTypes_Atk" xml:space="preserve">
+        <value>Rnk</value>
+    </data>
+    <data name="ArmyTypes_Init" xml:space="preserve">
+        <value>Init</value>
+    </data>
+    <data name="ArmyTypes_Dmg" xml:space="preserve">
+        <value>Kahju</value>
+    </data>
+    <data name="ArmyTypes_Chip" xml:space="preserve">
+        <value>Lisa</value>
+    </data>
+    <data name="ArmyTypes_Training" xml:space="preserve">
+        <value>Treening</value>
+    </data>
+    <data name="ArmyTypes_ConfirmDelete" xml:space="preserve">
+        <value>Kustuta see väetüüp?</value>
+    </data>
+
+    <!-- Terrain Types -->
+    <data name="TerrainTypes_Title" xml:space="preserve">
+        <value>Maastikutüübid</value>
+    </data>
+    <data name="TerrainTypes_Create" xml:space="preserve">
+        <value>Loo maastikutüüp</value>
+    </data>
+    <data name="TerrainTypes_Edit" xml:space="preserve">
+        <value>Muuda maastikutüüpi</value>
+    </data>
+    <data name="TerrainTypes_Add" xml:space="preserve">
+        <value>Lisa maastikutüüp</value>
+    </data>
+    <data name="TerrainTypes_ResourceMultiplier" xml:space="preserve">
+        <value>Ressursikordaja</value>
+    </data>
+    <data name="TerrainTypes_ResourceMultiplierHint" xml:space="preserve">
+        <value>nt 1.10 = +10% ressursitoodang</value>
+    </data>
+    <data name="TerrainTypes_ResourceBonusType" xml:space="preserve">
+        <value>Ressursiboonuse tüüp</value>
+    </data>
+    <data name="TerrainTypes_MapColor" xml:space="preserve">
+        <value>Kaardi värv</value>
+    </data>
+    <data name="TerrainTypes_MapColorHint" xml:space="preserve">
+        <value>Hex-värv kaardi renderdamiseks</value>
+    </data>
+    <data name="TerrainTypes_ResourceBonus" xml:space="preserve">
+        <value>Ressursiboonus</value>
+    </data>
+    <data name="TerrainTypes_Icon" xml:space="preserve">
+        <value>Ikoon</value>
+    </data>
+    <data name="TerrainTypes_ConfirmDelete" xml:space="preserve">
+        <value>Kustuta see maastikutüüp?</value>
+    </data>
+
+    <!-- Game Events -->
+    <data name="GameEvents_Title" xml:space="preserve">
+        <value>Mängusündmused</value>
+    </data>
+    <data name="GameEvents_Create" xml:space="preserve">
+        <value>Loo mängusündmus</value>
+    </data>
+    <data name="GameEvents_Edit" xml:space="preserve">
+        <value>Muuda mängusündmust</value>
+    </data>
+    <data name="GameEvents_Add" xml:space="preserve">
+        <value>Lisa mängusündmus</value>
+    </data>
+    <data name="GameEvents_ResourceEffect" xml:space="preserve">
+        <value>Ressursimõju</value>
+    </data>
+    <data name="GameEvents_ResourceEffectHint" xml:space="preserve">
+        <value>Kordaja või kindel summa ressurssidele</value>
+    </data>
+    <data name="GameEvents_ConfirmDelete" xml:space="preserve">
+        <value>Kustuta see mängusündmus?</value>
     </data>
 </root>

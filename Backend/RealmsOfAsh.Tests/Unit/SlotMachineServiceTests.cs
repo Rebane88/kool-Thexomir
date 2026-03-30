@@ -146,7 +146,8 @@ public class SlotMachineServiceTests
         var result = await _sut.SpinAsync(GameId, UserId);
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value!.Outcome.ShouldBe(2);
+        result.Value!.KingdomId.ShouldBe(KingdomId);
+        result.Value.Outcome.ShouldBe(2);
         result.Value.ActionPointsAfter.ShouldBe(5); // 3 + 2
         result.Value.GoldAfter.ShouldBe(70); // 100 - 30
         result.Value.GoldSpent.ShouldBe(30);

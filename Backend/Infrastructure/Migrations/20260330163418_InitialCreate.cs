@@ -75,7 +75,7 @@ namespace Infrastructure.Migrations
                     BaseYieldStone = table.Column<int>(type: "integer", nullable: false),
                     BaseYieldMana = table.Column<int>(type: "integer", nullable: false),
                     ArmyCapacity = table.Column<int>(type: "integer", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<LangStr>(type: "jsonb", nullable: false),
                     IconUrl = table.Column<string>(type: "text", nullable: true),
                     UnlockedByBuildingTypeId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -112,8 +112,8 @@ namespace Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<LangStr>(type: "jsonb", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: true),
-                    Lore = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<LangStr>(type: "jsonb", nullable: false),
+                    Lore = table.Column<LangStr>(type: "jsonb", nullable: false),
                     AttackModifier = table.Column<decimal>(type: "numeric", nullable: false),
                     HPModifier = table.Column<decimal>(type: "numeric", nullable: false),
                     InitiativeModifier = table.Column<decimal>(type: "numeric", nullable: false),
@@ -323,7 +323,7 @@ namespace Infrastructure.Migrations
                     UpkeepMana = table.Column<int>(type: "integer", nullable: false),
                     RequiredBuildingTypeId = table.Column<Guid>(type: "uuid", nullable: false),
                     IconUrl = table.Column<string>(type: "text", nullable: true),
-                    Description = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<LangStr>(type: "jsonb", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
@@ -387,24 +387,6 @@ namespace Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_BattleRounds", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_BattleRounds_Armies_ArmyDestroyedId",
-                        column: x => x.ArmyDestroyedId,
-                        principalTable: "Armies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_BattleRounds_Armies_AttackerArmyId",
-                        column: x => x.AttackerArmyId,
-                        principalTable: "Armies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_BattleRounds_Armies_DefenderArmyId",
-                        column: x => x.DefenderArmyId,
-                        principalTable: "Armies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -467,6 +449,8 @@ namespace Infrastructure.Migrations
                     RiskedTileId = table.Column<Guid>(type: "uuid", nullable: false),
                     AttackerSelectedArmyIds = table.Column<string>(type: "text", nullable: true),
                     DefenderSelectedArmyIds = table.Column<string>(type: "text", nullable: true),
+                    AttackerLineupConfirmed = table.Column<bool>(type: "boolean", nullable: false),
+                    DefenderLineupConfirmed = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
@@ -528,7 +512,7 @@ namespace Infrastructure.Migrations
                     TurnOrder = table.Column<int>(type: "integer", nullable: false),
                     GameId = table.Column<Guid>(type: "uuid", nullable: false),
                     AppUserId = table.Column<Guid>(type: "uuid", nullable: true),
-                    FactionTypeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    FactionTypeId = table.Column<Guid>(type: "uuid", nullable: true),
                     DefeatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     JoinedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -711,25 +695,10 @@ namespace Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_BattleRounds_ArmyDestroyedId",
-                table: "BattleRounds",
-                column: "ArmyDestroyedId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BattleRounds_AttackerArmyId",
-                table: "BattleRounds",
-                column: "AttackerArmyId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_BattleRounds_BattleId_RoundNumber",
                 table: "BattleRounds",
                 columns: new[] { "BattleId", "RoundNumber" },
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BattleRounds_DefenderArmyId",
-                table: "BattleRounds",
-                column: "DefenderArmyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Battles_AttackerKingdomId",
@@ -1063,6 +1032,9 @@ namespace Infrastructure.Migrations
                 table: "Games");
 
             migrationBuilder.DropTable(
+                name: "Armies");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
             migrationBuilder.DropTable(
@@ -1099,19 +1071,16 @@ namespace Infrastructure.Migrations
                 name: "TurnLogs");
 
             migrationBuilder.DropTable(
-                name: "AspNetRoles");
-
-            migrationBuilder.DropTable(
-                name: "Armies");
-
-            migrationBuilder.DropTable(
-                name: "Battles");
-
-            migrationBuilder.DropTable(
                 name: "ArmyTypes");
 
             migrationBuilder.DropTable(
                 name: "Buildings");
+
+            migrationBuilder.DropTable(
+                name: "AspNetRoles");
+
+            migrationBuilder.DropTable(
+                name: "Battles");
 
             migrationBuilder.DropTable(
                 name: "BuildingTypes");

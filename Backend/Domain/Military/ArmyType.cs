@@ -39,7 +39,8 @@ public class ArmyType : BaseEntity, IHasName
     public BuildingType? RequiredBuildingType { get; set; }
 
     public string? IconUrl { get; set; }
-    public string? Description { get; set; }
+    [Column(TypeName = "jsonb")]
+    public LangStr Description { get; set; } = new();
 
     // Navigation
     public ICollection<Army>? Armies { get; set; }

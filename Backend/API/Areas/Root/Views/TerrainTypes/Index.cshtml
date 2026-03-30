@@ -1,47 +1,61 @@
 @model IEnumerable<Domain.Map.TerrainType>
+@inject IStringLocalizer<Common> Localizer
 @{
-    ViewData["Title"] = "Terrain Types";
+    ViewData["Title"] = Localizer["TerrainTypes_Title"].Value;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Terrain Types</h2>
-    <a asp-action="Create" class="btn btn-primary">Add Terrain Type</a>
+<div class="page-header">
+    <h1>@Localizer["TerrainTypes_Title"]</h1>
+    <a asp-action="Create" class="btn-admin btn-primary-admin">@Localizer["TerrainTypes_Add"]</a>
 </div>
 
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
-
-<div class="table-responsive">
-    <table class="table table-striped table-sm">
+<div class="admin-card" style="padding:0; overflow:hidden;">
+    <table class="admin-table">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Resource Multiplier</th>
-                <th>Resource Bonus Type</th>
-                <th>Map Color</th>
-                <th>Actions</th>
+                <th>@Localizer["Field_Name"]</th>
+                <th>@Localizer["TerrainTypes_ResourceMultiplier"]</th>
+                <th>@Localizer["TerrainTypes_ResourceBonus"]</th>
+                <th>@Localizer["TerrainTypes_MapColor"]</th>
+                <th>@Localizer["TerrainTypes_Icon"]</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
             @foreach (var item in Model)
             {
                 <tr>
-                    <td>@item.Name.Translate("en")</td>
+                    <td style="font-weight:500;">@item.Name.Translate()</td>
                     <td>@item.ResourceMultiplier</td>
                     <td>@item.ResourceBonusType</td>
-                    <td>@item.MapColor</td>
                     <td>
-                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
-                        <form method="post" asp-action="Delete" asp-route-id="@item.Id" class="d-inline"
-                              onsubmit="return confirm('Delete this terrain type?')">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                        </form>
+                        @if (!string.IsNullOrEmpty(item.MapColor))
+                        {
+                            <span style="display:inline-flex; align-items:center; gap:0.35rem;">
+                                <span style="width:14px; height:14px; border-radius:3px; background:@item.MapColor; border:1px solid #d4d4d8;"></span>
+                                @item.MapColor
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.IconUrl))
+                        {
+                            <span style="color:#71717a; font-size:0.75rem;">@item.IconUrl</span>
+                        }
+                        else
+                        {
+                            <span style="color:#a1a1aa;">—</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn-admin">@Localizer["Form_Edit"]</a>
+                            <form method="post" asp-action="Delete" asp-route-id="@item.Id" class="d-inline"
+                                  onsubmit="return confirm('@Localizer["TerrainTypes_ConfirmDelete"]')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-admin btn-danger-admin">@Localizer["Form_Delete"]</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             }

@@ -29,6 +29,7 @@
         <ProjectReference Include="..\Application\Application.csproj" />
         <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
         <ProjectReference Include="..\App.Resources\App.Resources.csproj" />
+        <ProjectReference Include="..\Base.Resources\Base.Resources.csproj" />
     </ItemGroup>
 
 </Project>

@@ -9,10 +9,10 @@
 }
 
 <div class="dropdown">
-    <button class="btn btn-outline-secondary btn-sm w-100 text-white dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <button class="sidebar-logout dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
         @currentCulture.ToUpperInvariant()
     </button>
-    <ul class="dropdown-menu dropdown-menu-dark">
+    <ul class="dropdown-menu dropdown-menu-dark" style="font-size:0.8rem;">
         @foreach (var item in cultureItems)
         {
             <li>

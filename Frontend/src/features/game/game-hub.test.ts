@@ -102,11 +102,13 @@ describe('game-hub', () => {
   });
 
   describe('SlotMachineSpun handler', () => {
-    it('calls game store handler and animation store setSlotResult', async () => {
+    it('calls game store handler and animation store setSlotResult for own kingdom', async () => {
       await connectToGame('game-1');
+      // Set myKingdomId on the mock store so the guard passes
+      (mockGameStoreState as Record<string, unknown>).myKingdomId = 'k1';
 
       const handler = onHandlers.get('SlotMachineSpun')!;
-      const data = { outcome: 3, actionPointsAfter: 2, goldAfter: 100, goldSpent: 10 };
+      const data = { kingdomId: 'k1', outcome: 3, actionPointsAfter: 2, goldAfter: 100, goldSpent: 10 };
       handler(data);
 
       expect(mockGameStoreState.handleSlotMachineSpun).toHaveBeenCalledWith(data);
@@ -114,6 +116,18 @@ describe('game-hub', () => {
         outcome: 3,
         actionPointsAfter: 2,
       });
+    });
+
+    it('does NOT trigger animation for other kingdoms', async () => {
+      await connectToGame('game-1');
+      (mockGameStoreState as Record<string, unknown>).myKingdomId = 'k1';
+
+      const handler = onHandlers.get('SlotMachineSpun')!;
+      const data = { kingdomId: 'k2', outcome: 1, actionPointsAfter: 4, goldAfter: 80, goldSpent: 10 };
+      handler(data);
+
+      expect(mockGameStoreState.handleSlotMachineSpun).toHaveBeenCalledWith(data);
+      expect(mockAnimationStoreState.setSlotResult).not.toHaveBeenCalled();
     });
   });
 

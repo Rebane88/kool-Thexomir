@@ -1,43 +1,61 @@
 @using Domain.Map
+@inject IStringLocalizer<Common> Localizer
 @{
-    ViewData["Title"] = "Create Terrain Type";
+    ViewData["Title"] = Localizer["TerrainTypes_Create"].Value;
 }
 
-<h2>Create Terrain Type</h2>
-<hr />
+<div class="page-header">
+    <h1>@Localizer["TerrainTypes_Create"]</h1>
+</div>
 
-<form method="post" asp-action="Create">
-    <div class="row g-3" style="max-width: 500px;">
+<div class="admin-card">
+    <form method="post" asp-action="Create" class="admin-form">
+        @Html.AntiForgeryToken()
+        <div class="row g-3">
 
-        <div class="col-12">
-            <label class="form-label fw-semibold">Name (English)</label>
-            <input type="text" name="NameEn" class="form-control" required />
+            <div class="col-12"><div class="form-section-label">@Localizer["Field_Name"]</div></div>
+
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Name"] (EN)</label>
+                <input type="text" name="NameEn" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Name"] (ET)</label>
+                <input type="text" name="NameEt" class="form-control" />
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["TerrainTypes_ResourceMultiplier"]</label>
+                <input type="number" name="ResourceMultiplier" class="form-control" step="0.01" value="1.10" required />
+                <div class="form-text">@Localizer["TerrainTypes_ResourceMultiplierHint"]</div>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["TerrainTypes_ResourceBonusType"]</label>
+                <select name="ResourceBonusType" class="form-select">
+                    @foreach (var value in Enum.GetValues<ETerrainResourceBonus>())
+                    {
+                        <option value="@value">@value</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["TerrainTypes_MapColor"]</label>
+                <input type="text" name="MapColor" class="form-control" placeholder="#4ade80" />
+                <div class="form-text">@Localizer["TerrainTypes_MapColorHint"]</div>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_IconUrl"]</label>
+                <input type="text" name="IconUrl" class="form-control" placeholder="@Localizer["Field_Optional"]" />
+            </div>
+
+            <div class="col-12 d-flex gap-2 mt-2">
+                <button type="submit" class="btn-admin btn-primary-admin">@Localizer["Form_Create"]</button>
+                <a asp-action="Index" class="btn-admin">@Localizer["Form_Cancel"]</a>
+            </div>
+
         </div>
-
-        <div class="col-md-6">
-            <label class="form-label">Defense Bonus</label>
-            <input type="number" name="DefenseBonus" class="form-control" step="0.01" value="0.00" required />
-        </div>
-
-        <div class="col-md-6">
-            <label class="form-label">Movement Cost</label>
-            <input type="number" name="MovementCost" class="form-control" value="1" required />
-        </div>
-
-        <div class="col-12">
-            <label class="form-label">Resource Bonus Type</label>
-            <select name="ResourceBonusType" class="form-select">
-                @foreach (var value in Enum.GetValues<ETerrainResourceBonus>())
-                {
-                    <option value="@value">@value</option>
-                }
-            </select>
-        </div>
-
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary">Create</button>
-            <a asp-action="Index" class="btn btn-outline-secondary ms-2">Cancel</a>
-        </div>
-
-    </div>
-</form>
+    </form>
+</div>

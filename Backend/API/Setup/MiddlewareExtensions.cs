@@ -15,6 +15,7 @@ public static class MiddlewareExtensions
         app.UseExceptionMiddleware(includeDeveloperDetails: app.Environment.IsDevelopment());
 
         app.UseHttpsRedirection();
+        app.UseRequestLocalization();
         app.UseRouting();
 
         app.UseCors("CorsAllowAll");

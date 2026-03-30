@@ -202,6 +202,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork, ILogger<GameIniti
             CurrentTurnKingdomId = game.CurrentTurnKingdomId,
             CurrentPhase = game.CurrentPhase.ToString(),
             RemainingActionPoints = game.RemainingActionPoints,
+            SpinCostGold = game.SpinCostGold,
             DeclaredAttacks = declaredAttackDtos,
             Tiles = tiles.Select(t => new TileDto
             {

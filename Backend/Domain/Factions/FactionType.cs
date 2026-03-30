@@ -9,8 +9,11 @@ public class FactionType : BaseEntity, IHasName
     [Column(TypeName = "jsonb")]
     public LangStr Name { get; set; } = new();
 
-    public string? Description { get; set; }
-    public string? Lore { get; set; }
+    [Column(TypeName = "jsonb")]
+    public LangStr Description { get; set; } = new();
+
+    [Column(TypeName = "jsonb")]
+    public LangStr Lore { get; set; } = new();
 
     // Combat modifiers (multiplicative)
     public decimal AttackModifier { get; set; } = 1.0m;

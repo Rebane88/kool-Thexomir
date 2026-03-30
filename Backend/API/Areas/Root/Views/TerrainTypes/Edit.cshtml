@@ -1,53 +1,70 @@
 @using Domain.Map
 @model dynamic
+@inject IStringLocalizer<Common> Localizer
 @{
-    ViewData["Title"] = "Edit Terrain Type";
+    ViewData["Title"] = Localizer["TerrainTypes_Edit"].Value;
 }
 
-<h2>Edit Terrain Type</h2>
-<hr />
+<div class="page-header">
+    <h1>@Localizer["TerrainTypes_Edit"]</h1>
+</div>
 
-<form method="post" asp-action="Edit" asp-route-id="@Model.Id">
-    <input type="hidden" name="Id" value="@Model.Id" />
-    <div class="row g-3" style="max-width: 500px;">
+<div class="admin-card">
+    <form method="post" asp-action="Edit" asp-route-id="@Model.Id" class="admin-form">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <div class="row g-3">
 
-        <div class="col-12">
-            <label class="form-label fw-semibold">Name (English)</label>
-            <input type="text" name="NameEn" class="form-control" value="@Model.NameEn" required />
-        </div>
+            <div class="col-12"><div class="form-section-label">@Localizer["Field_Name"]</div></div>
 
-        <div class="col-md-6">
-            <label class="form-label">Defense Bonus</label>
-            <input type="number" name="DefenseBonus" class="form-control" step="0.01"
-                   value="@Model.DefenseBonus" required />
-        </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Name"] (EN)</label>
+                <input type="text" name="NameEn" class="form-control" value="@Model.NameEn" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Name"] (ET)</label>
+                <input type="text" name="NameEt" class="form-control" value="@Model.NameEt" />
+            </div>
 
-        <div class="col-md-6">
-            <label class="form-label">Movement Cost</label>
-            <input type="number" name="MovementCost" class="form-control" value="@Model.MovementCost" required />
-        </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["TerrainTypes_ResourceMultiplier"]</label>
+                <input type="number" name="ResourceMultiplier" class="form-control" step="0.01" value="@Model.ResourceMultiplier" required />
+                <div class="form-text">@Localizer["TerrainTypes_ResourceMultiplierHint"]</div>
+            </div>
 
-        <div class="col-12">
-            <label class="form-label">Resource Bonus Type</label>
-            <select name="ResourceBonusType" class="form-select">
-                @foreach (var value in Enum.GetValues<ETerrainResourceBonus>())
-                {
-                    if (value == Model.ResourceBonusType)
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["TerrainTypes_ResourceBonusType"]</label>
+                <select name="ResourceBonusType" class="form-select">
+                    @foreach (var value in Enum.GetValues<ETerrainResourceBonus>())
                     {
-                        <option value="@value" selected>@value</option>
+                        if (value == Model.ResourceBonusType)
+                        {
+                            <option value="@value" selected>@value</option>
+                        }
+                        else
+                        {
+                            <option value="@value">@value</option>
+                        }
                     }
-                    else
-                    {
-                        <option value="@value">@value</option>
-                    }
-                }
-            </select>
-        </div>
+                </select>
+            </div>
 
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-            <a asp-action="Index" class="btn btn-outline-secondary ms-2">Cancel</a>
-        </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["TerrainTypes_MapColor"]</label>
+                <input type="text" name="MapColor" class="form-control" value="@Model.MapColor" placeholder="#4ade80" />
+                <div class="form-text">@Localizer["TerrainTypes_MapColorHint"]</div>
+            </div>
 
-    </div>
-</form>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_IconUrl"]</label>
+                <input type="text" name="IconUrl" class="form-control" value="@Model.IconUrl" placeholder="@Localizer["Field_Optional"]" />
+            </div>
+
+            <div class="col-12 d-flex gap-2 mt-2">
+                <button type="submit" class="btn-admin btn-primary-admin">@Localizer["Form_Save"]</button>
+                <a asp-action="Index" class="btn-admin">@Localizer["Form_Cancel"]</a>
+            </div>
+
+        </div>
+    </form>
+</div>

@@ -14,6 +14,7 @@ public class GameStateDto
     public Guid? CurrentTurnKingdomId { get; set; }
     public string? CurrentPhase { get; set; }
     public int? RemainingActionPoints { get; set; }
+    public int SpinCostGold { get; set; }
     public List<DeclareAttackResponse> DeclaredAttacks { get; set; } = [];
     public List<TileDto> Tiles { get; set; } = [];
     public List<KingdomDto> Kingdoms { get; set; } = [];

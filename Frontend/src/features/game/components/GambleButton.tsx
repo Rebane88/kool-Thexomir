@@ -3,8 +3,6 @@ import { useGameStore } from '../game-store';
 import { useAnimationStore } from '../animation-store';
 import { spinSlotMachine } from '../game-api';
 
-const SPIN_COST_GOLD = 10;
-
 export function GambleButton() {
   const gameId = useGameStore((s) => s.gameId);
   const currentPhase = useGameStore((s) => s.currentPhase);
@@ -12,6 +10,7 @@ export function GambleButton() {
   const myKingdomId = useGameStore((s) => s.myKingdomId);
   const currentTurnKingdomId = useGameStore((s) => s.currentTurnKingdomId);
   const kingdoms = useGameStore((s) => s.kingdoms);
+  const spinCostGold = useGameStore((s) => s.spinCostGold);
   const spinning = useAnimationStore((s) => s.slotSpinning);
 
   const isMyTurn = myKingdomId !== null && currentTurnKingdomId === myKingdomId;
@@ -21,7 +20,7 @@ export function GambleButton() {
 
   const myKingdom = myKingdomId ? kingdoms.get(myKingdomId) : undefined;
   const gold = myKingdom?.resources.Gold ?? 0;
-  const canAfford = gold >= SPIN_COST_GOLD && (actionPoints ?? 0) >= 1;
+  const canAfford = gold >= spinCostGold && (actionPoints ?? 0) >= 1;
 
   async function handleGamble() {
     if (!gameId || spinning) return;
@@ -42,7 +41,7 @@ export function GambleButton() {
       onClick={handleGamble}
       className="border-gold-400/40 text-gold-300"
     >
-      Gamble ({SPIN_COST_GOLD}g)
+      Gamble ({spinCostGold}g)
     </Button>
   );
 }

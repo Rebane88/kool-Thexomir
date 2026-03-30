@@ -28,14 +28,21 @@ public class FactionTypesController : ReferenceDataBaseController<FactionType>
         entity.StartingBonusResource = Enum.TryParse<EResourceType>(
             form["StartingBonusResource"].ToString(), out var sbr) ? sbr : null;
         entity.StartingBonusAmount = int.TryParse(form["StartingBonusAmount"].ToString(), out var sba) ? sba : 0;
-        entity.Description = form["Description"].ToString() is { Length: > 0 } desc ? desc : null;
-        entity.Lore = form["Lore"].ToString() is { Length: > 0 } lore ? lore : null;
+        if (form["DescriptionEn"].ToString() is { Length: > 0 } descEn)
+            entity.Description.SetTranslation(descEn, "en");
+        if (form["DescriptionEt"].ToString() is { Length: > 0 } descEt)
+            entity.Description.SetTranslation(descEt, "et");
+        if (form["LoreEn"].ToString() is { Length: > 0 } loreEn)
+            entity.Lore.SetTranslation(loreEn, "en");
+        if (form["LoreEt"].ToString() is { Length: > 0 } loreEt)
+            entity.Lore.SetTranslation(loreEt, "et");
     }
 
     protected override object ToViewModel(FactionType entity) => new
     {
         entity.Id,
         NameEn = entity.Name.Translate("en") ?? string.Empty,
+        NameEt = entity.Name.Translate("et") ?? string.Empty,
         entity.AttackModifier,
         entity.HPModifier,
         entity.InitiativeModifier,
@@ -47,7 +54,9 @@ public class FactionTypesController : ReferenceDataBaseController<FactionType>
         entity.HealRateModifier,
         entity.StartingBonusResource,
         entity.StartingBonusAmount,
-        entity.Description,
-        entity.Lore
+        DescriptionEn = entity.Description.Translate("en") ?? string.Empty,
+        DescriptionEt = entity.Description.Translate("et") ?? string.Empty,
+        LoreEn = entity.Lore.Translate("en") ?? string.Empty,
+        LoreEt = entity.Lore.Translate("et") ?? string.Empty
     };
 }

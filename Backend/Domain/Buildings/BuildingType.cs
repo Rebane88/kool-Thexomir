@@ -28,7 +28,8 @@ public class BuildingType : BaseEntity, IHasName
     // Military
     public int ArmyCapacity { get; set; }
 
-    public string? Description { get; set; }
+    [Column(TypeName = "jsonb")]
+    public LangStr Description { get; set; } = new();
     public string? IconUrl { get; set; }
 
     // Self-referencing FK for upgrade chain

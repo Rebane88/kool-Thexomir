@@ -1,43 +1,30 @@
 @model IEnumerable<API.Areas.Root.ViewModels.UserListViewModel>
+@inject IStringLocalizer<Common> Localizer
 @{
-    ViewData["Title"] = "Users";
+    ViewData["Title"] = Localizer["Nav_Users"].Value;
 }
 
-<h1 class="h3 mb-4">User Management</h1>
+<div class="page-header">
+    <h1>@Localizer["Nav_Users"]</h1>
+</div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["Success"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        @TempData["Error"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-
-<div class="table-responsive">
-    <table class="table table-bordered table-hover align-middle">
-        <thead class="table-dark">
+<div class="admin-card" style="padding:0; overflow:hidden;">
+    <table class="admin-table">
+        <thead>
             <tr>
-                <th>Email</th>
-                <th>Username</th>
-                <th>Roles</th>
-                <th>Status</th>
-                <th>Registration Date</th>
-                <th>Actions</th>
+                <th>@Localizer["Users_Email"]</th>
+                <th>@Localizer["Users_Username"]</th>
+                <th>@Localizer["Users_Roles"]</th>
+                <th>@Localizer["Users_Status"]</th>
+                <th>@Localizer["Users_Registered"]</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
             @foreach (var user in Model)
             {
                 <tr>
-                    <td>@user.Email</td>
+                    <td style="font-weight:500;">@user.Email</td>
                     <td>@user.UserName</td>
                     <td>
                         @if (user.Roles.Any())
@@ -46,17 +33,17 @@
                         }
                         else
                         {
-                            <span class="text-muted">None</span>
+                            <span style="color:#a1a1aa;">@Localizer["Users_None"]</span>
                         }
                     </td>
                     <td>
                         @if (user.IsLockedOut)
                         {
-                            <span class="badge bg-danger">Locked</span>
+                            <span class="badge-status badge-danger">@Localizer["Users_Locked"]</span>
                         }
                         else
                         {
-                            <span class="badge bg-success">Active</span>
+                            <span class="badge-status badge-success">@Localizer["Users_Active"]</span>
                         }
                     </td>
                     <td>@user.CreatedAt.ToString("yyyy-MM-dd")</td>
@@ -68,7 +55,7 @@
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="userId" value="@user.Id" />
                                     <input type="hidden" name="role" value="Admin" />
-                                    <button type="submit" class="btn btn-outline-primary btn-sm">Add Admin</button>
+                                    <button type="submit" class="btn-admin">@Localizer["Users_AddAdmin"]</button>
                                 </form>
                             }
                             else
@@ -77,7 +64,7 @@
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="userId" value="@user.Id" />
                                     <input type="hidden" name="role" value="Admin" />
-                                    <button type="submit" class="btn btn-outline-warning btn-sm">Remove Admin</button>
+                                    <button type="submit" class="btn-admin btn-danger-admin">@Localizer["Users_RemoveAdmin"]</button>
                                 </form>
                             }
 
@@ -86,7 +73,7 @@
                                 <form method="post" asp-action="UnlockUser" class="d-inline">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@user.Id" />
-                                    <button type="submit" class="btn btn-outline-success btn-sm">Unlock</button>
+                                    <button type="submit" class="btn-admin">@Localizer["Users_Unlock"]</button>
                                 </form>
                             }
                             else
@@ -94,7 +81,7 @@
                                 <form method="post" asp-action="LockUser" class="d-inline">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@user.Id" />
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">Lock</button>
+                                    <button type="submit" class="btn-admin btn-danger-admin">@Localizer["Users_Lock"]</button>
                                 </form>
                             }
                         </div>

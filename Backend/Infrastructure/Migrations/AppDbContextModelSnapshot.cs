@@ -108,8 +108,9 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
+                    b.Property<LangStr>("Description")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("IconUrl")
                         .HasColumnType("text");
@@ -155,8 +156,9 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
+                    b.Property<LangStr>("Description")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<decimal>("HPModifier")
                         .HasColumnType("numeric");
@@ -170,8 +172,9 @@ namespace Infrastructure.Migrations
                     b.Property<decimal>("InitiativeModifier")
                         .HasColumnType("numeric");
 
-                    b.Property<string>("Lore")
-                        .HasColumnType("text");
+                    b.Property<LangStr>("Lore")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<LangStr>("Name")
                         .IsRequired()
@@ -576,8 +579,9 @@ namespace Infrastructure.Migrations
                     b.Property<decimal>("DamageRangeMin")
                         .HasColumnType("numeric");
 
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
+                    b.Property<LangStr>("Description")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<int>("HP")
                         .HasColumnType("integer");

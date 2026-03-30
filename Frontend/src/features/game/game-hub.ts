@@ -78,10 +78,14 @@ export async function connectToGame(gameId: string): Promise<void> {
   // --- Slot machine ---
   connection.on('SlotMachineSpun', (data: SlotMachineSpunEvent) => {
     useGameStore.getState().handleSlotMachineSpun(data);
-    useAnimationStore.getState().setSlotResult({
-      outcome: data.outcome,
-      actionPointsAfter: data.actionPointsAfter,
-    });
+    // Only show animation for the player who spun
+    const myKingdomId = useGameStore.getState().myKingdomId;
+    if (data.kingdomId === myKingdomId) {
+      useAnimationStore.getState().setSlotResult({
+        outcome: data.outcome,
+        actionPointsAfter: data.actionPointsAfter,
+      });
+    }
   });
 
   // --- Army ---

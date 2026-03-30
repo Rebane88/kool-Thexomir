@@ -4,6 +4,7 @@ using System.Linq;
 using Base;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +16,11 @@ public static class LocalizationExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.AddLocalization();
+
+        services.AddControllersWithViews()
+            .AddViewLocalization(LanguageViewLocationExpanderFormat.SubFolder);
+
         var supportedCultures = configuration
             .GetSection("SupportedCultures")
             .GetChildren()

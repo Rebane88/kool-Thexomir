@@ -48,6 +48,7 @@ interface GameState {
   currentPhase: GamePhase | null;
   actionPoints: number | null;
   maxActionPoints: number | null;
+  spinCostGold: number;
   declaredAttacks: DeclaredAttack[];
   activeBattle: BattleStep | null;
   lastBattleResult: BattleResolvedEvent | null;
@@ -187,6 +188,7 @@ const initialState = {
   currentPhase: null as GamePhase | null,
   actionPoints: null as number | null,
   maxActionPoints: null as number | null,
+  spinCostGold: 30,
   declaredAttacks: [] as DeclaredAttack[],
   activeBattle: null as BattleStep | null,
   lastBattleResult: null as BattleResolvedEvent | null,
@@ -285,6 +287,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       // Corrected when next TurnStarted fires (see handleTurnStarted).
       // Adding MaxActionPoints to GameStateDto would fix this edge case.
       maxActionPoints: snapshot.remainingActionPoints ?? null,
+      spinCostGold: snapshot.spinCostGold ?? 30,
       declaredAttacks: (snapshot.declaredAttacks ?? []).map((da) => ({
         attackId: da.attackId,
         targetTileId: da.targetTileId,
@@ -597,16 +600,19 @@ export const useGameStore = create<GameState>((set, get) => ({
   handleSlotMachineSpun: (data) => {
     const { kingdoms, myKingdomId } = get();
     const newKingdoms = new Map(kingdoms);
-    if (myKingdomId) {
-      const kingdom = newKingdoms.get(myKingdomId);
-      if (kingdom) {
-        newKingdoms.set(myKingdomId, {
-          ...kingdom,
-          resources: { ...kingdom.resources, Gold: data.goldAfter },
-        });
-      }
+    const spinnerKingdom = newKingdoms.get(data.kingdomId);
+    if (spinnerKingdom) {
+      newKingdoms.set(data.kingdomId, {
+        ...spinnerKingdom,
+        resources: { ...spinnerKingdom.resources, Gold: data.goldAfter },
+      });
     }
-    set({ actionPoints: data.actionPointsAfter, kingdoms: newKingdoms });
+    // Only update AP display if it's our spin
+    if (data.kingdomId === myKingdomId) {
+      set({ actionPoints: data.actionPointsAfter, kingdoms: newKingdoms });
+    } else {
+      set({ kingdoms: newKingdoms });
+    }
   },
 
   handleArmyTrained: (data) => {

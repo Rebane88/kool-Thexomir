@@ -3,7 +3,7 @@
 <root>
     <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
         <xsd:element name="root" msdata:IsDataSet="true">
-            
+
         </xsd:element>
     </xsd:schema>
     <resheader name="resmimetype">
@@ -18,6 +18,8 @@
     <resheader name="writer">
         <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
     </resheader>
+
+    <!-- Validation errors -->
     <data name="ErrorMessage_MaxLength" xml:space="preserve">
         <value>The field {0} must be a string or array type with a maximum length of '{1}'.</value>
     </data>
@@ -72,6 +74,8 @@
     <data name="ErrorMessage_NotValidPhone" xml:space="preserve">
         <value>The {0} field is not a valid phone number.</value>
     </data>
+
+    <!-- Form buttons -->
     <data name="Form_Cancel" xml:space="preserve">
         <value>Cancel</value>
     </data>
@@ -105,7 +109,479 @@
     <data name="Form_Actions" xml:space="preserve">
         <value>Actions</value>
     </data>
-    <data name="test" xml:space="preserve">
-        <value>test</value>
+
+    <!-- Layout / Sidebar -->
+    <data name="Nav_Dashboard" xml:space="preserve">
+        <value>Dashboard</value>
+    </data>
+    <data name="Nav_Management" xml:space="preserve">
+        <value>Management</value>
+    </data>
+    <data name="Nav_ReferenceData" xml:space="preserve">
+        <value>Reference Data</value>
+    </data>
+    <data name="Nav_Users" xml:space="preserve">
+        <value>Users</value>
+    </data>
+    <data name="Nav_Games" xml:space="preserve">
+        <value>Games</value>
+    </data>
+    <data name="Nav_FactionTypes" xml:space="preserve">
+        <value>Faction Types</value>
+    </data>
+    <data name="Nav_TerrainTypes" xml:space="preserve">
+        <value>Terrain Types</value>
+    </data>
+    <data name="Nav_BuildingTypes" xml:space="preserve">
+        <value>Building Types</value>
+    </data>
+    <data name="Nav_ArmyTypes" xml:space="preserve">
+        <value>Army Types</value>
+    </data>
+    <data name="Nav_GameEvents" xml:space="preserve">
+        <value>Game Events</value>
+    </data>
+    <data name="Nav_SignOut" xml:space="preserve">
+        <value>Sign out</value>
+    </data>
+
+    <!-- Login -->
+    <data name="Login_Title" xml:space="preserve">
+        <value>Admin Login</value>
+    </data>
+    <data name="Login_Email" xml:space="preserve">
+        <value>Email</value>
+    </data>
+    <data name="Login_Password" xml:space="preserve">
+        <value>Password</value>
+    </data>
+    <data name="Login_SignIn" xml:space="preserve">
+        <value>Sign in</value>
+    </data>
+
+    <!-- Dashboard -->
+    <data name="Dashboard_Title" xml:space="preserve">
+        <value>Dashboard</value>
+    </data>
+    <data name="Dashboard_UsersDesc" xml:space="preserve">
+        <value>Manage accounts, assign roles, lock users.</value>
+    </data>
+    <data name="Dashboard_GamesDesc" xml:space="preserve">
+        <value>View active games. Force-close stuck lobbies.</value>
+    </data>
+    <data name="Dashboard_RefDataDesc" xml:space="preserve">
+        <value>Configure game types and balance values.</value>
+    </data>
+    <data name="Dashboard_Manage" xml:space="preserve">
+        <value>Manage</value>
+    </data>
+    <data name="Dashboard_View" xml:space="preserve">
+        <value>View</value>
+    </data>
+    <data name="Dashboard_Factions" xml:space="preserve">
+        <value>Factions</value>
+    </data>
+    <data name="Dashboard_Terrain" xml:space="preserve">
+        <value>Terrain</value>
+    </data>
+    <data name="Dashboard_Buildings" xml:space="preserve">
+        <value>Buildings</value>
+    </data>
+    <data name="Dashboard_Armies" xml:space="preserve">
+        <value>Armies</value>
+    </data>
+    <data name="Dashboard_Events" xml:space="preserve">
+        <value>Events</value>
+    </data>
+
+    <!-- Users page -->
+    <data name="Users_Email" xml:space="preserve">
+        <value>Email</value>
+    </data>
+    <data name="Users_Username" xml:space="preserve">
+        <value>Username</value>
+    </data>
+    <data name="Users_Roles" xml:space="preserve">
+        <value>Roles</value>
+    </data>
+    <data name="Users_Status" xml:space="preserve">
+        <value>Status</value>
+    </data>
+    <data name="Users_Registered" xml:space="preserve">
+        <value>Registered</value>
+    </data>
+    <data name="Users_None" xml:space="preserve">
+        <value>None</value>
+    </data>
+    <data name="Users_Locked" xml:space="preserve">
+        <value>Locked</value>
+    </data>
+    <data name="Users_Active" xml:space="preserve">
+        <value>Active</value>
+    </data>
+    <data name="Users_AddAdmin" xml:space="preserve">
+        <value>Add Admin</value>
+    </data>
+    <data name="Users_RemoveAdmin" xml:space="preserve">
+        <value>Remove Admin</value>
+    </data>
+    <data name="Users_Unlock" xml:space="preserve">
+        <value>Unlock</value>
+    </data>
+    <data name="Users_Lock" xml:space="preserve">
+        <value>Lock</value>
+    </data>
+
+    <!-- Games page -->
+    <data name="Games_ActiveGames" xml:space="preserve">
+        <value>Active Games</value>
+    </data>
+    <data name="Games_NoActiveGames" xml:space="preserve">
+        <value>No active games at this time.</value>
+    </data>
+    <data name="Games_LobbyCode" xml:space="preserve">
+        <value>Lobby Code</value>
+    </data>
+    <data name="Games_Host" xml:space="preserve">
+        <value>Host</value>
+    </data>
+    <data name="Games_Players" xml:space="preserve">
+        <value>Players</value>
+    </data>
+    <data name="Games_Status" xml:space="preserve">
+        <value>Status</value>
+    </data>
+    <data name="Games_Lobby" xml:space="preserve">
+        <value>Lobby</value>
+    </data>
+    <data name="Games_InProgress" xml:space="preserve">
+        <value>In Progress</value>
+    </data>
+    <data name="Games_Created" xml:space="preserve">
+        <value>Created</value>
+    </data>
+    <data name="Games_ForceClose" xml:space="preserve">
+        <value>Force Close</value>
+    </data>
+    <data name="Games_ForceCloseTitle" xml:space="preserve">
+        <value>Force Close Game</value>
+    </data>
+    <data name="Games_ForceCloseWarning" xml:space="preserve">
+        <value>This will transition the game to Completed status. This cannot be undone.</value>
+    </data>
+    <data name="Games_YesForceClose" xml:space="preserve">
+        <value>Yes, Force Close</value>
+    </data>
+    <data name="Games_Unknown" xml:space="preserve">
+        <value>Unknown</value>
+    </data>
+
+    <!-- Shared field labels -->
+    <data name="Field_Name" xml:space="preserve">
+        <value>Name</value>
+    </data>
+    <data name="Field_Translations" xml:space="preserve">
+        <value>Translations</value>
+    </data>
+    <data name="Field_Description" xml:space="preserve">
+        <value>Description</value>
+    </data>
+    <data name="Field_Lore" xml:space="preserve">
+        <value>Lore</value>
+    </data>
+    <data name="Field_IconUrl" xml:space="preserve">
+        <value>Icon URL</value>
+    </data>
+    <data name="Field_None" xml:space="preserve">
+        <value>None</value>
+    </data>
+    <data name="Field_Optional" xml:space="preserve">
+        <value>Optional</value>
+    </data>
+
+    <!-- Faction Types -->
+    <data name="FactionTypes_Title" xml:space="preserve">
+        <value>Faction Types</value>
+    </data>
+    <data name="FactionTypes_Create" xml:space="preserve">
+        <value>Create Faction Type</value>
+    </data>
+    <data name="FactionTypes_Edit" xml:space="preserve">
+        <value>Edit Faction Type</value>
+    </data>
+    <data name="FactionTypes_Add" xml:space="preserve">
+        <value>Add Faction Type</value>
+    </data>
+    <data name="FactionTypes_CombatModifiers" xml:space="preserve">
+        <value>Combat Modifiers</value>
+    </data>
+    <data name="FactionTypes_Attack" xml:space="preserve">
+        <value>Attack</value>
+    </data>
+    <data name="FactionTypes_HP" xml:space="preserve">
+        <value>HP</value>
+    </data>
+    <data name="FactionTypes_Initiative" xml:space="preserve">
+        <value>Initiative</value>
+    </data>
+    <data name="FactionTypes_ChipDamage" xml:space="preserve">
+        <value>Chip Damage</value>
+    </data>
+    <data name="FactionTypes_EconomyModifiers" xml:space="preserve">
+        <value>Economy Modifiers</value>
+    </data>
+    <data name="FactionTypes_ResourceProduction" xml:space="preserve">
+        <value>Resource Production</value>
+    </data>
+    <data name="FactionTypes_BuildingCost" xml:space="preserve">
+        <value>Building Cost</value>
+    </data>
+    <data name="FactionTypes_TrainingCost" xml:space="preserve">
+        <value>Training Cost</value>
+    </data>
+    <data name="FactionTypes_ActionPointModifier" xml:space="preserve">
+        <value>Action Point Modifier</value>
+    </data>
+    <data name="FactionTypes_ActionPointHint" xml:space="preserve">
+        <value>Additive (e.g. +1)</value>
+    </data>
+    <data name="FactionTypes_HealRate" xml:space="preserve">
+        <value>Heal Rate</value>
+    </data>
+    <data name="FactionTypes_StartingBonus" xml:space="preserve">
+        <value>Starting Bonus</value>
+    </data>
+    <data name="FactionTypes_BonusResource" xml:space="preserve">
+        <value>Bonus Resource</value>
+    </data>
+    <data name="FactionTypes_BonusAmount" xml:space="preserve">
+        <value>Bonus Amount</value>
+    </data>
+    <data name="FactionTypes_Flavor" xml:space="preserve">
+        <value>Flavor</value>
+    </data>
+    <data name="FactionTypes_Atk" xml:space="preserve">
+        <value>Atk</value>
+    </data>
+    <data name="FactionTypes_Init" xml:space="preserve">
+        <value>Init</value>
+    </data>
+    <data name="FactionTypes_ChipDmg" xml:space="preserve">
+        <value>Chip Dmg</value>
+    </data>
+    <data name="FactionTypes_ResProd" xml:space="preserve">
+        <value>Res Prod</value>
+    </data>
+    <data name="FactionTypes_BldCost" xml:space="preserve">
+        <value>Bld Cost</value>
+    </data>
+    <data name="FactionTypes_TrainCost" xml:space="preserve">
+        <value>Train Cost</value>
+    </data>
+    <data name="FactionTypes_AP" xml:space="preserve">
+        <value>AP</value>
+    </data>
+    <data name="FactionTypes_Heal" xml:space="preserve">
+        <value>Heal</value>
+    </data>
+    <data name="FactionTypes_Bonus" xml:space="preserve">
+        <value>Bonus</value>
+    </data>
+    <data name="FactionTypes_ConfirmDelete" xml:space="preserve">
+        <value>Delete this faction type?</value>
+    </data>
+
+    <!-- Building Types -->
+    <data name="BuildingTypes_Title" xml:space="preserve">
+        <value>Building Types</value>
+    </data>
+    <data name="BuildingTypes_Create" xml:space="preserve">
+        <value>Create Building Type</value>
+    </data>
+    <data name="BuildingTypes_Edit" xml:space="preserve">
+        <value>Edit Building Type</value>
+    </data>
+    <data name="BuildingTypes_Add" xml:space="preserve">
+        <value>Add Building Type</value>
+    </data>
+    <data name="BuildingTypes_Tier" xml:space="preserve">
+        <value>Tier</value>
+    </data>
+    <data name="BuildingTypes_Chain" xml:space="preserve">
+        <value>Chain</value>
+    </data>
+    <data name="BuildingTypes_Costs" xml:space="preserve">
+        <value>Costs</value>
+    </data>
+    <data name="BuildingTypes_BaseYields" xml:space="preserve">
+        <value>Base Yields (per turn)</value>
+    </data>
+    <data name="BuildingTypes_Gold" xml:space="preserve">
+        <value>Gold</value>
+    </data>
+    <data name="BuildingTypes_Food" xml:space="preserve">
+        <value>Food</value>
+    </data>
+    <data name="BuildingTypes_Wood" xml:space="preserve">
+        <value>Wood</value>
+    </data>
+    <data name="BuildingTypes_Stone" xml:space="preserve">
+        <value>Stone</value>
+    </data>
+    <data name="BuildingTypes_Mana" xml:space="preserve">
+        <value>Mana</value>
+    </data>
+    <data name="BuildingTypes_ArmyCapacity" xml:space="preserve">
+        <value>Army Capacity</value>
+    </data>
+    <data name="BuildingTypes_UnlockedBy" xml:space="preserve">
+        <value>Unlocked By (Building Type ID)</value>
+    </data>
+    <data name="BuildingTypes_Other" xml:space="preserve">
+        <value>Other</value>
+    </data>
+    <data name="BuildingTypes_ArmyCap" xml:space="preserve">
+        <value>Army Cap</value>
+    </data>
+    <data name="BuildingTypes_ConfirmDelete" xml:space="preserve">
+        <value>Delete this building type?</value>
+    </data>
+
+    <!-- Army Types -->
+    <data name="ArmyTypes_Title" xml:space="preserve">
+        <value>Army Types</value>
+    </data>
+    <data name="ArmyTypes_Create" xml:space="preserve">
+        <value>Create Army Type</value>
+    </data>
+    <data name="ArmyTypes_Edit" xml:space="preserve">
+        <value>Edit Army Type</value>
+    </data>
+    <data name="ArmyTypes_Add" xml:space="preserve">
+        <value>Add Army Type</value>
+    </data>
+    <data name="ArmyTypes_CombatStats" xml:space="preserve">
+        <value>Combat Stats</value>
+    </data>
+    <data name="ArmyTypes_Attack" xml:space="preserve">
+        <value>Attack</value>
+    </data>
+    <data name="ArmyTypes_HP" xml:space="preserve">
+        <value>HP</value>
+    </data>
+    <data name="ArmyTypes_Initiative" xml:space="preserve">
+        <value>Initiative</value>
+    </data>
+    <data name="ArmyTypes_DamageMin" xml:space="preserve">
+        <value>Damage Min</value>
+    </data>
+    <data name="ArmyTypes_DamageMax" xml:space="preserve">
+        <value>Damage Max</value>
+    </data>
+    <data name="ArmyTypes_ChipDmgMin" xml:space="preserve">
+        <value>Chip Dmg Min</value>
+    </data>
+    <data name="ArmyTypes_ChipDmgMax" xml:space="preserve">
+        <value>Chip Dmg Max</value>
+    </data>
+    <data name="ArmyTypes_SituationalBonus" xml:space="preserve">
+        <value>Situational Bonus</value>
+    </data>
+    <data name="ArmyTypes_BonusStat" xml:space="preserve">
+        <value>Bonus Stat</value>
+    </data>
+    <data name="ArmyTypes_BonusValue" xml:space="preserve">
+        <value>Bonus Value</value>
+    </data>
+    <data name="ArmyTypes_Condition" xml:space="preserve">
+        <value>Condition</value>
+    </data>
+    <data name="ArmyTypes_TrainingCosts" xml:space="preserve">
+        <value>Training Costs</value>
+    </data>
+    <data name="ArmyTypes_Upkeep" xml:space="preserve">
+        <value>Upkeep (per round)</value>
+    </data>
+    <data name="ArmyTypes_RequiredBuildingTypeId" xml:space="preserve">
+        <value>Required Building Type ID</value>
+    </data>
+    <data name="ArmyTypes_Atk" xml:space="preserve">
+        <value>Atk</value>
+    </data>
+    <data name="ArmyTypes_Init" xml:space="preserve">
+        <value>Init</value>
+    </data>
+    <data name="ArmyTypes_Dmg" xml:space="preserve">
+        <value>Dmg</value>
+    </data>
+    <data name="ArmyTypes_Chip" xml:space="preserve">
+        <value>Chip</value>
+    </data>
+    <data name="ArmyTypes_Training" xml:space="preserve">
+        <value>Training</value>
+    </data>
+    <data name="ArmyTypes_ConfirmDelete" xml:space="preserve">
+        <value>Delete this army type?</value>
+    </data>
+
+    <!-- Terrain Types -->
+    <data name="TerrainTypes_Title" xml:space="preserve">
+        <value>Terrain Types</value>
+    </data>
+    <data name="TerrainTypes_Create" xml:space="preserve">
+        <value>Create Terrain Type</value>
+    </data>
+    <data name="TerrainTypes_Edit" xml:space="preserve">
+        <value>Edit Terrain Type</value>
+    </data>
+    <data name="TerrainTypes_Add" xml:space="preserve">
+        <value>Add Terrain Type</value>
+    </data>
+    <data name="TerrainTypes_ResourceMultiplier" xml:space="preserve">
+        <value>Resource Multiplier</value>
+    </data>
+    <data name="TerrainTypes_ResourceMultiplierHint" xml:space="preserve">
+        <value>e.g. 1.10 = +10% resource yield</value>
+    </data>
+    <data name="TerrainTypes_ResourceBonusType" xml:space="preserve">
+        <value>Resource Bonus Type</value>
+    </data>
+    <data name="TerrainTypes_MapColor" xml:space="preserve">
+        <value>Map Color</value>
+    </data>
+    <data name="TerrainTypes_MapColorHint" xml:space="preserve">
+        <value>Hex color for map rendering</value>
+    </data>
+    <data name="TerrainTypes_ResourceBonus" xml:space="preserve">
+        <value>Resource Bonus</value>
+    </data>
+    <data name="TerrainTypes_Icon" xml:space="preserve">
+        <value>Icon</value>
+    </data>
+    <data name="TerrainTypes_ConfirmDelete" xml:space="preserve">
+        <value>Delete this terrain type?</value>
+    </data>
+
+    <!-- Game Events -->
+    <data name="GameEvents_Title" xml:space="preserve">
+        <value>Game Events</value>
+    </data>
+    <data name="GameEvents_Create" xml:space="preserve">
+        <value>Create Game Event</value>
+    </data>
+    <data name="GameEvents_Edit" xml:space="preserve">
+        <value>Edit Game Event</value>
+    </data>
+    <data name="GameEvents_Add" xml:space="preserve">
+        <value>Add Game Event</value>
+    </data>
+    <data name="GameEvents_ResourceEffect" xml:space="preserve">
+        <value>Resource Effect</value>
+    </data>
+    <data name="GameEvents_ResourceEffectHint" xml:space="preserve">
+        <value>Multiplier or flat amount applied to resources</value>
+    </data>
+    <data name="GameEvents_ConfirmDelete" xml:space="preserve">
+        <value>Delete this game event?</value>
     </data>
 </root>

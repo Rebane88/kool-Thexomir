@@ -1,101 +1,402 @@
+@using Microsoft.Extensions.Localization
+@using Base.Resources
+@inject IStringLocalizer<Common> Localizer
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Realms of Ash Admin — @ViewData["Title"]</title>
+    <title>Realms of Ash — @ViewData["Title"]</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <style>
+        :root {
+            --sidebar-width: 220px;
+            --sidebar-bg: #111113;
+            --sidebar-text: #9a9a9f;
+            --sidebar-hover: #e4e4e7;
+            --sidebar-active: #fff;
+            --sidebar-heading: #55555a;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --page-bg: #fafafa;
+            --card-border: #e4e4e7;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--page-bg);
+            color: #18181b;
+            font-size: 0.875rem;
+        }
+
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
         .sidebar {
-            position: sticky;
+            width: var(--sidebar-width);
+            min-width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            padding: 1.25rem 0;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
             top: 0;
-            height: 100vh;
-            padding-top: 1rem;
+            left: 0;
+            bottom: 0;
             overflow-y: auto;
+            z-index: 100;
         }
-        .sidebar .nav-link {
-            color: #adb5bd;
-            padding: 0.5rem 1rem;
+
+        .sidebar-brand {
+            padding: 0 1rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #fff;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
         }
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
+
+        .sidebar-section {
+            padding: 1rem 1rem 0.25rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--sidebar-heading);
+        }
+
+        .sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-nav a {
+            display: block;
+            padding: 0.4rem 1rem;
+            color: var(--sidebar-text);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: color 0.15s, background 0.15s;
+            border-left: 2px solid transparent;
+        }
+
+        .sidebar-nav a:hover {
+            color: var(--sidebar-hover);
+            background: rgba(255,255,255,0.04);
+        }
+
+        .sidebar-nav a.active {
+            color: var(--sidebar-active);
+            border-left-color: var(--accent);
+            background: rgba(255,255,255,0.06);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 1rem;
+        }
+
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 2rem 2.5rem;
+            min-width: 0;
+        }
+
+        /* Page header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+            color: #18181b;
+        }
+
+        /* Cards */
+        .admin-card {
+            background: #fff;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 1.25rem;
+        }
+
+        /* Tables */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        .admin-table th {
+            text-align: left;
+            padding: 0.6rem 0.75rem;
+            font-weight: 600;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #71717a;
+            border-bottom: 1px solid var(--card-border);
+            background: #fafafa;
+        }
+
+        .admin-table td {
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid #f4f4f5;
+            vertical-align: middle;
+        }
+
+        .admin-table tbody tr:hover {
+            background: #f8f8fa;
+        }
+
+        /* Badges */
+        .badge-status {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-danger  { background: #fee2e2; color: #991b1b; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-info    { background: #dbeafe; color: #1e40af; }
+
+        /* Buttons */
+        .btn-admin {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid var(--card-border);
+            background: #fff;
+            color: #18181b;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-admin:hover {
+            background: #f4f4f5;
+            border-color: #d4d4d8;
+        }
+
+        .btn-primary-admin {
+            background: var(--accent);
+            border-color: var(--accent);
             color: #fff;
         }
-        .sidebar-heading {
+
+        .btn-primary-admin:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+            color: #fff;
+        }
+
+        .btn-danger-admin {
+            color: #dc2626;
+            border-color: #fecaca;
+        }
+
+        .btn-danger-admin:hover {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            color: #dc2626;
+        }
+
+        .btn-danger-solid {
+            background: #dc2626;
+            border-color: #dc2626;
+            color: #fff;
+        }
+
+        .btn-danger-solid:hover {
+            background: #b91c1c;
+            border-color: #b91c1c;
+            color: #fff;
+        }
+
+        /* Alerts */
+        .admin-alert {
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .admin-alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .admin-alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        /* Forms */
+        .admin-form {
+            max-width: 800px;
+        }
+
+        .admin-form .form-label {
             font-size: 0.75rem;
+            font-weight: 600;
+            color: #3f3f46;
+            margin-bottom: 0.25rem;
+        }
+
+        .admin-form .form-control,
+        .admin-form .form-select {
+            font-size: 0.8rem;
+            border-radius: 6px;
+            border: 1px solid #d4d4d8;
+            padding: 0.4rem 0.6rem;
+        }
+
+        .admin-form .form-control:focus,
+        .admin-form .form-select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+        }
+
+        .admin-form .form-text {
+            font-size: 0.7rem;
+            color: #a1a1aa;
+        }
+
+        .form-section-label {
+            font-size: 0.7rem;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.1rem;
-            color: #6c757d;
-            padding: 0.5rem 1rem;
+            letter-spacing: 0.04em;
+            color: #71717a;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid #e4e4e7;
+            margin-top: 0.25rem;
+        }
+
+        /* Logout button */
+        .sidebar-logout {
+            width: 100%;
+            padding: 0.35rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: transparent;
+            color: var(--sidebar-text);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .sidebar-logout:hover {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+        }
+
+        @@media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; padding: 1rem; }
         }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <nav class="col-md-2 d-none d-md-block bg-dark sidebar min-vh-100">
-                <div class="pt-3">
-                    <div class="px-3 mb-3">
-                        <span class="text-white fw-bold fs-6">Realms of Ash Admin</span>
-                    </div>
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="Root" asp-controller="Home" asp-action="Index">
-                                Dashboard
-                            </a>
-                        </li>
-                        <li class="sidebar-heading mt-2">Management</li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="Root" asp-controller="Users" asp-action="Index">
-                                Users
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="Root" asp-controller="Games" asp-action="Index">
-                                Active Games
-                            </a>
-                        </li>
-                        <li class="sidebar-heading mt-2">Reference Data</li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="Root" asp-controller="FactionTypes" asp-action="Index">
-                                Faction Types
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="Root" asp-controller="TerrainTypes" asp-action="Index">
-                                Terrain Types
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="Root" asp-controller="BuildingTypes" asp-action="Index">
-                                Building Types
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="Root" asp-controller="UnitTypes" asp-action="Index">
-                                Unit Types
-                            </a>
-                        </li>
-                    </ul>
-                    <div class="mt-4 px-3">
-                        <partial name="_AdminLanguageSelection" />
-                    </div>
-                    <div class="mt-2 px-3">
-                        <form method="post" asp-area="Root" asp-controller="Account" asp-action="Logout">
-                            <button type="submit" class="btn btn-outline-secondary btn-sm w-100 text-white">
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </nav>
+    <div class="admin-wrapper">
+        <nav class="sidebar">
+            <div class="sidebar-brand">Realms of Ash</div>
 
-            <!-- Main content -->
-            <main class="col-md-10 ms-sm-auto px-4 py-3">
-                @RenderBody()
-            </main>
-        </div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a asp-area="Root" asp-controller="Home" asp-action="Index">
+                        @Localizer["Nav_Dashboard"]
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-section">@Localizer["Nav_Management"]</div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a asp-area="Root" asp-controller="Users" asp-action="Index">
+                        @Localizer["Nav_Users"]
+                    </a>
+                </li>
+                <li>
+                    <a asp-area="Root" asp-controller="Games" asp-action="Index">
+                        @Localizer["Nav_Games"]
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-section">@Localizer["Nav_ReferenceData"]</div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a asp-area="Root" asp-controller="FactionTypes" asp-action="Index">
+                        @Localizer["Nav_FactionTypes"]
+                    </a>
+                </li>
+                <li>
+                    <a asp-area="Root" asp-controller="TerrainTypes" asp-action="Index">
+                        @Localizer["Nav_TerrainTypes"]
+                    </a>
+                </li>
+                <li>
+                    <a asp-area="Root" asp-controller="BuildingTypes" asp-action="Index">
+                        @Localizer["Nav_BuildingTypes"]
+                    </a>
+                </li>
+                <li>
+                    <a asp-area="Root" asp-controller="ArmyTypes" asp-action="Index">
+                        @Localizer["Nav_ArmyTypes"]
+                    </a>
+                </li>
+                <li>
+                    <a asp-area="Root" asp-controller="GameEvents" asp-action="Index">
+                        @Localizer["Nav_GameEvents"]
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <partial name="_AdminLanguageSelection" />
+                <form method="post" asp-area="Root" asp-controller="Account" asp-action="Logout" class="mt-2">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="sidebar-logout">@Localizer["Nav_SignOut"]</button>
+                </form>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            @if (TempData["Success"] != null)
+            {
+                <div class="admin-alert admin-alert-success">@TempData["Success"]</div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="admin-alert admin-alert-error">@TempData["Error"]</div>
+            }
+            @RenderBody()
+        </main>
     </div>
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

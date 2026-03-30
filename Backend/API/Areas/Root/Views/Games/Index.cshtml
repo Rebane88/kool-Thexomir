@@ -1,65 +1,54 @@
 @model IEnumerable<API.Areas.Root.ViewModels.GameListViewModel>
+@inject IStringLocalizer<Common> Localizer
 @{
-    ViewData["Title"] = "Active Games";
+    ViewData["Title"] = Localizer["Games_ActiveGames"].Value;
 }
 
-<h1 class="h3 mb-4">Active Games</h1>
-
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["Success"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        @TempData["Error"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
+<div class="page-header">
+    <h1>@Localizer["Games_ActiveGames"]</h1>
+</div>
 
 @if (!Model.Any())
 {
-    <p class="text-muted">No active games at this time.</p>
+    <div class="admin-card">
+        <p style="color:#71717a; margin:0;">@Localizer["Games_NoActiveGames"]</p>
+    </div>
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead class="table-dark">
+    <div class="admin-card" style="padding:0; overflow:hidden;">
+        <table class="admin-table">
+            <thead>
                 <tr>
-                    <th>Lobby Code</th>
-                    <th>Host</th>
-                    <th>Players</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th>Actions</th>
+                    <th>@Localizer["Games_LobbyCode"]</th>
+                    <th>@Localizer["Games_Host"]</th>
+                    <th>@Localizer["Games_Players"]</th>
+                    <th>@Localizer["Games_Status"]</th>
+                    <th>@Localizer["Games_Created"]</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var game in Model)
                 {
                     <tr>
-                        <td><code>@game.LobbyCode</code></td>
-                        <td>@(game.HostName ?? "Unknown")</td>
+                        <td><code style="background:#f4f4f5; padding:0.15rem 0.4rem; border-radius:4px; font-size:0.8rem;">@game.LobbyCode</code></td>
+                        <td>@(game.HostName ?? Localizer["Games_Unknown"].Value)</td>
                         <td>@game.PlayerCount / @game.MaxPlayers</td>
                         <td>
                             @if (game.Status == Domain.Game.EGameStatus.Lobby)
                             {
-                                <span class="badge bg-info text-dark">Lobby</span>
+                                <span class="badge-status badge-info">@Localizer["Games_Lobby"]</span>
                             }
                             else
                             {
-                                <span class="badge bg-warning text-dark">In Progress</span>
+                                <span class="badge-status badge-warning">@Localizer["Games_InProgress"]</span>
                             }
                         </td>
                         <td>@game.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
                         <td>
-                            <a asp-action="ForceClose" asp-route-id="@game.Id" class="btn btn-outline-danger btn-sm">
-                                Force Close
+                            <a asp-action="ForceClose" asp-route-id="@game.Id" class="btn-admin btn-danger-admin">
+                                @Localizer["Games_ForceClose"]
                             </a>
                         </td>
                     </tr>

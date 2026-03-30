@@ -1,0 +1,63 @@
+@model IEnumerable<Domain.Military.ArmyType>
+@inject IStringLocalizer<Common> Localizer
+@{
+    ViewData["Title"] = Localizer["ArmyTypes_Title"].Value;
+}
+
+<div class="page-header">
+    <h1>@Localizer["ArmyTypes_Title"]</h1>
+    <a asp-action="Create" class="btn-admin btn-primary-admin">@Localizer["ArmyTypes_Add"]</a>
+</div>
+
+<div class="admin-card" style="padding:0; overflow:hidden;">
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>@Localizer["Field_Name"]</th>
+                    <th>@Localizer["ArmyTypes_Atk"]</th>
+                    <th>@Localizer["ArmyTypes_HP"]</th>
+                    <th>@Localizer["ArmyTypes_Init"]</th>
+                    <th>@Localizer["ArmyTypes_Dmg"]</th>
+                    <th>@Localizer["ArmyTypes_Chip"]</th>
+                    <th>@Localizer["ArmyTypes_Training"]</th>
+                    <th>@Localizer["ArmyTypes_Upkeep"]</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td style="font-weight:500;">@item.Name.Translate()</td>
+                        <td>@item.Attack</td>
+                        <td>@item.HP</td>
+                        <td>@item.Initiative</td>
+                        <td>@item.DamageRangeMin–@item.DamageRangeMax</td>
+                        <td>@item.ChipDamageRangeMin–@item.ChipDamageRangeMax</td>
+                        <td>
+                            <span style="font-size:0.75rem; color:#71717a;">
+                                @item.TrainingCostGold G / @item.TrainingCostFood F / @item.TrainingCostStone S / @item.TrainingCostMana M
+                            </span>
+                        </td>
+                        <td>
+                            <span style="font-size:0.75rem; color:#71717a;">
+                                @item.UpkeepGold G / @item.UpkeepFood F / @item.UpkeepMana M
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn-admin">@Localizer["Form_Edit"]</a>
+                                <form method="post" asp-action="Delete" asp-route-id="@item.Id" class="d-inline"
+                                      onsubmit="return confirm('@Localizer["ArmyTypes_ConfirmDelete"]')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn-admin btn-danger-admin">@Localizer["Form_Delete"]</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

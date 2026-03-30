@@ -1,51 +1,41 @@
+@inject IStringLocalizer<Common> Localizer
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = Localizer["Dashboard_Title"].Value;
 }
 
-<h1 class="h3 mb-4">Admin Dashboard</h1>
+<div class="page-header">
+    <h1>@Localizer["Dashboard_Title"]</h1>
+</div>
 
-<div class="row row-cols-1 row-cols-md-3 g-4">
-    <div class="col">
-        <div class="card h-100 border-primary">
-            <div class="card-body">
-                <h5 class="card-title">Users</h5>
-                <p class="card-text text-muted">Manage user accounts, assign roles, and lock accounts.</p>
-                <a asp-area="Root" asp-controller="Users" asp-action="Index" class="btn btn-outline-primary btn-sm">
-                    Manage Users
-                </a>
-            </div>
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="admin-card">
+            <div style="font-weight:600; margin-bottom:0.35rem;">@Localizer["Nav_Users"]</div>
+            <p style="font-size:0.8rem; color:#71717a; margin-bottom:0.75rem;">@Localizer["Dashboard_UsersDesc"]</p>
+            <a asp-area="Root" asp-controller="Users" asp-action="Index" class="btn-admin btn-primary-admin">
+                @Localizer["Dashboard_Manage"]
+            </a>
         </div>
     </div>
-    <div class="col">
-        <div class="card h-100 border-warning">
-            <div class="card-body">
-                <h5 class="card-title">Active Games</h5>
-                <p class="card-text text-muted">View lobby and in-progress games. Force-close stuck lobbies.</p>
-                <a asp-area="Root" asp-controller="Games" asp-action="Index" class="btn btn-outline-warning btn-sm">
-                    View Games
-                </a>
-            </div>
+    <div class="col-md-4">
+        <div class="admin-card">
+            <div style="font-weight:600; margin-bottom:0.35rem;">@Localizer["Nav_Games"]</div>
+            <p style="font-size:0.8rem; color:#71717a; margin-bottom:0.75rem;">@Localizer["Dashboard_GamesDesc"]</p>
+            <a asp-area="Root" asp-controller="Games" asp-action="Index" class="btn-admin btn-primary-admin">
+                @Localizer["Dashboard_View"]
+            </a>
         </div>
     </div>
-    <div class="col">
-        <div class="card h-100 border-secondary">
-            <div class="card-body">
-                <h5 class="card-title">Reference Data</h5>
-                <p class="card-text text-muted">Manage faction types, terrain types, building types, and unit types.</p>
-                <div class="d-flex flex-wrap gap-1 mt-2">
-                    <a asp-area="Root" asp-controller="FactionTypes" asp-action="Index" class="btn btn-outline-secondary btn-sm">
-                        Factions
-                    </a>
-                    <a asp-area="Root" asp-controller="TerrainTypes" asp-action="Index" class="btn btn-outline-secondary btn-sm">
-                        Terrain
-                    </a>
-                    <a asp-area="Root" asp-controller="BuildingTypes" asp-action="Index" class="btn btn-outline-secondary btn-sm">
-                        Buildings
-                    </a>
-                    <a asp-area="Root" asp-controller="UnitTypes" asp-action="Index" class="btn btn-outline-secondary btn-sm">
-                        Units
-                    </a>
-                </div>
+    <div class="col-md-4">
+        <div class="admin-card">
+            <div style="font-weight:600; margin-bottom:0.35rem;">@Localizer["Nav_ReferenceData"]</div>
+            <p style="font-size:0.8rem; color:#71717a; margin-bottom:0.75rem;">@Localizer["Dashboard_RefDataDesc"]</p>
+            <div class="d-flex flex-wrap gap-1">
+                <a asp-area="Root" asp-controller="FactionTypes" asp-action="Index" class="btn-admin">@Localizer["Dashboard_Factions"]</a>
+                <a asp-area="Root" asp-controller="TerrainTypes" asp-action="Index" class="btn-admin">@Localizer["Dashboard_Terrain"]</a>
+                <a asp-area="Root" asp-controller="BuildingTypes" asp-action="Index" class="btn-admin">@Localizer["Dashboard_Buildings"]</a>
+                <a asp-area="Root" asp-controller="ArmyTypes" asp-action="Index" class="btn-admin">@Localizer["Dashboard_Armies"]</a>
+                <a asp-area="Root" asp-controller="GameEvents" asp-action="Index" class="btn-admin">@Localizer["Dashboard_Events"]</a>
             </div>
         </div>
     </div>

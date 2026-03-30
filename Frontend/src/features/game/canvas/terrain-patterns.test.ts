@@ -4,11 +4,11 @@ import { createTerrainPatternCanvas, TERRAIN_BASE_COLORS } from './terrain-patte
 describe('TERRAIN_BASE_COLORS', () => {
   it('contains all 5 backend terrain types', () => {
     expect(Object.keys(TERRAIN_BASE_COLORS)).toHaveLength(5);
-    expect(TERRAIN_BASE_COLORS).toHaveProperty('Plains', '#90EE90');
-    expect(TERRAIN_BASE_COLORS).toHaveProperty('Forest', '#228B22');
-    expect(TERRAIN_BASE_COLORS).toHaveProperty('Mountain', '#808080');
-    expect(TERRAIN_BASE_COLORS).toHaveProperty('Desert', '#C2B280');
-    expect(TERRAIN_BASE_COLORS).toHaveProperty('Magic Grove', '#9B59B6');
+    expect(TERRAIN_BASE_COLORS).toHaveProperty('Plains', '#5a7a4a');
+    expect(TERRAIN_BASE_COLORS).toHaveProperty('Forest', '#2a5a2a');
+    expect(TERRAIN_BASE_COLORS).toHaveProperty('Mountain', '#4a4a50');
+    expect(TERRAIN_BASE_COLORS).toHaveProperty('Desert', '#7a6e50');
+    expect(TERRAIN_BASE_COLORS).toHaveProperty('Magic Grove', '#5a3a6a');
   });
 
   it('does not contain River terrain', () => {

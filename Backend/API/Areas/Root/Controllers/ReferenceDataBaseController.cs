@@ -56,6 +56,8 @@ public abstract class ReferenceDataBaseController<TEntity> : Controller
     {
         var entity = new TEntity();
         entity.Name = new LangStr(form["NameEn"].ToString(), "en");
+        if (form["NameEt"].ToString() is { Length: > 0 } nameEt)
+            entity.Name.SetTranslation(nameEt, "et");
         PopulateEntity(entity, form);
 
         DbSet.Add(entity);
@@ -87,8 +89,8 @@ public abstract class ReferenceDataBaseController<TEntity> : Controller
         if (entity == null)
             return NotFound();
 
-        // Preserve existing translations; update only the English value
         entity.Name.SetTranslation(form["NameEn"].ToString(), "en");
+        entity.Name.SetTranslation(form["NameEt"].ToString(), "et");
         PopulateEntity(entity, form);
 
         await _context.SaveChangesAsync();

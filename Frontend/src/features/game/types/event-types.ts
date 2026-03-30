@@ -12,6 +12,7 @@ export interface GameStateSnapshot {
   currentTurnKingdomId: string | null;
   currentPhase: string | null;
   remainingActionPoints: number | null;
+  spinCostGold: number;
   declaredAttacks: SnapshotDeclaredAttack[];
   tiles: SnapshotTile[];
   kingdoms: SnapshotKingdom[];
@@ -106,6 +107,7 @@ export interface BuildingPlacedEvent {
 
 // --- Slot machine events ---
 export interface SlotMachineSpunEvent {
+  kingdomId: string;
   outcome: number;
   actionPointsAfter: number;
   goldAfter: number;

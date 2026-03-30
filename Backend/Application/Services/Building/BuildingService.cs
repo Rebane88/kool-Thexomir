@@ -29,7 +29,7 @@ public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBu
             BaseYieldWood = bt.BaseYieldWood,
             BaseYieldStone = bt.BaseYieldStone,
             BaseYieldMana = bt.BaseYieldMana,
-            Description = bt.Description,
+            Description = bt.Description.Translate(),
             UnlockedByBuildingTypeId = bt.UnlockedByBuildingTypeId,
             UnlockedByBuildingName = bt.UnlockedByBuildingType?.Name.Translate(),
             ArmyCapacity = bt.ArmyCapacity

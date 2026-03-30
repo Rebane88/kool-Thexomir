@@ -416,6 +416,7 @@ describe('delta events', () => {
     });
 
     const event: SlotMachineSpunEvent = {
+      kingdomId: 'k-1',
       outcome: 7,
       actionPointsAfter: 4,
       goldAfter: 120,

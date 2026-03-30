@@ -22,6 +22,10 @@ public class ArmyTypesController : ReferenceDataBaseController<ArmyType>
         entity.DamageRangeMax = decimal.TryParse(form["DamageRangeMax"].ToString(), out var drMax) ? drMax : 0m;
         entity.ChipDamageRangeMin = decimal.TryParse(form["ChipDamageRangeMin"].ToString(), out var cdMin) ? cdMin : 0m;
         entity.ChipDamageRangeMax = decimal.TryParse(form["ChipDamageRangeMax"].ToString(), out var cdMax) ? cdMax : 0m;
+        entity.SituationalBonusStat = form["SituationalBonusStat"].ToString() is { Length: > 0 } sbs ? sbs : null;
+        entity.SituationalBonusValue = decimal.TryParse(form["SituationalBonusValue"].ToString(), out var sbv) ? sbv : null;
+        entity.SituationalBonusCondition = Enum.TryParse<ESituationalBonusCondition>(
+            form["SituationalBonusCondition"].ToString(), out var sbc) ? sbc : null;
         entity.TrainingCostGold = int.TryParse(form["TrainingCostGold"].ToString(), out var tcg) ? tcg : 0;
         entity.TrainingCostFood = int.TryParse(form["TrainingCostFood"].ToString(), out var tcf) ? tcf : 0;
         entity.TrainingCostStone = int.TryParse(form["TrainingCostStone"].ToString(), out var tcs) ? tcs : 0;
@@ -29,7 +33,10 @@ public class ArmyTypesController : ReferenceDataBaseController<ArmyType>
         entity.UpkeepGold = int.TryParse(form["UpkeepGold"].ToString(), out var ug) ? ug : 0;
         entity.UpkeepFood = int.TryParse(form["UpkeepFood"].ToString(), out var uf) ? uf : 0;
         entity.UpkeepMana = int.TryParse(form["UpkeepMana"].ToString(), out var um) ? um : 0;
-        entity.Description = form["Description"].ToString() is { Length: > 0 } desc ? desc : null;
+        if (form["DescriptionEn"].ToString() is { Length: > 0 } descEn)
+            entity.Description.SetTranslation(descEn, "en");
+        if (form["DescriptionEt"].ToString() is { Length: > 0 } descEt)
+            entity.Description.SetTranslation(descEt, "et");
         entity.IconUrl = form["IconUrl"].ToString() is { Length: > 0 } icon ? icon : null;
 
         var reqBldStr = form["RequiredBuildingTypeId"].ToString();
@@ -40,6 +47,7 @@ public class ArmyTypesController : ReferenceDataBaseController<ArmyType>
     {
         entity.Id,
         NameEn = entity.Name.Translate("en") ?? string.Empty,
+        NameEt = entity.Name.Translate("et") ?? string.Empty,
         entity.Attack,
         entity.HP,
         entity.Initiative,
@@ -47,6 +55,9 @@ public class ArmyTypesController : ReferenceDataBaseController<ArmyType>
         entity.DamageRangeMax,
         entity.ChipDamageRangeMin,
         entity.ChipDamageRangeMax,
+        entity.SituationalBonusStat,
+        entity.SituationalBonusValue,
+        entity.SituationalBonusCondition,
         entity.TrainingCostGold,
         entity.TrainingCostFood,
         entity.TrainingCostStone,
@@ -54,7 +65,8 @@ public class ArmyTypesController : ReferenceDataBaseController<ArmyType>
         entity.UpkeepGold,
         entity.UpkeepFood,
         entity.UpkeepMana,
-        entity.Description,
+        DescriptionEn = entity.Description.Translate("en") ?? string.Empty,
+        DescriptionEt = entity.Description.Translate("et") ?? string.Empty,
         entity.IconUrl,
         entity.RequiredBuildingTypeId
     };

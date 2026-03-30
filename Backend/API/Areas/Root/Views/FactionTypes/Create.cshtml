@@ -1,58 +1,114 @@
+@using Domain.Resources
+@inject IStringLocalizer<Common> Localizer
 @{
-    ViewData["Title"] = "Create Faction Type";
+    ViewData["Title"] = Localizer["FactionTypes_Create"].Value;
 }
 
-<h2>Create Faction Type</h2>
-<hr />
+<div class="page-header">
+    <h1>@Localizer["FactionTypes_Create"]</h1>
+</div>
 
-<form method="post" asp-action="Create">
-    <div class="row g-3" style="max-width: 600px;">
+<div class="admin-card">
+    <form method="post" asp-action="Create" class="admin-form">
+        @Html.AntiForgeryToken()
+        <div class="row g-3">
 
-        <div class="col-12">
-            <label class="form-label fw-semibold">Name (English)</label>
-            <input type="text" name="NameEn" class="form-control" required />
+            <div class="col-12"><div class="form-section-label">@Localizer["Field_Translations"]</div></div>
+
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Name"] (EN)</label>
+                <input type="text" name="NameEn" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Name"] (ET)</label>
+                <input type="text" name="NameEt" class="form-control" />
+            </div>
+
+            <div class="col-12"><div class="form-section-label">@Localizer["FactionTypes_CombatModifiers"]</div></div>
+
+            <div class="col-md-3">
+                <label class="form-label">@Localizer["FactionTypes_Attack"]</label>
+                <input type="number" name="AttackModifier" class="form-control" step="0.01" value="1.00" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">@Localizer["FactionTypes_HP"]</label>
+                <input type="number" name="HPModifier" class="form-control" step="0.01" value="1.00" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">@Localizer["FactionTypes_Initiative"]</label>
+                <input type="number" name="InitiativeModifier" class="form-control" step="0.01" value="1.00" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">@Localizer["FactionTypes_ChipDamage"]</label>
+                <input type="number" name="ChipDamageModifier" class="form-control" step="0.01" value="1.00" required />
+            </div>
+
+            <div class="col-12"><div class="form-section-label">@Localizer["FactionTypes_EconomyModifiers"]</div></div>
+
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["FactionTypes_ResourceProduction"]</label>
+                <input type="number" name="ResourceProductionModifier" class="form-control" step="0.01" value="1.00" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["FactionTypes_BuildingCost"]</label>
+                <input type="number" name="BuildingCostModifier" class="form-control" step="0.01" value="1.00" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["FactionTypes_TrainingCost"]</label>
+                <input type="number" name="TrainingCostModifier" class="form-control" step="0.01" value="1.00" required />
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["FactionTypes_ActionPointModifier"]</label>
+                <input type="number" name="ActionPointModifier" class="form-control" value="0" required />
+                <div class="form-text">@Localizer["FactionTypes_ActionPointHint"]</div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">@Localizer["FactionTypes_HealRate"]</label>
+                <input type="number" name="HealRateModifier" class="form-control" step="0.01" value="1.00" required />
+            </div>
+
+            <div class="col-12"><div class="form-section-label">@Localizer["FactionTypes_StartingBonus"]</div></div>
+
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["FactionTypes_BonusResource"]</label>
+                <select name="StartingBonusResource" class="form-select">
+                    <option value="">@Localizer["Field_None"]</option>
+                    @foreach (var value in Enum.GetValues<EResourceType>())
+                    {
+                        <option value="@value">@value</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["FactionTypes_BonusAmount"]</label>
+                <input type="number" name="StartingBonusAmount" class="form-control" value="0" />
+            </div>
+
+            <div class="col-12"><div class="form-section-label">@Localizer["FactionTypes_Flavor"]</div></div>
+
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Description"] (EN)</label>
+                <textarea name="DescriptionEn" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Description"] (ET)</label>
+                <textarea name="DescriptionEt" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Lore"] (EN)</label>
+                <textarea name="LoreEn" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@Localizer["Field_Lore"] (ET)</label>
+                <textarea name="LoreEt" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="col-12 d-flex gap-2 mt-2">
+                <button type="submit" class="btn-admin btn-primary-admin">@Localizer["Form_Create"]</button>
+                <a asp-action="Index" class="btn-admin">@Localizer["Form_Cancel"]</a>
+            </div>
+
         </div>
-
-        <div class="col-md-6">
-            <label class="form-label">Building Cost Modifier</label>
-            <input type="number" name="BuildingCostModifier" class="form-control" step="0.01" value="1.00" required />
-            <div class="form-text">e.g. 1.1 = +10% cost, 0.8 = -20%</div>
-        </div>
-
-        <div class="col-md-6">
-            <label class="form-label">Starting Gold</label>
-            <input type="number" name="StartingGold" class="form-control" value="0" required />
-        </div>
-
-        <div class="col-md-6">
-            <label class="form-label">Starting Food</label>
-            <input type="number" name="StartingFood" class="form-control" value="0" required />
-        </div>
-
-        <div class="col-md-6">
-            <label class="form-label">Starting Wood</label>
-            <input type="number" name="StartingWood" class="form-control" value="0" required />
-        </div>
-
-        <div class="col-md-6">
-            <label class="form-label">Starting Stone</label>
-            <input type="number" name="StartingStone" class="form-control" value="0" required />
-        </div>
-
-        <div class="col-md-6">
-            <label class="form-label">Starting Mana</label>
-            <input type="number" name="StartingMana" class="form-control" value="0" required />
-        </div>
-
-        <div class="col-12">
-            <label class="form-label">Description</label>
-            <textarea name="Description" class="form-control" rows="3"></textarea>
-        </div>
-
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary">Create</button>
-            <a asp-action="Index" class="btn btn-outline-secondary ms-2">Cancel</a>
-        </div>
-
-    </div>
-</form>
+    </form>
+</div>

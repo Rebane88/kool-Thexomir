@@ -6,106 +6,122 @@
  * Colors are aligned with backend TerrainType.MapColor values.
  */
 
-/** Backend-aligned terrain base colors (TerrainType.MapColor) */
+/** Backend-aligned terrain base colors — muted so tiles stay in the background */
 export const TERRAIN_BASE_COLORS: Record<string, string> = {
-  Plains: '#90EE90',
-  Forest: '#228B22',
-  Mountain: '#808080',
-  Desert: '#C2B280',
-  'Magic Grove': '#9B59B6',
+  Plains: '#5a7a4a',
+  Forest: '#2a5a2a',
+  Mountain: '#4a4a50',
+  Desert: '#7a6e50',
+  'Magic Grove': '#5a3a6a',
 };
 
 const FALLBACK_COLOR = '#333333';
 
 // ---------------------------------------------------------------------------
-// Per-terrain overlay painters
+// Deterministic pseudo-random number generator (splitmix32)
+// ---------------------------------------------------------------------------
+
+function splitmix32(seed: number): () => number {
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x9e3779b9) | 0;
+    let t = seed ^ (seed >>> 16);
+    t = Math.imul(t, 0x21f0aaad);
+    t = t ^ (t >>> 15);
+    t = Math.imul(t, 0x735a2d97);
+    t = t ^ (t >>> 15);
+    return (t >>> 0) / 4294967296;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Per-terrain overlay painters — organic, noise-driven patterns
 // ---------------------------------------------------------------------------
 
 function drawPlainsOverlay(ctx: CanvasRenderingContext2D, size: number): void {
-  // Diagonal hatching lines at 45 degrees
-  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-  ctx.lineWidth = 1.5;
-  const spacing = 6;
-  ctx.beginPath();
-  for (let offset = -size; offset < size * 2; offset += spacing) {
-    ctx.moveTo(offset, 0);
-    ctx.lineTo(offset + size, size);
+  // Scattered short grass strokes at random angles
+  const rng = splitmix32(17);
+  const count = Math.floor(size * size * 0.04);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < count; i++) {
+    const x = rng() * size;
+    const y = rng() * size;
+    const angle = rng() * Math.PI;
+    const len = 2 + rng() * 3;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.cos(angle) * len, y + Math.sin(angle) * len);
+    ctx.stroke();
   }
-  ctx.stroke();
 }
 
 function drawForestOverlay(ctx: CanvasRenderingContext2D, size: number): void {
-  // Small triangle/tree shapes scattered in a grid
-  ctx.fillStyle = 'rgba(0,0,0,0.35)';
-  const spacing = 8;
-  const triSize = 5;
-  for (let y = spacing / 2; y < size; y += spacing) {
-    for (let x = spacing / 2; x < size; x += spacing) {
-      ctx.beginPath();
-      ctx.moveTo(x, y - triSize);
-      ctx.lineTo(x - triSize / 2, y + triSize / 2);
-      ctx.lineTo(x + triSize / 2, y + triSize / 2);
-      ctx.closePath();
-      ctx.fill();
-    }
+  // Randomly placed small blobs of varying darkness
+  const rng = splitmix32(42);
+  const count = Math.floor(size * size * 0.025);
+  for (let i = 0; i < count; i++) {
+    const x = rng() * size;
+    const y = rng() * size;
+    const r = 1 + rng() * 2.5;
+    const alpha = 0.06 + rng() * 0.1;
+    ctx.fillStyle = `rgba(0,0,0,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
 function drawMountainOverlay(ctx: CanvasRenderingContext2D, size: number): void {
-  // Small inverted-V peak shapes
-  ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-  ctx.lineWidth = 1.5;
-  const spacing = 7;
-  const peakHeight = 6;
-  for (let y = spacing; y < size; y += spacing) {
-    for (let x = spacing / 2; x < size; x += spacing) {
-      ctx.beginPath();
-      ctx.moveTo(x - 3, y);
-      ctx.lineTo(x, y - peakHeight);
-      ctx.lineTo(x + 3, y);
-      ctx.stroke();
-    }
+  // Scattered small cracks / short jagged lines
+  const rng = splitmix32(73);
+  const count = Math.floor(size * size * 0.02);
+  ctx.lineWidth = 1;
+  for (let i = 0; i < count; i++) {
+    const x = rng() * size;
+    const y = rng() * size;
+    const alpha = 0.08 + rng() * 0.1;
+    ctx.strokeStyle = `rgba(0,0,0,${alpha})`;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    // 2-segment jagged line
+    const mx = x + (rng() - 0.5) * 4;
+    const my = y + (rng() - 0.5) * 4;
+    ctx.lineTo(mx, my);
+    ctx.lineTo(mx + (rng() - 0.5) * 4, my + (rng() - 0.5) * 4);
+    ctx.stroke();
   }
 }
 
 function drawDesertOverlay(ctx: CanvasRenderingContext2D, size: number): void {
-  // Stippled dots in a semi-random but deterministic pattern
-  ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  const spacing = 5;
-  const radius = 2;
-  for (let y = spacing / 2; y < size; y += spacing) {
-    for (let x = spacing / 2; x < size; x += spacing) {
-      // Deterministic offset based on position for natural look
-      const ox = ((x * 7 + y * 13) % 5) - 2;
-      const oy = ((x * 11 + y * 3) % 5) - 2;
-      ctx.beginPath();
-      ctx.arc(x + ox, y + oy, radius, 0, Math.PI * 2);
-      ctx.fill();
-    }
+  // Scattered tiny dots of varying size — like sand grains
+  const rng = splitmix32(101);
+  const count = Math.floor(size * size * 0.03);
+  for (let i = 0; i < count; i++) {
+    const x = rng() * size;
+    const y = rng() * size;
+    const r = 0.5 + rng() * 1.5;
+    const alpha = 0.05 + rng() * 0.08;
+    ctx.fillStyle = `rgba(0,0,0,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
 function drawMagicGroveOverlay(ctx: CanvasRenderingContext2D, size: number): void {
-  // Small 4-pointed star/sparkle shapes
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  const spacing = 8;
-  const arm = 4;
-  const center = 1;
-  for (let y = spacing / 2; y < size; y += spacing) {
-    for (let x = spacing / 2; x < size; x += spacing) {
-      ctx.beginPath();
-      // 4-pointed star
-      ctx.moveTo(x, y - arm);
-      ctx.lineTo(x + center, y - center);
-      ctx.lineTo(x + arm, y);
-      ctx.lineTo(x + center, y + center);
-      ctx.lineTo(x, y + arm);
-      ctx.lineTo(x - center, y + center);
-      ctx.lineTo(x - arm, y);
-      ctx.lineTo(x - center, y - center);
-      ctx.closePath();
-      ctx.fill();
-    }
+  // Faint glowing specks at random positions
+  const rng = splitmix32(137);
+  const count = Math.floor(size * size * 0.015);
+  for (let i = 0; i < count; i++) {
+    const x = rng() * size;
+    const y = rng() * size;
+    const r = 0.8 + rng() * 2;
+    const alpha = 0.05 + rng() * 0.1;
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
