@@ -299,6 +299,38 @@
         <value>Optional</value>
     </data>
 
+    <!-- Enum values -->
+    <data name="Enum_None" xml:space="preserve">
+        <value>None</value>
+    </data>
+    <data name="Enum_Gold" xml:space="preserve">
+        <value>Gold</value>
+    </data>
+    <data name="Enum_Food" xml:space="preserve">
+        <value>Food</value>
+    </data>
+    <data name="Enum_Wood" xml:space="preserve">
+        <value>Wood</value>
+    </data>
+    <data name="Enum_Stone" xml:space="preserve">
+        <value>Stone</value>
+    </data>
+    <data name="Enum_Mana" xml:space="preserve">
+        <value>Mana</value>
+    </data>
+    <data name="Enum_Military" xml:space="preserve">
+        <value>Military</value>
+    </data>
+    <data name="Enum_Castle" xml:space="preserve">
+        <value>Castle</value>
+    </data>
+    <data name="Enum_Attacking" xml:space="preserve">
+        <value>Attacking</value>
+    </data>
+    <data name="Enum_Defending" xml:space="preserve">
+        <value>Defending</value>
+    </data>
+
     <!-- Faction Types -->
     <data name="FactionTypes_Title" xml:space="preserve">
         <value>Faction Types</value>

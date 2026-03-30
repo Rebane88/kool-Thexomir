@@ -44,7 +44,7 @@
                     <td>
                         @if (item.StartingBonusResource.HasValue)
                         {
-                            <span>@item.StartingBonusResource +@item.StartingBonusAmount</span>
+                            <span>@Localizer["Enum_" + item.StartingBonusResource] +@item.StartingBonusAmount</span>
                         }
                         else
                         {

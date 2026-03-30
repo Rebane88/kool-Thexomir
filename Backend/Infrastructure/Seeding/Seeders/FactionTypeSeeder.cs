@@ -14,6 +14,13 @@ public class FactionTypeSeeder : ISeeder
     public static readonly Guid MerchantRepublicId = new("EEEEEEEE-0001-0000-0000-000000000003");
     public static readonly Guid ForestElvesId = new("EEEEEEEE-0001-0000-0000-000000000004");
 
+    private static LangStr L(string en, string et)
+    {
+        var ls = new LangStr(en, "en");
+        ls.SetTranslation(et, "et");
+        return ls;
+    }
+
     public void Seed(object context)
     {
         var db = (AppDbContext)context;
@@ -25,9 +32,13 @@ public class FactionTypeSeeder : ISeeder
             new FactionType
             {
                 Id = IronThroneId,
-                Name = new LangStr("Iron Throne"),
-                Description = new LangStr("Masters of war. Superior attack power and chip damage, but reduced resource production.", "en"),
-                Lore = new LangStr("Forged in centuries of conquest, the Iron Throne rules through military supremacy.", "en"),
+                Name = L("Iron Throne", "Raudtroon"),
+                Description = L(
+                    "Masters of war. Superior attack power and chip damage, but reduced resource production.",
+                    "Sõjameistrid. Suurepärane rünnakujõud ja lisakahju, kuid vähendatud ressursitootmine."),
+                Lore = L(
+                    "Forged in centuries of conquest, the Iron Throne rules through military supremacy.",
+                    "Sajandite vallutustes sepistatud Raudtroon valitseb sõjalise ülemvõimu kaudu."),
                 AttackModifier = 1.15m,
                 HPModifier = 1.0m,
                 InitiativeModifier = 1.0m,
@@ -44,9 +55,13 @@ public class FactionTypeSeeder : ISeeder
             new FactionType
             {
                 Id = MageCouncilId,
-                Name = new LangStr("Mage Council"),
-                Description = new LangStr("Arcane masters. Higher initiative and an extra action point, but reduced army HP.", "en"),
-                Lore = new LangStr("The Mage Council channels ancient arcane knowledge to dominate through superior tactics.", "en"),
+                Name = L("Mage Council", "Maaginõukogu"),
+                Description = L(
+                    "Arcane masters. Higher initiative and an extra action point, but reduced army HP.",
+                    "Müstilised meistrid. Kõrgem initsiatiiv ja lisategevuspunkt, kuid vähendatud väe elupunktid."),
+                Lore = L(
+                    "The Mage Council channels ancient arcane knowledge to dominate through superior tactics.",
+                    "Maaginõukogu kasutab iidset müstilist tarkust, et domineerida ülemate taktikate kaudu."),
                 AttackModifier = 1.0m,
                 HPModifier = 0.85m,
                 InitiativeModifier = 1.20m,
@@ -63,9 +78,13 @@ public class FactionTypeSeeder : ISeeder
             new FactionType
             {
                 Id = MerchantRepublicId,
-                Name = new LangStr("Merchant Republic"),
-                Description = new LangStr("Economic powerhouse. Cheaper buildings and training, but weaker in combat.", "en"),
-                Lore = new LangStr("Trade routes spanning the known world fuel the Merchant Republic's endless coffers.", "en"),
+                Name = L("Merchant Republic", "Kaupmehevabariik"),
+                Description = L(
+                    "Economic powerhouse. Cheaper buildings and training, but weaker in combat.",
+                    "Majanduslik jõujaam. Odavamad ehitised ja treening, kuid nõrgem lahingus."),
+                Lore = L(
+                    "Trade routes spanning the known world fuel the Merchant Republic's endless coffers.",
+                    "Tuntud maailma hõlmavad kaubateed toidavad Kaupmehevabariigi lõputuid rahakotte."),
                 AttackModifier = 0.90m,
                 HPModifier = 1.0m,
                 InitiativeModifier = 1.0m,
@@ -82,9 +101,13 @@ public class FactionTypeSeeder : ISeeder
             new FactionType
             {
                 Id = ForestElvesId,
-                Name = new LangStr("Forest Elves"),
-                Description = new LangStr("Resilient defenders. Higher HP and healing rate, but one fewer action point.", "en"),
-                Lore = new LangStr("Ancient guardians of the deep forests, the Elves endure through patience and regeneration.", "en"),
+                Name = L("Forest Elves", "Metsahaldjad"),
+                Description = L(
+                    "Resilient defenders. Higher HP and healing rate, but one fewer action point.",
+                    "Vastupidavad kaitsjad. Kõrgemad elupunktid ja tervenemiskiirus, kuid üks tegevuspunkt vähem."),
+                Lore = L(
+                    "Ancient guardians of the deep forests, the Elves endure through patience and regeneration.",
+                    "Sügavate metsade iidsed kaitsjad, haldjad kestavad kannatuse ja taastumise kaudu."),
                 AttackModifier = 1.0m,
                 HPModifier = 1.15m,
                 InitiativeModifier = 1.0m,

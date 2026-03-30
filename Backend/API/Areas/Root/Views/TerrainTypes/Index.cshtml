@@ -27,7 +27,7 @@
                 <tr>
                     <td style="font-weight:500;">@item.Name.Translate()</td>
                     <td>@item.ResourceMultiplier</td>
-                    <td>@item.ResourceBonusType</td>
+                    <td>@Localizer["Enum_" + item.ResourceBonusType]</td>
                     <td>
                         @if (!string.IsNullOrEmpty(item.MapColor))
                         {

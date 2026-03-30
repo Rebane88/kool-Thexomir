@@ -90,7 +90,10 @@ public abstract class ReferenceDataBaseController<TEntity> : Controller
             return NotFound();
 
         entity.Name.SetTranslation(form["NameEn"].ToString(), "en");
-        entity.Name.SetTranslation(form["NameEt"].ToString(), "et");
+        if (form["NameEt"].ToString() is { Length: > 0 } nameEt)
+            entity.Name.SetTranslation(nameEt, "et");
+        else
+            entity.Name.Remove("et");
         PopulateEntity(entity, form);
 
         await _context.SaveChangesAsync();

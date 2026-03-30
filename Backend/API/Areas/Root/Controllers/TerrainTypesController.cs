@@ -1,3 +1,4 @@
+using System.Globalization;
 using Domain.Map;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
@@ -25,9 +26,9 @@ public class TerrainTypesController : ReferenceDataBaseController<TerrainType>
     protected override object ToViewModel(TerrainType entity) => new
     {
         entity.Id,
-        NameEn = entity.Name.Translate("en") ?? string.Empty,
-        NameEt = entity.Name.Translate("et") ?? string.Empty,
-        entity.ResourceMultiplier,
+        NameEn = entity.Name.GetValueOrDefault("en", string.Empty),
+        NameEt = entity.Name.GetValueOrDefault("et", string.Empty),
+        ResourceMultiplier = entity.ResourceMultiplier.ToString(CultureInfo.InvariantCulture),
         entity.ResourceBonusType,
         entity.MapColor,
         entity.IconUrl

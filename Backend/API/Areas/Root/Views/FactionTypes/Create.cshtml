@@ -76,7 +76,7 @@
                     <option value="">@Localizer["Field_None"]</option>
                     @foreach (var value in Enum.GetValues<EResourceType>())
                     {
-                        <option value="@value">@value</option>
+                        <option value="@value">@Localizer["Enum_" + value]</option>
                     }
                 </select>
             </div>

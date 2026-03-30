@@ -35,7 +35,7 @@
                 <select name="ResourceBonusType" class="form-select">
                     @foreach (var value in Enum.GetValues<ETerrainResourceBonus>())
                     {
-                        <option value="@value">@value</option>
+                        <option value="@value">@Localizer["Enum_" + value]</option>
                     }
                 </select>
             </div>

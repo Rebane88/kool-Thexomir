@@ -31,12 +31,6 @@ public class LangStr : Dictionary<string, string>
 
         var neutralCulture = culture.Split('-')[0];
         this[neutralCulture] = value;
-
-        // check for default culture also. if not set - do so
-        if (!ContainsKey(DefaultCulture))
-        {
-            this[DefaultCulture] = value;
-        }
     }
 
     public string? Translate(string? culture = null)
@@ -60,7 +54,8 @@ public class LangStr : Dictionary<string, string>
             return this[DefaultCulture];
         }
 
-        return null;
+        // Last resort: return any available translation
+        return Values.FirstOrDefault();
     }
 
     public void SetTranslation(string value, string? culture = null)

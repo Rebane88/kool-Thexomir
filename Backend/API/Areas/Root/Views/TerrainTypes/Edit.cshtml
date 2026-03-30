@@ -39,11 +39,11 @@
                     {
                         if (value == Model.ResourceBonusType)
                         {
-                            <option value="@value" selected>@value</option>
+                            <option value="@value" selected>@Localizer["Enum_" + value]</option>
                         }
                         else
                         {
-                            <option value="@value">@value</option>
+                            <option value="@value">@Localizer["Enum_" + value]</option>
                         }
                     }
                 </select>

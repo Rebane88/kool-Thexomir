@@ -69,10 +69,10 @@
             <div class="col-md-4">
                 <label class="form-label">@Localizer["ArmyTypes_Condition"]</label>
                 <select name="SituationalBonusCondition" class="form-select">
-                    <option value="">None</option>
+                    <option value="">@Localizer["Field_None"]</option>
                     @foreach (var value in Enum.GetValues<ESituationalBonusCondition>())
                     {
-                        <option value="@value">@value</option>
+                        <option value="@value">@Localizer["Enum_" + value]</option>
                     }
                 </select>
             </div>

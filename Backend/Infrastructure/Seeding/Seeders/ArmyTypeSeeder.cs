@@ -15,6 +15,13 @@ public class ArmyTypeSeeder : ISeeder
     public static readonly Guid MageId = new("CCCCCCCC-0001-0000-0000-000000000005");
     public static readonly Guid GuardianId = new("CCCCCCCC-0001-0000-0000-000000000006");
 
+    private static LangStr L(string en, string et)
+    {
+        var ls = new LangStr(en, "en");
+        ls.SetTranslation(et, "et");
+        return ls;
+    }
+
     public void Seed(object context)
     {
         var db = (AppDbContext)context;
@@ -26,7 +33,7 @@ public class ArmyTypeSeeder : ISeeder
             new ArmyType
             {
                 Id = WarriorId,
-                Name = new LangStr("Warrior"),
+                Name = L("Warrior", "Sõdalane"),
                 Attack = 25, HP = 100, Initiative = 50,
                 DamageRangeMin = 0.60m, DamageRangeMax = 1.00m,
                 ChipDamageRangeMin = 0.00m, ChipDamageRangeMax = 0.15m,
@@ -41,7 +48,7 @@ public class ArmyTypeSeeder : ISeeder
             new ArmyType
             {
                 Id = ScoutId,
-                Name = new LangStr("Scout"),
+                Name = L("Scout", "Skaut"),
                 Attack = 15, HP = 60, Initiative = 70,
                 DamageRangeMin = 0.50m, DamageRangeMax = 0.80m,
                 ChipDamageRangeMin = 0.00m, ChipDamageRangeMax = 0.10m,
@@ -56,7 +63,7 @@ public class ArmyTypeSeeder : ISeeder
             new ArmyType
             {
                 Id = KnightId,
-                Name = new LangStr("Knight"),
+                Name = L("Knight", "Rüütel"),
                 Attack = 35, HP = 140, Initiative = 30,
                 DamageRangeMin = 0.60m, DamageRangeMax = 1.00m,
                 ChipDamageRangeMin = 0.00m, ChipDamageRangeMax = 0.15m,
@@ -71,7 +78,7 @@ public class ArmyTypeSeeder : ISeeder
             new ArmyType
             {
                 Id = BerserkerId,
-                Name = new LangStr("Berserker"),
+                Name = L("Berserker", "Berserk"),
                 Attack = 35, HP = 60, Initiative = 50,
                 DamageRangeMin = 0.70m, DamageRangeMax = 1.00m,
                 ChipDamageRangeMin = 0.00m, ChipDamageRangeMax = 0.10m,
@@ -86,7 +93,7 @@ public class ArmyTypeSeeder : ISeeder
             new ArmyType
             {
                 Id = MageId,
-                Name = new LangStr("Mage"),
+                Name = L("Mage", "Maag"),
                 Attack = 35, HP = 60, Initiative = 70,
                 DamageRangeMin = 0.40m, DamageRangeMax = 1.00m,
                 ChipDamageRangeMin = 0.00m, ChipDamageRangeMax = 0.05m,
@@ -101,7 +108,7 @@ public class ArmyTypeSeeder : ISeeder
             new ArmyType
             {
                 Id = GuardianId,
-                Name = new LangStr("Guardian"),
+                Name = L("Guardian", "Kaitsja"),
                 Attack = 15, HP = 140, Initiative = 30,
                 DamageRangeMin = 0.50m, DamageRangeMax = 0.90m,
                 ChipDamageRangeMin = 0.05m, ChipDamageRangeMax = 0.25m,

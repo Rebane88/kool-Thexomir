@@ -1,3 +1,4 @@
+using System.Globalization;
 using Domain.Factions;
 using Domain.Resources;
 using Infrastructure;
@@ -41,22 +42,22 @@ public class FactionTypesController : ReferenceDataBaseController<FactionType>
     protected override object ToViewModel(FactionType entity) => new
     {
         entity.Id,
-        NameEn = entity.Name.Translate("en") ?? string.Empty,
-        NameEt = entity.Name.Translate("et") ?? string.Empty,
-        entity.AttackModifier,
-        entity.HPModifier,
-        entity.InitiativeModifier,
-        entity.ChipDamageModifier,
-        entity.ResourceProductionModifier,
-        entity.BuildingCostModifier,
-        entity.TrainingCostModifier,
+        NameEn = entity.Name.GetValueOrDefault("en", string.Empty),
+        NameEt = entity.Name.GetValueOrDefault("et", string.Empty),
+        AttackModifier = entity.AttackModifier.ToString(CultureInfo.InvariantCulture),
+        HPModifier = entity.HPModifier.ToString(CultureInfo.InvariantCulture),
+        InitiativeModifier = entity.InitiativeModifier.ToString(CultureInfo.InvariantCulture),
+        ChipDamageModifier = entity.ChipDamageModifier.ToString(CultureInfo.InvariantCulture),
+        ResourceProductionModifier = entity.ResourceProductionModifier.ToString(CultureInfo.InvariantCulture),
+        BuildingCostModifier = entity.BuildingCostModifier.ToString(CultureInfo.InvariantCulture),
+        TrainingCostModifier = entity.TrainingCostModifier.ToString(CultureInfo.InvariantCulture),
         entity.ActionPointModifier,
-        entity.HealRateModifier,
+        HealRateModifier = entity.HealRateModifier.ToString(CultureInfo.InvariantCulture),
         entity.StartingBonusResource,
         entity.StartingBonusAmount,
-        DescriptionEn = entity.Description.Translate("en") ?? string.Empty,
-        DescriptionEt = entity.Description.Translate("et") ?? string.Empty,
-        LoreEn = entity.Lore.Translate("en") ?? string.Empty,
-        LoreEt = entity.Lore.Translate("et") ?? string.Empty
+        DescriptionEn = entity.Description.GetValueOrDefault("en", string.Empty),
+        DescriptionEt = entity.Description.GetValueOrDefault("et", string.Empty),
+        LoreEn = entity.Lore.GetValueOrDefault("en", string.Empty),
+        LoreEt = entity.Lore.GetValueOrDefault("et", string.Empty)
     };
 }

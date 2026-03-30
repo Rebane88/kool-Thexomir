@@ -1,3 +1,4 @@
+using System.Globalization;
 using Domain.Military;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
@@ -46,17 +47,17 @@ public class ArmyTypesController : ReferenceDataBaseController<ArmyType>
     protected override object ToViewModel(ArmyType entity) => new
     {
         entity.Id,
-        NameEn = entity.Name.Translate("en") ?? string.Empty,
-        NameEt = entity.Name.Translate("et") ?? string.Empty,
+        NameEn = entity.Name.GetValueOrDefault("en", string.Empty),
+        NameEt = entity.Name.GetValueOrDefault("et", string.Empty),
         entity.Attack,
         entity.HP,
         entity.Initiative,
-        entity.DamageRangeMin,
-        entity.DamageRangeMax,
-        entity.ChipDamageRangeMin,
-        entity.ChipDamageRangeMax,
+        DamageRangeMin = entity.DamageRangeMin.ToString(CultureInfo.InvariantCulture),
+        DamageRangeMax = entity.DamageRangeMax.ToString(CultureInfo.InvariantCulture),
+        ChipDamageRangeMin = entity.ChipDamageRangeMin.ToString(CultureInfo.InvariantCulture),
+        ChipDamageRangeMax = entity.ChipDamageRangeMax.ToString(CultureInfo.InvariantCulture),
         entity.SituationalBonusStat,
-        entity.SituationalBonusValue,
+        SituationalBonusValue = entity.SituationalBonusValue?.ToString(CultureInfo.InvariantCulture),
         entity.SituationalBonusCondition,
         entity.TrainingCostGold,
         entity.TrainingCostFood,
@@ -65,8 +66,8 @@ public class ArmyTypesController : ReferenceDataBaseController<ArmyType>
         entity.UpkeepGold,
         entity.UpkeepFood,
         entity.UpkeepMana,
-        DescriptionEn = entity.Description.Translate("en") ?? string.Empty,
-        DescriptionEt = entity.Description.Translate("et") ?? string.Empty,
+        DescriptionEn = entity.Description.GetValueOrDefault("en", string.Empty),
+        DescriptionEt = entity.Description.GetValueOrDefault("et", string.Empty),
         entity.IconUrl,
         entity.RequiredBuildingTypeId
     };

@@ -14,6 +14,13 @@ public class TerrainTypeSeeder : ISeeder
     public static readonly Guid DesertId = new("AAAAAAAA-0001-0000-0000-000000000004");
     public static readonly Guid MagicGroveId = new("AAAAAAAA-0001-0000-0000-000000000005");
 
+    private static LangStr L(string en, string et)
+    {
+        var ls = new LangStr(en, "en");
+        ls.SetTranslation(et, "et");
+        return ls;
+    }
+
     public void Seed(object context)
     {
         var db = (AppDbContext)context;
@@ -25,7 +32,7 @@ public class TerrainTypeSeeder : ISeeder
             new TerrainType
             {
                 Id = PlainsId,
-                Name = new LangStr("Plains"),
+                Name = L("Plains", "Tasandik"),
                 ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Food,
                 MapColor = "#90EE90",
@@ -34,7 +41,7 @@ public class TerrainTypeSeeder : ISeeder
             new TerrainType
             {
                 Id = ForestId,
-                Name = new LangStr("Forest"),
+                Name = L("Forest", "Mets"),
                 ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Wood,
                 MapColor = "#228B22",
@@ -43,7 +50,7 @@ public class TerrainTypeSeeder : ISeeder
             new TerrainType
             {
                 Id = MountainId,
-                Name = new LangStr("Mountain"),
+                Name = L("Mountain", "Mägi"),
                 ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Stone,
                 MapColor = "#808080",
@@ -52,7 +59,7 @@ public class TerrainTypeSeeder : ISeeder
             new TerrainType
             {
                 Id = DesertId,
-                Name = new LangStr("Desert"),
+                Name = L("Desert", "Kõrb"),
                 ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Gold,
                 MapColor = "#C2B280",
@@ -61,7 +68,7 @@ public class TerrainTypeSeeder : ISeeder
             new TerrainType
             {
                 Id = MagicGroveId,
-                Name = new LangStr("Magic Grove"),
+                Name = L("Magic Grove", "Võlusalubaar"),
                 ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Mana,
                 MapColor = "#9B59B6",

@@ -41,6 +41,13 @@ public class BuildingTypeSeeder : ISeeder
     public static readonly Guid StablesId = new("BBBBBBBB-0001-0000-0000-000000000011");
     public static readonly Guid WarAcademyId = new("BBBBBBBB-0001-0000-0000-000000000012");
 
+    private static LangStr L(string en, string et)
+    {
+        var ls = new LangStr(en, "en");
+        ls.SetTranslation(et, "et");
+        return ls;
+    }
+
     public void Seed(object context)
     {
         var db = (AppDbContext)context;
@@ -53,7 +60,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = CastleId,
-                Name = new LangStr("Castle"),
+                Name = L("Castle", "Loss"),
                 Tier = 0, Chain = "Castle",
                 CostGold = 0, CostFood = 0, CostWood = 0, CostStone = 0, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 10, BaseYieldWood = 10, BaseYieldStone = 10, BaseYieldMana = 0,
@@ -66,7 +73,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = FarmId,
-                Name = new LangStr("Farm"),
+                Name = L("Farm", "Talu"),
                 Tier = 1, Chain = "Food",
                 CostGold = 0, CostFood = 0, CostWood = 30, CostStone = 0, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 10, BaseYieldWood = 0, BaseYieldStone = 0, BaseYieldMana = 0,
@@ -77,7 +84,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = WindmillId,
-                Name = new LangStr("Windmill"),
+                Name = L("Windmill", "Tuuleveski"),
                 Tier = 2, Chain = "Food",
                 CostGold = 60, CostFood = 0, CostWood = 30, CostStone = 0, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 20, BaseYieldWood = 0, BaseYieldStone = 0, BaseYieldMana = 0,
@@ -88,7 +95,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = GranaryId,
-                Name = new LangStr("Granary"),
+                Name = L("Granary", "Viljaait"),
                 Tier = 3, Chain = "Food",
                 CostGold = 100, CostFood = 0, CostWood = 0, CostStone = 50, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 35, BaseYieldWood = 0, BaseYieldStone = 0, BaseYieldMana = 0,
@@ -101,7 +108,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = LumberCampId,
-                Name = new LangStr("Lumber Camp"),
+                Name = L("Lumber Camp", "Metsalaager"),
                 Tier = 1, Chain = "Wood",
                 CostGold = 30, CostFood = 0, CostWood = 0, CostStone = 0, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 0, BaseYieldWood = 8, BaseYieldStone = 0, BaseYieldMana = 0,
@@ -112,7 +119,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = SawmillId,
-                Name = new LangStr("Sawmill"),
+                Name = L("Sawmill", "Saeveski"),
                 Tier = 2, Chain = "Wood",
                 CostGold = 50, CostFood = 0, CostWood = 0, CostStone = 20, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 0, BaseYieldWood = 18, BaseYieldStone = 0, BaseYieldMana = 0,
@@ -123,7 +130,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = TimberHallId,
-                Name = new LangStr("Timber Hall"),
+                Name = L("Timber Hall", "Puidukoda"),
                 Tier = 3, Chain = "Wood",
                 CostGold = 80, CostFood = 0, CostWood = 0, CostStone = 50, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 0, BaseYieldWood = 30, BaseYieldStone = 0, BaseYieldMana = 0,
@@ -136,7 +143,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = QuarryId,
-                Name = new LangStr("Quarry"),
+                Name = L("Quarry", "Karjäär"),
                 Tier = 1, Chain = "Stone",
                 CostGold = 40, CostFood = 0, CostWood = 10, CostStone = 0, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 0, BaseYieldWood = 0, BaseYieldStone = 6, BaseYieldMana = 0,
@@ -147,7 +154,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = MasonId,
-                Name = new LangStr("Mason"),
+                Name = L("Mason", "Müürsepp"),
                 Tier = 2, Chain = "Stone",
                 CostGold = 60, CostFood = 0, CostWood = 30, CostStone = 0, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 0, BaseYieldWood = 0, BaseYieldStone = 14, BaseYieldMana = 0,
@@ -158,7 +165,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = StoneworksId,
-                Name = new LangStr("Stoneworks"),
+                Name = L("Stoneworks", "Kivitöökoda"),
                 Tier = 3, Chain = "Stone",
                 CostGold = 100, CostFood = 0, CostWood = 60, CostStone = 0, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 0, BaseYieldWood = 0, BaseYieldStone = 25, BaseYieldMana = 0,
@@ -171,7 +178,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = MarketId,
-                Name = new LangStr("Market"),
+                Name = L("Market", "Turg"),
                 Tier = 1, Chain = "Gold",
                 CostGold = 0, CostFood = 0, CostWood = 40, CostStone = 0, CostMana = 0,
                 BaseYieldGold = 12, BaseYieldFood = 0, BaseYieldWood = 0, BaseYieldStone = 0, BaseYieldMana = 0,
@@ -182,7 +189,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = TradingPostId,
-                Name = new LangStr("Trading Post"),
+                Name = L("Trading Post", "Kaubanduspost"),
                 Tier = 2, Chain = "Gold",
                 CostGold = 0, CostFood = 0, CostWood = 80, CostStone = 30, CostMana = 0,
                 BaseYieldGold = 25, BaseYieldFood = 0, BaseYieldWood = 0, BaseYieldStone = 0, BaseYieldMana = 0,
@@ -193,7 +200,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = BankId,
-                Name = new LangStr("Bank"),
+                Name = L("Bank", "Pank"),
                 Tier = 3, Chain = "Gold",
                 CostGold = 0, CostFood = 0, CostWood = 120, CostStone = 60, CostMana = 0,
                 BaseYieldGold = 45, BaseYieldFood = 0, BaseYieldWood = 0, BaseYieldStone = 0, BaseYieldMana = 0,
@@ -206,7 +213,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = ShrineId,
-                Name = new LangStr("Shrine"),
+                Name = L("Shrine", "Pühamu"),
                 Tier = 1, Chain = "Mana",
                 CostGold = 50, CostFood = 0, CostWood = 20, CostStone = 0, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 0, BaseYieldWood = 0, BaseYieldStone = 0, BaseYieldMana = 5,
@@ -217,7 +224,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = WizardTowerId,
-                Name = new LangStr("Wizard Tower"),
+                Name = L("Wizard Tower", "Võluri torn"),
                 Tier = 2, Chain = "Mana",
                 CostGold = 80, CostFood = 0, CostWood = 0, CostStone = 40, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 0, BaseYieldWood = 0, BaseYieldStone = 0, BaseYieldMana = 12,
@@ -228,7 +235,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = ArcaneSanctumId,
-                Name = new LangStr("Arcane Sanctum"),
+                Name = L("Arcane Sanctum", "Müstiline pühamu"),
                 Tier = 3, Chain = "Mana",
                 CostGold = 150, CostFood = 0, CostWood = 0, CostStone = 80, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 0, BaseYieldWood = 0, BaseYieldStone = 0, BaseYieldMana = 22,
@@ -241,7 +248,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = BarracksId,
-                Name = new LangStr("Barracks"),
+                Name = L("Barracks", "Kasarmud"),
                 Tier = 1, Chain = "Military",
                 CostGold = 50, CostFood = 0, CostWood = 30, CostStone = 0, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 0, BaseYieldWood = 0, BaseYieldStone = 0, BaseYieldMana = 0,
@@ -252,7 +259,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = StablesId,
-                Name = new LangStr("Stables"),
+                Name = L("Stables", "Tallid"),
                 Tier = 2, Chain = "Military",
                 CostGold = 100, CostFood = 0, CostWood = 50, CostStone = 20, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 0, BaseYieldWood = 0, BaseYieldStone = 0, BaseYieldMana = 0,
@@ -263,7 +270,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = WarAcademyId,
-                Name = new LangStr("War Academy"),
+                Name = L("War Academy", "Sõjaakadeemia"),
                 Tier = 3, Chain = "Military",
                 CostGold = 200, CostFood = 0, CostWood = 80, CostStone = 50, CostMana = 0,
                 BaseYieldGold = 0, BaseYieldFood = 0, BaseYieldWood = 0, BaseYieldStone = 0, BaseYieldMana = 0,

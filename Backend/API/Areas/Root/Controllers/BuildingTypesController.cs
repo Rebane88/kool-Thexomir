@@ -41,8 +41,8 @@ public class BuildingTypesController : ReferenceDataBaseController<BuildingType>
     protected override object ToViewModel(BuildingType entity) => new
     {
         entity.Id,
-        NameEn = entity.Name.Translate("en") ?? string.Empty,
-        NameEt = entity.Name.Translate("et") ?? string.Empty,
+        NameEn = entity.Name.GetValueOrDefault("en", string.Empty),
+        NameEt = entity.Name.GetValueOrDefault("et", string.Empty),
         entity.Tier,
         entity.Chain,
         entity.CostGold,
@@ -56,8 +56,8 @@ public class BuildingTypesController : ReferenceDataBaseController<BuildingType>
         entity.BaseYieldStone,
         entity.BaseYieldMana,
         entity.ArmyCapacity,
-        DescriptionEn = entity.Description.Translate("en") ?? string.Empty,
-        DescriptionEt = entity.Description.Translate("et") ?? string.Empty,
+        DescriptionEn = entity.Description.GetValueOrDefault("en", string.Empty),
+        DescriptionEt = entity.Description.GetValueOrDefault("et", string.Empty),
         entity.IconUrl,
         UnlockedByBuildingTypeId = entity.UnlockedByBuildingTypeId?.ToString() ?? string.Empty
     };
