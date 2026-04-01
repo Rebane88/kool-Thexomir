@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { createGameHubConnection } from '@/lib/signalr-client';
 import type * as signalR from '@microsoft/signalr';
@@ -13,6 +14,7 @@ import { FactionCard } from './FactionCard';
 import { FACTION_METADATA } from './faction-constants';
 
 export function LobbyDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const userId = useAuthStore((s) => s.user?.id);
@@ -128,9 +130,9 @@ export function LobbyDetailPage() {
   const enoughPlayers = (lobby?.playerCount ?? 0) >= 2;
   const canStart = allHaveFactions && enoughPlayers;
   const startReason = !enoughPlayers
-    ? 'Need at least 2 players'
+    ? t('lobby.needMorePlayers')
     : !allHaveFactions
-      ? 'Waiting for all players to select factions'
+      ? t('lobby.waitingFactions')
       : '';
 
   const handleCopy = async () => {
@@ -189,18 +191,18 @@ export function LobbyDetailPage() {
 
       <div className="relative z-10 max-w-xl w-full">
         {!lobby ? (
-          <p className="text-parchment-400 text-center">Loading...</p>
+          <p className="text-parchment-400 text-center">{t('common.loading')}</p>
         ) : (
           <>
             {connectionError && (
               <div className="bg-blood-600/20 border border-blood-600/30 text-blood-500 px-4 py-2 text-sm mb-4">
-                Connection lost
+                {t('lobby.connectionLost')}
               </div>
             )}
 
             <Panel variant="auth-frame" className="p-6">
               <div className="text-center mb-6">
-                <p className="text-parchment-400 text-xs uppercase tracking-[0.3em] font-heading mb-2">Invite Code</p>
+                <p className="text-parchment-400 text-xs uppercase tracking-[0.3em] font-heading mb-2">{t('lobby.inviteCodeLabel')}</p>
                 <div className="text-parchment-400 text-xs mb-1">{'\u2726 \u2726 \u2726'}</div>
                 <div className="flex items-center justify-center gap-3">
                   <span className="text-3xl font-mono font-bold text-gold-500 tracking-[0.5em]">
@@ -212,7 +214,7 @@ export function LobbyDetailPage() {
                     title="Copy invite code"
                   >
                     {copied ? (
-                      <span className="text-gold-500 text-xs font-heading">Copied!</span>
+                      <span className="text-gold-500 text-xs font-heading">{t('lobby.copied')}</span>
                     ) : (
                       <ScrollIcon size={18} />
                     )}
@@ -222,12 +224,12 @@ export function LobbyDetailPage() {
               </div>
 
               <div className="flex justify-between text-parchment-400 text-sm mb-4 border-b border-bronze-700 pb-3">
-                <span>Elimination</span>
-                <span>Players: {lobby.playerCount}/{lobby.maxPlayers}</span>
+                <span>{t('lobby.elimination')}</span>
+                <span>{t('lobby.players')}: {lobby.playerCount}/{lobby.maxPlayers}</span>
               </div>
 
               <div className="space-y-2 mb-6">
-                <h2 className="text-parchment-200 text-sm font-heading font-medium tracking-wide mb-2">Players</h2>
+                <h2 className="text-parchment-200 text-sm font-heading font-medium tracking-wide mb-2">{t('lobby.players')}</h2>
                 {lobby.players.map((player) => {
                   const factionMeta = player.factionTypeId
                     ? FACTION_METADATA[player.factionTypeId.toLowerCase()]
@@ -246,7 +248,7 @@ export function LobbyDetailPage() {
                       {player.factionName ? (
                         <Badge variant="success">{player.factionName}</Badge>
                       ) : (
-                        <span className="text-parchment-400 text-sm italic">No faction</span>
+                        <span className="text-parchment-400 text-sm italic">{t('lobby.noFaction')}</span>
                       )}
                     </div>
                   );
@@ -255,7 +257,7 @@ export function LobbyDetailPage() {
 
               {lobby.status === GAME_STATUS.Lobby && (
                 <div className="mb-6">
-                  <h2 className="text-parchment-200 text-sm font-heading font-medium tracking-wide mb-3">Select Faction</h2>
+                  <h2 className="text-parchment-200 text-sm font-heading font-medium tracking-wide mb-3">{t('lobby.selectFaction')}</h2>
                   <div className="grid grid-cols-2 gap-3">
                     {lobby.factions.map((f) => {
                       const takenPlayer = !f.isAvailable
@@ -285,7 +287,7 @@ export function LobbyDetailPage() {
                   variant="secondary"
                   className="flex-1"
                 >
-                  {isLeaving ? 'Leaving...' : 'Leave Lobby'}
+                  {isLeaving ? t('lobby.leaving') : t('lobby.leaveLobby')}
                 </Button>
                 {isHost && (
                   <Button
@@ -294,7 +296,7 @@ export function LobbyDetailPage() {
                     variant="primary"
                     className="flex-1"
                   >
-                    {isStarting ? 'Starting...' : 'Start Game'}
+                    {isStarting ? t('lobby.starting') : t('lobby.startGame')}
                   </Button>
                 )}
               </div>
@@ -306,11 +308,11 @@ export function LobbyDetailPage() {
             </Panel>
 
             <Modal open={showLeaveConfirm} onClose={() => setShowLeaveConfirm(false)}>
-              <h3 className="font-heading text-parchment-200 text-lg mb-3">Leave Lobby?</h3>
-              <p className="text-parchment-400 text-sm mb-4">You will be removed from this war council.</p>
+              <h3 className="font-heading text-parchment-200 text-lg mb-3">{t('lobby.leaveConfirm')}</h3>
+              <p className="text-parchment-400 text-sm mb-4">{t('lobby.leaveConfirmBody')}</p>
               <div className="flex gap-3">
-                <Button onClick={() => setShowLeaveConfirm(false)} variant="secondary" className="flex-1">Cancel</Button>
-                <Button onClick={confirmLeave} variant="danger" className="flex-1">Leave</Button>
+                <Button onClick={() => setShowLeaveConfirm(false)} variant="secondary" className="flex-1">{t('common.cancel')}</Button>
+                <Button onClick={confirmLeave} variant="danger" className="flex-1">{t('lobby.leave')}</Button>
               </div>
             </Modal>
           </>

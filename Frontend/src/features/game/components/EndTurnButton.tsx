@@ -1,17 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/ui/Button';
 import { endTurn } from '../game-api';
 import { useGameStore } from '../game-store';
 import type { GamePhase } from '../types/enums';
 
-const PHASE_LABELS: Record<GamePhase, string> = {
-  Action: 'End Actions',
-  Battle: 'End Battle',
-  Income: 'End Turn',
-  RoundEnd: 'Next Round',
-};
-
 export function EndTurnButton() {
+  const { t } = useTranslation();
   const gameId = useGameStore((s) => s.gameId);
   const currentPhase = useGameStore((s) => s.currentPhase);
   const isMyTurn = useGameStore(
@@ -26,7 +21,14 @@ export function EndTurnButton() {
     if (isMyTurn) setIsSubmitting(false);
   }, [isMyTurn, roundNumber]);
 
-  const label = currentPhase ? PHASE_LABELS[currentPhase] : 'End Turn';
+  const PHASE_LABEL_KEYS: Record<GamePhase, string> = {
+    Action: 'game.endActions',
+    Battle: 'game.endBattle',
+    Income: 'game.endTurn',
+    RoundEnd: 'game.nextRound',
+  };
+
+  const label = currentPhase ? t(PHASE_LABEL_KEYS[currentPhase]) : t('game.endTurn');
 
   async function handleEndTurn() {
     if (!gameId || !isMyTurn || isSubmitting) return;

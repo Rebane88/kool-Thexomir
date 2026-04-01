@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../game-store';
 import type { BattleStep } from '../types/enums';
 import { BattleSelectStep } from './BattleSelectStep';
@@ -7,12 +8,12 @@ import { BattleResolveStep } from './BattleResolveStep';
 
 const STEPS: BattleStep[] = ['SelectArmies', 'RevealArmies', 'SetLineup', 'Resolve'];
 
-const STEP_LABELS: Record<BattleStep, string> = {
-  DeclareAttack: 'Declare',
-  SelectArmies: 'Select',
-  RevealArmies: 'Reveal',
-  SetLineup: 'Lineup',
-  Resolve: 'Resolve',
+const STEP_LABEL_KEYS: Record<BattleStep, string> = {
+  DeclareAttack: 'game.declareAttack',
+  SelectArmies: 'game.selectArmies',
+  RevealArmies: 'game.battleResults',
+  SetLineup: 'game.lineup',
+  Resolve: 'game.battleResults',
 };
 
 function isComplete(current: BattleStep | null, step: BattleStep): boolean {
@@ -25,6 +26,7 @@ function isActive(current: BattleStep | null, step: BattleStep): boolean {
 }
 
 export function BattleOverlay() {
+  const { t } = useTranslation();
   const activeBattle = useGameStore((s) => s.activeBattle);
   const declaredAttacks = useGameStore((s) => s.declaredAttacks);
   const myKingdomId = useGameStore((s) => s.myKingdomId);
@@ -57,7 +59,7 @@ export function BattleOverlay() {
                 isActive(activeBattle, step) ? 'text-gold-400' : 'text-parchment-500'
               }`}
             >
-              {STEP_LABELS[step]}
+              {t(STEP_LABEL_KEYS[step])}
             </span>
             {i < STEPS.length - 1 && <div className="w-8 h-0.5 bg-ash-600" />}
           </div>
@@ -68,7 +70,7 @@ export function BattleOverlay() {
       <div className="flex-1 overflow-y-auto">
         {isSpectator ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-parchment-400 text-sm animate-pulse">Watching battle...</p>
+            <p className="text-parchment-400 text-sm animate-pulse">{t('game.watchingBattle')}</p>
           </div>
         ) : (
           <>

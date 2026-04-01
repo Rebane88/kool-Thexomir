@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../game-store';
 import { getKingdomColor } from '../canvas/hex-renderer';
 import { Panel } from '@/shared/ui/Panel';
@@ -10,6 +11,7 @@ interface StandingsProps {
 }
 
 export function Standings({ open, onClose }: StandingsProps) {
+  const { t } = useTranslation();
   const kingdoms = useGameStore((s) => s.kingdoms);
   const tiles = useGameStore((s) => s.tiles);
 
@@ -30,7 +32,7 @@ export function Standings({ open, onClose }: StandingsProps) {
   return (
     <Panel className="absolute top-14 left-4 z-40 w-64 p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-heading text-gold-400 text-sm font-bold">Standings</h3>
+        <h3 className="font-heading text-gold-400 text-sm font-bold">{t('game.standings')}</h3>
         <button onClick={onClose} className="text-parchment-400 hover:text-parchment-200 text-xs px-1" aria-label="Close standings">X</button>
       </div>
 
@@ -38,7 +40,7 @@ export function Standings({ open, onClose }: StandingsProps) {
       <div className="mb-3">
         <div className="flex items-center gap-1.5 mb-2">
           <span className="text-gold-400 text-xs">&#x1F6E1;</span>
-          <span className="font-heading text-gold-400 text-xs tracking-wide uppercase">Active Kingdoms</span>
+          <span className="font-heading text-gold-400 text-xs tracking-wide uppercase">{t('game.activeKingdoms')}</span>
         </div>
         <div className="space-y-1.5">
           {active.map((entry, index) => {
@@ -69,7 +71,7 @@ export function Standings({ open, onClose }: StandingsProps) {
         <div>
           <div className="flex items-center gap-1.5 mb-2">
             <span className="text-parchment-500 text-xs">&#x2620;</span>
-            <span className="font-heading text-parchment-500 text-xs tracking-wide uppercase">Fallen Kingdoms</span>
+            <span className="font-heading text-parchment-500 text-xs tracking-wide uppercase">{t('game.fallenKingdoms')}</span>
           </div>
           <div className="space-y-1.5">
             {fallen.map((entry) => {
@@ -85,7 +87,7 @@ export function Standings({ open, onClose }: StandingsProps) {
                     <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 opacity-50" style={{ backgroundColor: getKingdomColor(kingdoms, entry.kingdom.id) }} />
                   )}
                   <span className="text-parchment-400 truncate flex-1 line-through">{entry.kingdom.name}</span>
-                  <Badge variant="danger">Eliminated</Badge>
+                  <Badge variant="danger">{t('game.eliminated')}</Badge>
                 </div>
               );
             })}

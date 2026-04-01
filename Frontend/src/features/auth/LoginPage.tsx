@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { API_BASE_URL } from '@/lib/constants';
 import type { LoginResponse, ProblemDetails } from '@/shared/types/api';
@@ -10,16 +11,18 @@ import bgAuthPng from '@/assets/images/bg-auth.png';
 function validateLoginForm(
   email: string,
   password: string,
+  t: (key: string) => string,
 ): Record<string, string> {
   const errors: Record<string, string> = {};
-  if (!email.trim()) errors.email = 'Email is required';
+  if (!email.trim()) errors.email = t('auth.emailRequired');
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    errors.email = 'Invalid email format';
-  if (!password) errors.password = 'Password is required';
+    errors.email = t('auth.emailInvalid');
+  if (!password) errors.password = t('auth.passwordRequired');
   return errors;
 }
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -36,7 +39,7 @@ export function LoginPage() {
   if (isInitializing) {
     return (
       <div className="min-h-dvh flex items-center justify-center">
-        <p className="text-parchment-400">Loading...</p>
+        <p className="text-parchment-400">{t('common.loading')}</p>
       </div>
     );
   }
@@ -64,7 +67,7 @@ export function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const validationErrors = validateLoginForm(email, password);
+    const validationErrors = validateLoginForm(email, password, t);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -96,7 +99,7 @@ export function LoginPage() {
       const returnTo = searchParams.get('returnTo') || '/';
       navigate(returnTo, { replace: true });
     } catch {
-      setGeneralError('Network error. Please try again.');
+      setGeneralError(t('auth.networkError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -109,15 +112,15 @@ export function LoginPage() {
       <div className="relative z-10 max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="font-heading text-gold-500 text-5xl tracking-wide" style={{ textShadow: '0 0 20px rgba(201, 168, 76, 0.4), 0 0 40px rgba(217, 119, 6, 0.15)' }}>
-            Realms of Ash
+            {t('auth.title')}
           </h1>
-          <p className="text-parchment-400 italic mt-2 text-sm">Forge your kingdom</p>
+          <p className="text-parchment-400 italic mt-2 text-sm">{t('auth.subtitle')}</p>
         </div>
 
         <Panel variant="auth-frame" className="p-8">
           {sessionExpired && (
             <div className="bg-ember-500/20 border border-ember-500/30 text-ember-400 px-4 py-2 text-sm mb-4">
-              Session expired, please log in again.
+              {t('auth.sessionExpired')}
             </div>
           )}
 
@@ -132,7 +135,7 @@ export function LoginPage() {
               id="email"
               type="email"
               autoComplete="email"
-              label="Email"
+              label={t('auth.email')}
               value={email}
               onChange={(e) => handleFieldChange('email', e.target.value)}
               error={errors.email}
@@ -143,7 +146,7 @@ export function LoginPage() {
                 htmlFor="password"
                 className="text-parchment-300 text-sm font-medium mb-1 block"
               >
-                Password
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <Input
@@ -166,17 +169,17 @@ export function LoginPage() {
             </div>
 
             <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? 'Signing in...' : 'Sign In'}
+              {isSubmitting ? t('auth.signingIn') : t('auth.signIn')}
             </Button>
           </form>
 
           <p className="text-center text-sm text-parchment-400 mt-4">
-            Don&apos;t have an account?{' '}
+            {t('auth.noAccount')}{' '}
             <Link
               to="/register"
               className="text-gold-500 hover:text-gold-300 transition-colors"
             >
-              Register
+              {t('auth.register')}
             </Link>
           </p>
         </Panel>

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../game-store';
 import { setLineup } from '../game-api';
 import { ArmyCard } from './ArmyCard';
 import { Button } from '@/shared/ui/Button';
 
 export function BattleLineupStep() {
+  const { t } = useTranslation();
   const declaredAttacks = useGameStore((s) => s.declaredAttacks);
   const battleLineups = useGameStore((s) => s.battleLineups);
   const battleSelections = useGameStore((s) => s.battleSelections);
@@ -61,12 +63,12 @@ export function BattleLineupStep() {
           return (
             <div key={battle.attackId} className="mb-6">
               <h3 className="font-heading text-sm text-parchment-300 mb-2">
-                vs {opponentName} — Battle Order
+                vs {opponentName} — {t('game.lineup')}
               </h3>
               <div className="flex flex-col gap-1">
                 {lineup.map((armyId, index) => {
                   const army = armies.get(armyId);
-                  const armyType = armyTypes.find((t) => t.id === army?.armyTypeId);
+                  const armyType = armyTypes.find((ty) => ty.id === army?.armyTypeId);
                   if (!army || !armyType) return null;
                   return (
                     <div key={armyId} className="flex items-center gap-2">
@@ -113,11 +115,11 @@ export function BattleLineupStep() {
       <div className="border-t border-ash-700 p-4 flex items-center justify-end">
         {confirmed ? (
           <p className="text-parchment-400 text-sm animate-pulse w-full text-center">
-            Waiting for opponent...
+            {t('game.waitingForOpponent')}
           </p>
         ) : (
           <Button variant="primary" onClick={handleConfirmAll} disabled={confirmed}>
-            Confirm All Lineups
+            {t('game.confirmAllLineups')}
           </Button>
         )}
       </div>

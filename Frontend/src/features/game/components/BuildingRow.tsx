@@ -1,4 +1,5 @@
 import type { ComponentType, SVGProps } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { BuildingTypeRef } from '../types/building-types';
 import { GoldIcon, FoodIcon, WoodIcon, StoneIcon, ManaIcon } from '@/assets/icons';
 import { ApCostBadge, useCanAffordAp } from './ApCostBadge';
@@ -88,6 +89,7 @@ export function BuildingRow({
   isActive,
   onSelect,
 }: BuildingRowProps) {
+  const { t } = useTranslation();
   const canAffordAp = useCanAffordAp(1);
   const disabled = !canAfford || !hasPrerequisite || !canAffordAp;
 
@@ -134,7 +136,7 @@ export function BuildingRow({
 
           {buildingType.unlockedByBuildingName && !hasPrerequisite && (
             <div className="text-xs text-ember-400 mt-0.5">
-              Requires: {buildingType.unlockedByBuildingName}
+              {t('game.requires', { name: buildingType.unlockedByBuildingName })}
             </div>
           )}
 

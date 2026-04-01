@@ -1,15 +1,24 @@
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../game-store';
 import { getKingdomColor } from '../canvas/hex-renderer';
 import { FACTION_METADATA } from '../../lobby/faction-constants';
 
-const PHASE_CONFIG: Record<string, { color: string; label: string }> = {
-  Action: { color: 'text-gold-400', label: 'Action' },
-  Battle: { color: 'text-red-400', label: 'Battle' },
-  Income: { color: 'text-green-400', label: 'Income' },
-  RoundEnd: { color: 'text-parchment-400', label: 'Round End' },
+const PHASE_COLOR: Record<string, string> = {
+  Action: 'text-gold-400',
+  Battle: 'text-red-400',
+  Income: 'text-green-400',
+  RoundEnd: 'text-parchment-400',
+};
+
+const PHASE_KEY: Record<string, string> = {
+  Action: 'game.phase.action',
+  Battle: 'game.phase.battle',
+  Income: 'game.phase.income',
+  RoundEnd: 'game.phase.roundEnd',
 };
 
 export function TurnIndicator() {
+  const { t } = useTranslation();
   const roundNumber = useGameStore((s) => s.roundNumber);
   const currentPhase = useGameStore((s) => s.currentPhase);
   const currentTurnKingdomId = useGameStore((s) => s.currentTurnKingdomId);
@@ -26,7 +35,8 @@ export function TurnIndicator() {
     ? getKingdomColor(kingdoms, currentTurnKingdomId)
     : '#6b6b6b';
 
-  const phaseConfig = currentPhase ? PHASE_CONFIG[currentPhase] : null;
+  const phaseColor = currentPhase ? (PHASE_COLOR[currentPhase] ?? 'text-parchment-400') : null;
+  const phaseLabel = currentPhase ? t(PHASE_KEY[currentPhase] ?? 'game.phase.action') : null;
 
   const factionCrest = currentKingdom?.factionTypeId
     ? FACTION_METADATA[currentKingdom.factionTypeId.toLowerCase()]?.crestImage
@@ -45,9 +55,9 @@ export function TurnIndicator() {
         boxShadow: 'inset 0 1px 0 rgba(201, 168, 76, 0.15), inset 0 -1px 0 rgba(0, 0, 0, 0.3), 0 0 0 1px #3d3225, 0 4px 12px rgba(0, 0, 0, 0.5)',
       }}
     >
-      {phaseConfig && (
-        <span className={`${phaseConfig.color} font-heading font-bold text-xs uppercase tracking-wide`}>
-          {phaseConfig.label}
+      {phaseColor && phaseLabel && (
+        <span className={`${phaseColor} font-heading font-bold text-xs uppercase tracking-wide`}>
+          {phaseLabel}
         </span>
       )}
       <div className="flex items-center gap-2">
@@ -58,11 +68,11 @@ export function TurnIndicator() {
         />
         {isMyTurn ? (
           <span className="text-gold-400 font-heading font-bold text-sm">
-            Round {roundNumber} (You)
+            {t('game.roundYou', { n: roundNumber })}
           </span>
         ) : (
           <span className="text-parchment-300 text-sm">
-            Round {roundNumber} ({currentKingdom?.name || currentKingdom?.factionName || 'Waiting'})
+            {t('game.roundN', { n: roundNumber })} ({currentKingdom?.name || currentKingdom?.factionName || 'Waiting'})
           </span>
         )}
       </div>
@@ -81,7 +91,7 @@ export function TurnIndicator() {
               />
             ))}
             <span className="text-parchment-300 text-xs ml-1 tabular-nums">
-              {actionPoints}/{maxActionPoints} AP
+              {actionPoints}/{maxActionPoints} {t('game.ap')}
             </span>
           </div>
         </>

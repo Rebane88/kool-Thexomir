@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import eliminationSkullPng from '@/assets/images/elimination-skull.png';
 
 interface EliminationBannerProps {
@@ -7,6 +8,7 @@ interface EliminationBannerProps {
 }
 
 export function EliminationBanner({ kingdomName, onFaded }: EliminationBannerProps) {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export function EliminationBanner({ kingdomName, onFaded }: EliminationBannerPro
         <div className="flex items-center gap-3">
           <img src={eliminationSkullPng} alt="" className="w-8 h-8 object-contain" />
           <span className="text-parchment-100 font-heading text-lg font-semibold">
-            {kingdomName} has been eliminated!
+            {t('game.hasBeenEliminated', { name: kingdomName })}
           </span>
           <img src={eliminationSkullPng} alt="" className="w-8 h-8 object-contain" />
         </div>

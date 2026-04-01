@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAnimationStore } from '../animation-store';
 import { useGameStore } from '../game-store';
 import { CombatSlotReel } from './CombatSlotReel';
@@ -25,6 +26,7 @@ function generateDamageSymbols(actualDamage: number): string[] {
 // --- Component ---
 
 export function BattleResolveStep() {
+  const { t } = useTranslation();
   const currentRound = useAnimationStore((s) => s.currentRound);
   const currentBattleId = useAnimationStore((s) => s.currentBattleId);
   const battleRoundHistory = useAnimationStore((s) => s.battleRoundHistory);
@@ -121,11 +123,11 @@ export function BattleResolveStep() {
     : null;
 
   const attackerKingdomName = currentAttack
-    ? (kingdoms.get(currentAttack.attackerKingdomId)?.name ?? 'Attacker')
-    : 'Attacker';
+    ? (kingdoms.get(currentAttack.attackerKingdomId)?.name ?? t('game.attacker'))
+    : t('game.attacker');
   const defenderKingdomName = currentAttack
-    ? (kingdoms.get(currentAttack.defenderKingdomId)?.name ?? 'Defender')
-    : 'Defender';
+    ? (kingdoms.get(currentAttack.defenderKingdomId)?.name ?? t('game.defender'))
+    : t('game.defender');
 
   // Current round army data
   const attackerArmyId = currentRound?.attackerArmyId ?? null;
@@ -135,10 +137,10 @@ export function BattleResolveStep() {
   const defenderArmy: Army | null = defenderArmyId ? (armies.get(defenderArmyId) ?? null) : null;
 
   const attackerType: ArmyTypeRef | null = attackerArmy
-    ? (armyTypes.find((t) => t.id === attackerArmy.armyTypeId) ?? null)
+    ? (armyTypes.find((at) => at.id === attackerArmy.armyTypeId) ?? null)
     : null;
   const defenderType: ArmyTypeRef | null = defenderArmy
-    ? (armyTypes.find((t) => t.id === defenderArmy.armyTypeId) ?? null)
+    ? (armyTypes.find((at) => at.id === defenderArmy.armyTypeId) ?? null)
     : null;
 
   // HP display values (from local tracking map, fallback to army store)
@@ -150,8 +152,8 @@ export function BattleResolveStep() {
     : { current: 0, max: 1 };
 
   // Initiative symbols
-  const attackerTypeName = attackerType?.name ?? 'Attacker';
-  const defenderTypeName = defenderType?.name ?? 'Defender';
+  const attackerTypeName = attackerType?.name ?? t('game.attacker');
+  const defenderTypeName = defenderType?.name ?? t('game.defender');
   const initiativeSymbols = generateInitiativeSymbols(attackerTypeName, defenderTypeName);
   const initiativeTargetIndex = currentRound
     ? (currentRound.initiativeWinner === 'Attacker' ? 0 : 1)
@@ -183,7 +185,7 @@ export function BattleResolveStep() {
     <div className="flex flex-col items-center gap-4 p-4 flex-1">
       {/* Round counter */}
       <div className="font-heading text-lg text-gold-400">
-        Round {currentRound?.roundNumber ?? '...'}
+        {t('game.round')} {currentRound?.roundNumber ?? '...'}
       </div>
 
       {/* Battle arena: attacker card - slot machine - defender card */}
@@ -209,21 +211,21 @@ export function BattleResolveStep() {
             spinning={combatSpinPhase === 'initiative'}
             symbols={initiativeSymbols}
             targetIndex={combatSpinPhase === 'initiative' ? initiativeTargetIndex : null}
-            label="Initiative"
+            label={t('game.initiative')}
             onStopped={handleInitiativeStopped}
           />
           <CombatSlotReel
             spinning={combatSpinPhase === 'damage'}
             symbols={damageSymbols}
             targetIndex={combatSpinPhase === 'damage' ? damageTargetIndex : null}
-            label="Damage"
+            label={t('game.damage')}
             onStopped={handleDamageStopped}
           />
           <CombatSlotReel
             spinning={combatSpinPhase === 'chipDamage'}
             symbols={chipDamageSymbols}
             targetIndex={combatSpinPhase === 'chipDamage' ? chipDamageTargetIndex : null}
-            label="Chip Dmg"
+            label={t('game.chipDamage')}
             onStopped={handleChipDamageStopped}
           />
         </div>
@@ -254,17 +256,17 @@ export function BattleResolveStep() {
       {/* Result display after spin */}
       {combatSpinResults.initiativeWinner && combatSpinPhase !== 'initiative' && (
         <div className="text-sm text-gold-300 font-heading">
-          {combatSpinResults.initiativeWinner === 'Attacker' ? attackerKingdomName : defenderKingdomName} strikes first!
+          {t('game.strikesFirst', { name: combatSpinResults.initiativeWinner === 'Attacker' ? attackerKingdomName : defenderKingdomName })}
         </div>
       )}
       {combatSpinResults.damageDealt !== null && combatSpinPhase !== 'damage' && (
         <div className="text-sm text-red-400 font-heading">
-          {combatSpinResults.damageDealt} damage dealt
+          {t('game.damageDealt', { amount: combatSpinResults.damageDealt })}
         </div>
       )}
       {combatSpinResults.chipDamageDealt !== null && combatSpinPhase !== 'chipDamage' && (
         <div className="text-xs text-amber-400 font-heading">
-          {combatSpinResults.chipDamageDealt} chip damage
+          {t('game.chipDamageDealt', { amount: combatSpinResults.chipDamageDealt })}
         </div>
       )}
 

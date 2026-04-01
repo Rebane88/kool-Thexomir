@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../game-store';
 
 export function ActionPointsPips() {
+  const { t } = useTranslation();
   const actionPoints = useGameStore((s) => s.actionPoints);
   const maxActionPoints = useGameStore((s) => s.maxActionPoints);
 
@@ -21,7 +23,7 @@ export function ActionPointsPips() {
         />
       ))}
       <span className="text-parchment-300 text-xs ml-1 tabular-nums">
-        {actionPoints}/{maxActionPoints} AP
+        {actionPoints}/{maxActionPoints} {t('game.ap')}
       </span>
     </div>
   );

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Panel, Button, Input, FogBackground } from '@/shared/ui';
 import { createLobby, joinLobby } from './lobby-api';
 import bgLobbyPng from '@/assets/images/bg-lobby.png';
 
 export function LobbyHomePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
@@ -31,7 +33,7 @@ export function LobbyHomePage() {
       const data = await createLobby(maxPlayers, 0);
       navigate(`/lobby/${data.lobbyId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create lobby');
+      setError(err instanceof Error ? err.message : t('lobby.failedCreate'));
     } finally {
       setIsSubmitting(false);
     }
@@ -46,7 +48,7 @@ export function LobbyHomePage() {
       const data = await joinLobby(inviteCode);
       navigate(`/lobby/${data.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to join lobby');
+      setError(err instanceof Error ? err.message : t('lobby.failedJoin'));
     } finally {
       setIsSubmitting(false);
     }
@@ -62,7 +64,7 @@ export function LobbyHomePage() {
             className="font-heading text-gold-500 text-3xl tracking-wide"
             style={{ textShadow: '0 0 20px rgba(201, 168, 76, 0.4), 0 0 40px rgba(217, 119, 6, 0.15)' }}
           >
-            War Council
+            {t('lobby.warCouncil')}
           </h1>
         </div>
 
@@ -77,7 +79,7 @@ export function LobbyHomePage() {
                   : 'bg-ash-700 border-bronze-700 text-parchment-400 hover:border-bronze-500 hover:text-parchment-200'
               }`}
             >
-              Create
+              {t('lobby.create')}
             </button>
             <button
               type="button"
@@ -88,7 +90,7 @@ export function LobbyHomePage() {
                   : 'bg-ash-700 border-bronze-700 text-parchment-400 hover:border-bronze-500 hover:text-parchment-200'
               }`}
             >
-              Join
+              {t('lobby.join')}
             </button>
           </div>
 
@@ -101,8 +103,8 @@ export function LobbyHomePage() {
           {activeTab === 'create' ? (
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="text-parchment-300 text-sm font-medium mb-2 block">Max Players</label>
-                <div role="group" aria-label="Max Players" className="flex gap-2">
+                <label className="text-parchment-300 text-sm font-medium mb-2 block">{t('lobby.maxPlayers')}</label>
+                <div role="group" aria-label={t('lobby.maxPlayers')} className="flex gap-2">
                   {([2, 3, 4] as const).map((n) => (
                     <button
                       key={n}
@@ -122,8 +124,8 @@ export function LobbyHomePage() {
               </div>
 
               <div>
-                <label className="text-parchment-300 text-sm font-medium mb-1 block">Win Condition</label>
-                <p className="text-parchment-200 text-sm bg-ash-700 border border-bronze-700 px-3 py-2">Elimination</p>
+                <label className="text-parchment-300 text-sm font-medium mb-1 block">{t('lobby.winCondition')}</label>
+                <p className="text-parchment-200 text-sm bg-ash-700 border border-bronze-700 px-3 py-2">{t('lobby.elimination')}</p>
               </div>
 
               <Button
@@ -132,16 +134,16 @@ export function LobbyHomePage() {
                 variant="primary"
                 className="w-full"
               >
-                {isSubmitting ? 'Creating...' : 'Create Lobby'}
+                {isSubmitting ? t('lobby.creating') : t('lobby.createLobby')}
               </Button>
             </form>
           ) : (
             <form onSubmit={handleJoin} className="space-y-4">
               <Input
                 id="inviteCode"
-                label="Invite Code"
+                label={t('lobby.inviteCode')}
                 type="text"
-                placeholder="Enter invite code"
+                placeholder={t('lobby.enterInviteCode')}
                 maxLength={6}
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
@@ -153,7 +155,7 @@ export function LobbyHomePage() {
                 variant="primary"
                 className="w-full"
               >
-                {isSubmitting ? 'Joining...' : 'Join Lobby'}
+                {isSubmitting ? t('lobby.joining') : t('lobby.joinLobby')}
               </Button>
             </form>
           )}

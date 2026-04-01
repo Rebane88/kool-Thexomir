@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { ApCostBadge } from './ApCostBadge';
 import { Button } from '@/shared/ui/Button';
 
@@ -8,6 +9,8 @@ interface DeclareAttackPromptProps {
 }
 
 export function DeclareAttackPrompt({ defenderKingdomName, onCancel, position }: DeclareAttackPromptProps) {
+  const { t } = useTranslation();
+
   return (
     <div
       className="fixed z-40 pointer-events-auto"
@@ -25,10 +28,10 @@ export function DeclareAttackPrompt({ defenderKingdomName, onCancel, position }:
           <ApCostBadge cost={1} />
         </div>
         <p className="text-xs text-parchment-400 mb-3">
-          Select your tile to risk
+          {t('game.selectRiskedTile')}
         </p>
         <Button variant="ghost" size="sm" onClick={onCancel} className="w-full">
-          Cancel
+          {t('common.cancel')}
         </Button>
       </div>
       {/* Caret pointing down */}

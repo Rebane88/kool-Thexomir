@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/features/auth/auth-store';
 import { API_BASE_URL } from '@/lib/constants';
 import type { LoginResponse, ProblemDetails } from '@/shared/types/api';
@@ -11,22 +12,24 @@ function validateRegisterForm(
   email: string,
   password: string,
   confirmPassword: string,
+  t: (key: string) => string,
 ): Record<string, string> {
   const errors: Record<string, string> = {};
-  if (!email.trim()) errors.email = 'Email is required';
+  if (!email.trim()) errors.email = t('auth.emailRequired');
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    errors.email = 'Invalid email format';
-  if (!password) errors.password = 'Password is required';
+    errors.email = t('auth.emailInvalid');
+  if (!password) errors.password = t('auth.passwordRequired');
   else if (password.length < 6)
-    errors.password = 'Password must be at least 6 characters';
+    errors.password = t('auth.passwordMinLength');
   if (!confirmPassword)
-    errors.confirmPassword = 'Please confirm your password';
+    errors.confirmPassword = t('auth.passwordConfirmRequired');
   else if (password !== confirmPassword)
-    errors.confirmPassword = 'Passwords do not match';
+    errors.confirmPassword = t('auth.passwordMismatch');
   return errors;
 }
 
 export function RegisterPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const user = useAuthStore((s) => s.user);
@@ -44,7 +47,7 @@ export function RegisterPage() {
   if (isInitializing) {
     return (
       <div className="min-h-dvh flex items-center justify-center">
-        <p className="text-parchment-400">Loading...</p>
+        <p className="text-parchment-400">{t('common.loading')}</p>
       </div>
     );
   }
@@ -75,6 +78,7 @@ export function RegisterPage() {
       email,
       password,
       confirmPassword,
+      t,
     );
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -121,7 +125,7 @@ export function RegisterPage() {
 
       navigate('/', { replace: true });
     } catch {
-      setGeneralError('Network error. Please try again.');
+      setGeneralError(t('auth.networkError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -134,9 +138,9 @@ export function RegisterPage() {
       <div className="relative z-10 max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="font-heading text-gold-500 text-5xl tracking-wide" style={{ textShadow: '0 0 20px rgba(201, 168, 76, 0.4), 0 0 40px rgba(217, 119, 6, 0.15)' }}>
-            Realms of Ash
+            {t('auth.title')}
           </h1>
-          <p className="text-parchment-400 italic mt-2 text-sm">Forge your kingdom</p>
+          <p className="text-parchment-400 italic mt-2 text-sm">{t('auth.subtitle')}</p>
         </div>
 
         <Panel variant="auth-frame" className="p-8">
@@ -151,7 +155,7 @@ export function RegisterPage() {
               id="email"
               type="email"
               autoComplete="email"
-              label="Email"
+              label={t('auth.email')}
               value={email}
               onChange={(e) => handleFieldChange('email', e.target.value)}
               error={errors.email}
@@ -162,7 +166,7 @@ export function RegisterPage() {
                 htmlFor="password"
                 className="text-parchment-300 text-sm font-medium mb-1 block"
               >
-                Password
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <Input
@@ -189,7 +193,7 @@ export function RegisterPage() {
                 htmlFor="confirmPassword"
                 className="text-parchment-300 text-sm font-medium mb-1 block"
               >
-                Confirm Password
+                {t('auth.confirmPassword')}
               </label>
               <div className="relative">
                 <Input
@@ -214,17 +218,17 @@ export function RegisterPage() {
             </div>
 
             <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? 'Creating account...' : 'Create Account'}
+              {isSubmitting ? t('auth.registering') : t('auth.createAccount')}
             </Button>
           </form>
 
           <p className="text-center text-sm text-parchment-400 mt-4">
-            Already have an account?{' '}
+            {t('auth.haveAccount')}{' '}
             <Link
               to="/login"
               className="text-gold-500 hover:text-gold-300 transition-colors"
             >
-              Log in
+              {t('auth.login')}
             </Link>
           </p>
         </Panel>

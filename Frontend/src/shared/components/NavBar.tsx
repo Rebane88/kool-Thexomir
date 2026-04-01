@@ -1,10 +1,13 @@
 import { Link, useMatch } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/features/auth';
 import { useGameStore } from '@/features/game';
 import { API_BASE_URL } from '@/lib/constants';
 import { LogoutIcon, SwordIcon } from '@/assets/icons';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 export function NavBar() {
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const activeGameId = useGameStore((s) => s.activeGameId);
@@ -32,7 +35,7 @@ export function NavBar() {
   return (
     <nav className="relative z-20 bg-ash-900 border-b border-bronze-700 px-6 py-3 flex items-center justify-between">
       <Link to="/" className="font-heading text-xl font-bold text-gold-500 hover:text-gold-300 transition-colors tracking-wide">
-        Realms of Ash
+        {t('auth.title')}
       </Link>
       {activeGameId && user && !onGamePage && (
         <>
@@ -43,7 +46,7 @@ export function NavBar() {
               className="flex items-center gap-1 font-heading text-sm tracking-wide text-gold-500 hover:text-gold-300 transition-colors"
             >
               <SwordIcon size={16} />
-              Rejoin Game
+              {t('game.rejoinGame')}
             </Link>
             <button
               className="px-3 py-1 text-sm bg-blood-700 text-parchment-200 opacity-50 cursor-not-allowed"
@@ -51,13 +54,14 @@ export function NavBar() {
               title="Coming soon"
               disabled
             >
-              Abandon Game
+              {t('game.abandonGame')}
             </button>
           </div>
           <div className="h-5 w-px bg-bronze-700" />
         </>
       )}
       <div className="flex items-center gap-4">
+        <LanguageSwitcher />
         {user ? (
           <>
             <span className="text-parchment-400 text-sm">{user.email}</span>
@@ -66,16 +70,16 @@ export function NavBar() {
               className="flex items-center gap-1.5 text-parchment-400 hover:text-gold-500 transition-colors"
             >
               <LogoutIcon size={18} />
-              <span className="text-sm">Logout</span>
+              <span className="text-sm">{t('game.logout')}</span>
             </button>
           </>
         ) : (
           <>
             <Link to="/login" className="text-parchment-300 hover:text-gold-500 transition-colors text-sm">
-              Login
+              {t('game.login')}
             </Link>
             <Link to="/register" className="text-parchment-300 hover:text-gold-500 transition-colors text-sm">
-              Register
+              {t('game.registerLink')}
             </Link>
           </>
         )}

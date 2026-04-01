@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/features/auth';
 import { useGameStore } from '@/features/game';
 import { apiFetch } from '@/lib/api-client';
@@ -8,13 +9,14 @@ import { AppRouter } from '@/routes/router';
 import { Button } from '@/shared/ui';
 
 function ErrorFallback({ error, resetErrorBoundary }: { error: unknown; resetErrorBoundary: () => void }) {
+  const { t } = useTranslation();
   const message = error instanceof Error ? error.message : 'An unexpected error occurred';
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center gap-4 px-4">
-      <h1 className="text-2xl font-heading font-bold text-blood-500">Something went wrong</h1>
+      <h1 className="text-2xl font-heading font-bold text-blood-500">{t('common.error')}</h1>
       <p className="text-parchment-400">{message}</p>
       <Button onClick={resetErrorBoundary} variant="primary">
-        Try again
+        {t('common.tryAgain')}
       </Button>
     </div>
   );

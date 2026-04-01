@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/ui/Button';
 import { useGameStore } from '../game-store';
 import { useAnimationStore } from '../animation-store';
 import { spinSlotMachine } from '../game-api';
 
 export function GambleButton() {
+  const { t } = useTranslation();
   const gameId = useGameStore((s) => s.gameId);
   const currentPhase = useGameStore((s) => s.currentPhase);
   const actionPoints = useGameStore((s) => s.actionPoints);
@@ -41,7 +43,7 @@ export function GambleButton() {
       onClick={handleGamble}
       className="border-gold-400/40 text-gold-300"
     >
-      Gamble ({spinCostGold}g)
+      {t('game.gamble')} ({spinCostGold}g)
     </Button>
   );
 }

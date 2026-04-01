@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../game-store';
 import { BuildingRow } from './BuildingRow';
 import { MilitaryPanel } from './MilitaryPanel';
@@ -9,6 +10,7 @@ interface BuildingPanelProps {
 }
 
 export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
+  const { t } = useTranslation();
   const buildingTypes = useGameStore((s) => s.buildingTypes);
   const buildModeTypeId = useGameStore((s) => s.buildModeTypeId);
   const myKingdomId = useGameStore((s) => s.myKingdomId);
@@ -69,13 +71,13 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
   let displayedBuildings: BuildingTypeRef[];
 
   if (isCastleTile) {
-    catalogTitle = 'Castle';
+    catalogTitle = t('game.castle');
     displayedBuildings = [];
   } else if (existingBuilding) {
-    catalogTitle = `Upgrade ${existingBuildingName ?? 'Building'}`;
+    catalogTitle = t('game.upgrade', { name: existingBuildingName ?? 'Building' });
     displayedBuildings = buildingTypes.filter((bt) => bt.unlockedByBuildingTypeId === existingBuilding.buildingTypeId);
   } else {
-    catalogTitle = 'Build';
+    catalogTitle = t('game.build');
     displayedBuildings = buildingTypes.filter((bt) => bt.tier === 1);
   }
 
@@ -85,7 +87,7 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
 
   const buildingsContent = displayedBuildings.length === 0 ? (
     <div className="text-bronze-400 text-sm px-3 py-4 text-center">
-      {isCastleTile ? 'Castle cannot be upgraded' : existingBuilding ? 'No upgrades available' : 'Select a building, then click a tile to place it'}
+      {isCastleTile ? t('game.castleNoUpgrade') : existingBuilding ? t('game.noUpgrades') : t('game.selectBuildingHint')}
     </div>
   ) : (
     <div className="space-y-1">
@@ -102,7 +104,7 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
       ))}
       {buildModeTypeId && (
         <div className="text-bronze-400 text-xs px-3 py-2 text-center italic">
-          Click a highlighted tile to place
+          {t('game.clickTileToPlace')}
         </div>
       )}
     </div>
@@ -121,7 +123,7 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
                   : 'text-bronze-400 hover:text-parchment-200'
               }`}
             >
-              Buildings
+              {t('game.buildings')}
             </button>
             <button
               onClick={() => setActiveTab('military')}
@@ -131,7 +133,7 @@ export function BuildingPanel({ selectedTileKey }: BuildingPanelProps) {
                   : 'text-bronze-400 hover:text-parchment-200'
               }`}
             >
-              Military
+              {t('game.military')}
             </button>
           </div>
           {activeTab === 'buildings' ? buildingsContent : <MilitaryPanel selectedTileKey={selectedTileKey} />}

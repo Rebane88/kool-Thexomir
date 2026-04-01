@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../game-store';
 import { selectArmies } from '../game-api';
 import { ArmyCard } from './ArmyCard';
 import { Button } from '@/shared/ui/Button';
 
 export function BattleSelectStep() {
+  const { t } = useTranslation();
   const armies = useGameStore((s) => s.armies);
   const armyTypes = useGameStore((s) => s.armyTypes);
   const myKingdomId = useGameStore((s) => s.myKingdomId);
@@ -68,13 +70,13 @@ export function BattleSelectStep() {
     <div className="flex flex-col h-full">
       {selectedArmyId && (
         <div className="text-center py-2 text-xs text-gold-400 font-heading animate-pulse">
-          Click a battle column to assign army
+          {t('game.clickBattleColumn')}
         </div>
       )}
       <div className="flex gap-4 p-4 overflow-x-auto flex-1">
         {/* Roster column */}
         <div className="min-w-[180px] flex-shrink-0">
-          <h3 className="font-heading text-sm text-parchment-300 mb-2">Your Armies</h3>
+          <h3 className="font-heading text-sm text-parchment-300 mb-2">{t('game.yourArmies')}</h3>
           <div className="flex flex-col gap-2">
             {myArmies.map((army) => {
               const armyType = armyTypes.find((t) => t.id === army.armyTypeId);
@@ -110,7 +112,7 @@ export function BattleSelectStep() {
               onClick={() => handleBattleColumnClick(battle.attackId)}
             >
               <h3 className="font-heading text-sm text-parchment-300 mb-1">vs {opponentName}</h3>
-              <span className="text-xs text-parchment-500">{selectedIds.length} selected</span>
+              <span className="text-xs text-parchment-500">{t('game.selected', { count: selectedIds.length })}</span>
               <div className="flex flex-col gap-2 mt-2">
                 {selectedIds.map((id) => {
                   const army = armies.get(id);
@@ -143,19 +145,19 @@ export function BattleSelectStep() {
       <div className="border-t border-ash-700 p-4 flex items-center justify-between">
         {confirmed ? (
           <p className="text-parchment-400 text-sm animate-pulse w-full text-center">
-            Waiting for opponent...
+            {t('game.waitingForOpponent')}
           </p>
         ) : (
           <>
             <p className="text-xs text-parchment-500">
-              Select armies from your roster, then click a battle column to assign
+              {t('game.selectArmiesInstructions')}
             </p>
             <Button
               variant="primary"
               onClick={handleConfirmAll}
               disabled={confirmed}
             >
-              Confirm All
+              {t('game.confirmAll')}
             </Button>
           </>
         )}

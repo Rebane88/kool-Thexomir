@@ -1,8 +1,12 @@
+import { useTranslation } from 'react-i18next';
+
 interface LoadingScreenProps {
   message?: string;
 }
 
 export function LoadingScreen({ message }: LoadingScreenProps) {
+  const { t } = useTranslation();
+
   return (
     <div
       className="flex flex-1 min-h-0 flex-col items-center justify-center bg-ash-950"
@@ -16,10 +20,10 @@ export function LoadingScreen({ message }: LoadingScreenProps) {
         <span className="h-2 w-2 rounded-full bg-gold-500 animate-pulse" style={{ animationDelay: '600ms' }} />
       </div>
       <h2 className="font-heading text-xl font-bold text-gold-500">
-        {message ?? 'Entering the realm...'}
+        {message ?? t('game.enteringRealm')}
       </h2>
       <p className="mt-2 text-sm text-parchment-400">
-        {message ? 'Loading game assets' : 'Connecting to game server'}
+        {message ? t('game.loadingAssets') : t('game.connectingToServer')}
       </p>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/ui/Button';
 import { Badge } from '@/shared/ui/Badge';
 import { useGameStore } from '../game-store';
@@ -7,6 +8,7 @@ import victoryPng from '@/assets/images/gameover-victory.png';
 import defeatPng from '@/assets/images/gameover-defeat.png';
 
 export function GameOverOverlay() {
+  const { t } = useTranslation();
   const gameOver = useGameStore((s) => s.gameOver);
   const kingdoms = useGameStore((s) => s.kingdoms);
   const myKingdomId = useGameStore((s) => s.myKingdomId);
@@ -43,9 +45,9 @@ export function GameOverOverlay() {
         >
           {gameOver.winnerKingdomId
             ? isWinner
-              ? 'Victory!'
-              : 'Defeat'
-            : 'Game Over'}
+              ? t('game.victory')
+              : t('game.defeat')
+            : t('game.gameOver')}
         </h1>
 
         <p className="text-center text-parchment-300 text-sm mb-6" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
@@ -56,7 +58,7 @@ export function GameOverOverlay() {
 
         <div className="bg-black/40 backdrop-blur-sm rounded-lg p-4 space-y-2 mb-6">
           <h2 className="font-heading text-gold-400 text-sm font-semibold">
-            Final Standings
+            {t('game.finalStandings')}
           </h2>
           {gameOver.finalStandings
             .slice()
@@ -96,7 +98,7 @@ export function GameOverOverlay() {
                     {entry.tilesOwned} tiles
                   </span>
                   {entry.status === 'Defeated' && (
-                    <Badge variant="danger">Eliminated</Badge>
+                    <Badge variant="danger">{t('game.eliminated')}</Badge>
                   )}
                 </div>
               );
@@ -104,7 +106,7 @@ export function GameOverOverlay() {
         </div>
 
         <div className="flex justify-center">
-          <Button onClick={() => navigate('/')}>Return to Lobby</Button>
+          <Button onClick={() => navigate('/')}>{t('game.returnToLobby')}</Button>
         </div>
       </div>
     </div>

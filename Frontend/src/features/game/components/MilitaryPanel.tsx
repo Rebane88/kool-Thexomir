@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../game-store';
 import { trainArmy } from '../game-api';
 import { UnitRow } from './UnitRow';
@@ -15,6 +16,7 @@ const RESOURCE_COST_KEYS: { key: keyof ArmyTypeRef; resource: string }[] = [
 ];
 
 export function MilitaryPanel({ selectedTileKey }: MilitaryPanelProps) {
+  const { t } = useTranslation();
   const armyTypes = useGameStore((s) => s.armyTypes);
   const myKingdomId = useGameStore((s) => s.myKingdomId);
   const kingdoms = useGameStore((s) => s.kingdoms);
@@ -68,7 +70,7 @@ export function MilitaryPanel({ selectedTileKey }: MilitaryPanelProps) {
 
   if (trainableUnits.length === 0) {
     return (
-      <div className="text-bronze-400 text-sm px-3 py-2">No units trainable here</div>
+      <div className="text-bronze-400 text-sm px-3 py-2">{t('game.noUnitsHere')}</div>
     );
   }
 

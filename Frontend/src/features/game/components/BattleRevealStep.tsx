@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../game-store';
 import { revealArmies } from '../game-api';
 import { HpBar } from './HpBar';
@@ -47,6 +48,7 @@ function ArmyRevealCard({ army, revealed, delay }: ArmyRevealCardProps) {
 }
 
 export function BattleRevealStep() {
+  const { t } = useTranslation();
   const declaredAttacks = useGameStore((s) => s.declaredAttacks);
   const battleReveals = useGameStore((s) => s.battleReveals);
   const myKingdomId = useGameStore((s) => s.myKingdomId);
@@ -93,8 +95,8 @@ export function BattleRevealStep() {
     <div className="flex flex-col gap-8 p-6 overflow-y-auto">
       {myBattles.map((battle) => {
         const reveal = battleReveals.get(battle.attackId);
-        const attackerName = kingdoms.get(battle.attackerKingdomId)?.name ?? 'Attacker';
-        const defenderName = kingdoms.get(battle.defenderKingdomId)?.name ?? 'Defender';
+        const attackerName = kingdoms.get(battle.attackerKingdomId)?.name ?? t('game.attacker');
+        const defenderName = kingdoms.get(battle.defenderKingdomId)?.name ?? t('game.defender');
 
         return (
           <div key={battle.attackId} className="flex flex-col gap-4">
@@ -145,7 +147,7 @@ export function BattleRevealStep() {
 
       {revealed && (
         <p className="text-center text-parchment-400 text-sm animate-pulse">
-          Preparing lineups...
+          {t('game.preparingLineups')}
         </p>
       )}
     </div>

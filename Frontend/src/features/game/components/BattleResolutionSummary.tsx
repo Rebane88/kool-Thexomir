@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../game-store';
 import type { BattleResolvedEvent } from '../types/event-types';
 import { Button } from '@/shared/ui/Button';
@@ -10,6 +11,7 @@ interface BattleResolutionSummaryProps {
 }
 
 export function BattleResolutionSummary({ result, onContinue }: BattleResolutionSummaryProps) {
+  const { t } = useTranslation();
   const kingdoms = useGameStore((s) => s.kingdoms);
   const myKingdomId = useGameStore((s) => s.myKingdomId);
   const tiles = useGameStore((s) => s.tiles);
@@ -23,8 +25,8 @@ export function BattleResolutionSummary({ result, onContinue }: BattleResolution
   const winnerKingdomId = attackerWon ? result.attackerKingdomId : result.defenderKingdomId;
   const loserKingdomId = attackerWon ? result.defenderKingdomId : result.attackerKingdomId;
 
-  const winner = kingdoms.get(winnerKingdomId)?.name ?? (attackerWon ? 'Attacker' : 'Defender');
-  const loser = kingdoms.get(loserKingdomId)?.name ?? (attackerWon ? 'Defender' : 'Attacker');
+  const winner = kingdoms.get(winnerKingdomId)?.name ?? (attackerWon ? t('game.attacker') : t('game.defender'));
+  const loser = kingdoms.get(loserKingdomId)?.name ?? (attackerWon ? t('game.defender') : t('game.attacker'));
 
   const isMyVictory = myKingdomId !== null && winnerKingdomId === myKingdomId;
   const isSpectator =
@@ -53,34 +55,34 @@ export function BattleResolutionSummary({ result, onContinue }: BattleResolution
       <div
         className={`font-heading text-3xl font-bold ${isMyVictory ? 'text-green-400' : isSpectator ? 'text-gold-400' : 'text-red-400'}`}
       >
-        {isMyVictory ? 'Victory!' : isSpectator ? `${winner} Wins!` : 'Defeat!'}
+        {isMyVictory ? t('game.victory') : isSpectator ? `${winner} Wins!` : t('game.defeat') + '!'}
       </div>
 
       {/* Outcome details */}
       <div className="bg-ash-800/80 border border-ash-600 rounded-lg p-4 max-w-sm w-full">
         <div className="flex flex-col gap-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-parchment-400">Winner:</span>
+            <span className="text-parchment-400">{t('game.winner')}:</span>
             <span className="text-parchment-200 font-heading">{winner}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-parchment-400">Outcome:</span>
+            <span className="text-parchment-400">{t('game.outcome')}:</span>
             <span className="text-parchment-200">
-              {result.outcome === 'AttackerWon' ? 'Attack Successful' : 'Defense Held'}
+              {result.outcome === 'AttackerWon' ? t('game.attackSuccessful') : t('game.defenseHeld')}
             </span>
           </div>
 
           {/* Attacker vs defender */}
           <div className="flex justify-between text-xs text-parchment-500 pt-1 border-t border-ash-700">
-            <span>{attackerKingdom?.name ?? 'Attacker'} (attacked)</span>
+            <span>{attackerKingdom?.name ?? t('game.attacker')} (attacked)</span>
             <span>vs</span>
-            <span>{defenderKingdom?.name ?? 'Defender'} (defended)</span>
+            <span>{defenderKingdom?.name ?? t('game.defender')} (defended)</span>
           </div>
 
           {/* Tile captured */}
           {hasCapturedTile && capturedTileCoord && (
             <div className="flex justify-between">
-              <span className="text-parchment-400">Tile Captured:</span>
+              <span className="text-parchment-400">{t('game.tileCaptured')}:</span>
               <span className="text-gold-400 font-heading">{capturedTileCoord}</span>
             </div>
           )}
@@ -89,7 +91,7 @@ export function BattleResolutionSummary({ result, onContinue }: BattleResolution
           {isElimination && (
             <div className="mt-2 py-2 border-t border-ash-600">
               <span className="text-red-400 font-heading text-base animate-pulse">
-                {loser} has been eliminated!
+                {t('game.hasBeenEliminated', { name: loser })}
               </span>
             </div>
           )}
@@ -98,12 +100,14 @@ export function BattleResolutionSummary({ result, onContinue }: BattleResolution
 
       {/* Round summary */}
       <div className="text-xs text-parchment-500">
-        {result.rounds.length} round{result.rounds.length !== 1 ? 's' : ''} fought
+        {result.rounds.length === 1
+          ? t('game.roundsFought', { count: result.rounds.length })
+          : t('game.roundsFoughtPlural', { count: result.rounds.length })}
       </div>
 
       {/* Continue button */}
       <Button variant="primary" size="sm" onClick={onContinue}>
-        {hasMoreBattles ? 'Next Battle' : 'Done'}
+        {hasMoreBattles ? t('game.nextBattle') : t('game.done')}
       </Button>
     </div>
   );
