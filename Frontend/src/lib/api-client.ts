@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { useAuthStore } from '@/features/auth';
 import { API_BASE_URL } from '@/lib/constants';
 
@@ -32,6 +33,7 @@ export async function apiFetch(
     if (!headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json');
     }
+    headers.set('Accept-Language', i18next.language);
     return fetch(`${API_BASE_URL}${path}`, {
       ...options,
       headers,
