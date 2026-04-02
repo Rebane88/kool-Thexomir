@@ -7,6 +7,7 @@ using Application.Services.SlotMachine.DTOs;
 using Application.Services.Turn.DTOs;
 using Application.Services.WinCondition.DTOs;
 
+
 namespace Application.Services.GameHub;
 
 public interface IGameClient
@@ -46,4 +47,7 @@ public interface IGameClient
 
     // Phase 13 events
     Task GameOver(GameOverDto gameOver);
+
+    // Timeout/abandonment events
+    Task TurnAutoSkipped(TurnAutoSkippedDto dto);
 }

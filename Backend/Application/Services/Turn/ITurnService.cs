@@ -20,4 +20,13 @@ public interface ITurnService
         Guid gameId,
         Func<BattleRoundResultDto, string, Task> onRoundResolved,
         Func<BattleResultDto, Task> onBattleResolved);
+
+    /// <summary>
+    /// Auto-skips the current turn due to timeout. Increments ConsecutiveMissedTurns.
+    /// Eliminates kingdoms at 3 consecutive misses. Ends game as Abandoned if all kingdoms miss simultaneously.
+    /// </summary>
+    Task<Result<(TurnAdvancedDto TurnAdvanced, TurnAutoSkippedDto AutoSkipped)>> AutoSkipTurnAsync(
+        Guid gameId,
+        Func<BattleRoundResultDto, string, Task> onRoundResolved,
+        Func<BattleResultDto, Task> onBattleResolved);
 }

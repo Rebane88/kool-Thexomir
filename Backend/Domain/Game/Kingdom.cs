@@ -20,6 +20,7 @@ public class Kingdom : BaseEntity
 
     public DateTime? DefeatedAt { get; set; }
     public DateTime JoinedAt { get; set; }
+    public int ConsecutiveMissedTurns { get; set; }
 
     // Navigation
     public Game? Game { get; set; }

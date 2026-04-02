@@ -15,6 +15,7 @@ public class GameStateDto
     public string? CurrentPhase { get; set; }
     public int? RemainingActionPoints { get; set; }
     public int SpinCostGold { get; set; }
+    public DateTime? TurnDeadline { get; set; }
     public List<DeclareAttackResponse> DeclaredAttacks { get; set; } = [];
     public List<TileDto> Tiles { get; set; } = [];
     public List<KingdomDto> Kingdoms { get; set; } = [];

@@ -203,6 +203,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork, ILogger<GameIniti
             CurrentPhase = game.CurrentPhase.ToString(),
             RemainingActionPoints = game.RemainingActionPoints,
             SpinCostGold = game.SpinCostGold,
+            TurnDeadline = game.TurnDeadline,
             DeclaredAttacks = declaredAttackDtos,
             Tiles = tiles.Select(t => new TileDto
             {

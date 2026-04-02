@@ -32,4 +32,14 @@ public class GameRepository(AppDbContext context)
         return await Context.Games
             .AnyAsync(g => g.LobbyCode == code);
     }
+
+    public async Task<List<Domain.Game.Game>> GetInProgressGamesWithExpiredTurnsAsync()
+    {
+        return await Context.Games
+            .Include(g => g.Kingdoms!)
+            .Where(g => g.Status == EGameStatus.InProgress
+                        && g.TurnDeadline != null
+                        && g.TurnDeadline < DateTime.UtcNow)
+            .ToListAsync();
+    }
 }

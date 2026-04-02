@@ -2,6 +2,7 @@ using Application.Contracts;
 using Application.Services.Combat;
 using Application.Services.Combat.DTOs;
 using Application.Services.Turn.DTOs;
+using Application.Services.WinCondition.DTOs;
 using Base.Contracts;
 using Domain.Buildings;
 using Domain.Game;
@@ -32,6 +33,9 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
 
         var game = guardResult.Value!.Game;
         var kingdom = guardResult.Value!.Kingdom;
+
+        // Reset consecutive missed turns on manual end turn
+        kingdom.ConsecutiveMissedTurns = 0;
 
         logger.LogInformation("[EndTurn] Kingdom={KingdomName} (Id={KingdomId}, TurnOrder={TurnOrder}) Phase={Phase} Round={Round}",
             kingdom.Name, kingdom.Id, kingdom.TurnOrder, game.CurrentPhase, game.RoundNumber);
@@ -430,6 +434,216 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
         }
 
         return perKingdomIncome;
+    }
+
+    public async Task<Result<(TurnAdvancedDto TurnAdvanced, TurnAutoSkippedDto AutoSkipped)>> AutoSkipTurnAsync(
+        Guid gameId,
+        Func<BattleRoundResultDto, string, Task> onRoundResolved,
+        Func<BattleResultDto, Task> onBattleResolved)
+    {
+        logger.LogInformation("[AutoSkip] Game={GameId}", gameId);
+
+        var game = await unitOfWork.Games.GetByIdWithLockAsync(gameId);
+        if (game is null)
+            return Result<(TurnAdvancedDto, TurnAutoSkippedDto)>.Fail("Game not found.");
+
+        if (game.Status != EGameStatus.InProgress)
+            return Result<(TurnAdvancedDto, TurnAutoSkippedDto)>.Fail("Game is not in progress.");
+
+        if (!TurnRules.IsTurnExpired(game.TurnDeadline))
+            return Result<(TurnAdvancedDto, TurnAutoSkippedDto)>.Fail("Turn has not expired yet.");
+
+        if (game.CurrentTurnKingdomId is null)
+            return Result<(TurnAdvancedDto, TurnAutoSkippedDto)>.Fail("No current turn kingdom.");
+
+        // Get all kingdoms for this game
+        var kingdoms = await unitOfWork.Kingdoms.GetKingdomsForGameAsync(gameId);
+        var currentKingdom = kingdoms.FirstOrDefault(k => k.Id == game.CurrentTurnKingdomId);
+
+        if (currentKingdom is null)
+            return Result<(TurnAdvancedDto, TurnAutoSkippedDto)>.Fail("Current turn kingdom not found.");
+
+        // Increment missed turns
+        currentKingdom.ConsecutiveMissedTurns++;
+
+        logger.LogInformation("[AutoSkip] Kingdom={KingdomName} missed turn {Count}/3",
+            currentKingdom.Name, currentKingdom.ConsecutiveMissedTurns);
+
+        await AddTurnLogAsync(gameId, currentKingdom.Id, game.RoundNumber, EEventType.TurnEnded,
+            $"Turn auto-skipped (timeout) for {currentKingdom.Name} — missed {currentKingdom.ConsecutiveMissedTurns}/3");
+
+        var autoSkippedDto = new TurnAutoSkippedDto
+        {
+            SkippedKingdomId = currentKingdom.Id,
+            SkippedKingdomName = currentKingdom.Name,
+            ConsecutiveMissedTurns = currentKingdom.ConsecutiveMissedTurns
+        };
+
+        // Check elimination threshold (3 consecutive misses)
+        const int MissedTurnThreshold = 3;
+
+        var activeKingdoms = kingdoms.Where(k => k.Status == EKingdomStatus.Active).ToList();
+
+        // Check if ALL active kingdoms have hit the threshold
+        var allMissed = activeKingdoms.All(k =>
+            k.Id == currentKingdom.Id
+                ? k.ConsecutiveMissedTurns >= MissedTurnThreshold
+                : k.ConsecutiveMissedTurns >= MissedTurnThreshold);
+
+        if (allMissed && activeKingdoms.Count > 0)
+        {
+            // All active kingdoms inactive — end game as Abandoned
+            logger.LogInformation("[AutoSkip] All kingdoms inactive — ending game as Abandoned");
+            game.Status = EGameStatus.Completed;
+            game.FinishedAt = DateTime.UtcNow;
+            game.CurrentTurnKingdomId = null;
+            game.TurnDeadline = null;
+            game.RemainingActionPoints = null;
+
+            var finalStandings = await BuildFinalStandingsAsync(gameId, kingdoms);
+            var gameOverDto = new GameOverDto
+            {
+                GameId = gameId,
+                WinnerKingdomId = null,
+                WinConditionType = "Abandoned",
+                FinalStandings = finalStandings,
+                EliminationOrder = []
+            };
+
+            await unitOfWork.CommitAsync();
+
+            var abandonedTurnAdvanced = new TurnAdvancedDto
+            {
+                NextKingdomId = null,
+                RoundNumber = game.RoundNumber,
+                CurrentPhase = game.CurrentPhase.ToString(),
+                PhaseChanged = false,
+                GameOver = gameOverDto
+            };
+
+            return Result<(TurnAdvancedDto, TurnAutoSkippedDto)>.Ok((abandonedTurnAdvanced, autoSkippedDto));
+        }
+
+        // Eliminate kingdoms that hit the threshold
+        var toEliminate = activeKingdoms
+            .Where(k => k.ConsecutiveMissedTurns >= MissedTurnThreshold)
+            .ToList();
+
+        foreach (var kingdom in toEliminate)
+        {
+            logger.LogInformation("[AutoSkip] Eliminating kingdom {KingdomName} (3 consecutive misses)", kingdom.Name);
+            kingdom.Status = EKingdomStatus.Defeated;
+            kingdom.DefeatedAt = DateTime.UtcNow;
+            await AddTurnLogAsync(gameId, kingdom.Id, game.RoundNumber, EEventType.TurnEnded,
+                $"{kingdom.Name} eliminated after 3 consecutive missed turns");
+        }
+
+        // Refresh active kingdoms after eliminations
+        var remainingActive = kingdoms.Where(k => k.Status == EKingdomStatus.Active).ToList();
+
+        if (remainingActive.Count <= 1)
+        {
+            // Game over — last active kingdom wins
+            var winner = remainingActive.FirstOrDefault();
+            logger.LogInformation("[AutoSkip] Game over. Winner={Winner}", winner?.Name ?? "none");
+
+            game.Status = EGameStatus.Completed;
+            game.FinishedAt = DateTime.UtcNow;
+            game.CurrentTurnKingdomId = null;
+            game.TurnDeadline = null;
+            game.RemainingActionPoints = null;
+
+            var finalStandings = await BuildFinalStandingsAsync(gameId, kingdoms);
+            var gameOverDto = new GameOverDto
+            {
+                GameId = gameId,
+                WinnerKingdomId = winner?.Id,
+                WinConditionType = "Elimination",
+                FinalStandings = finalStandings,
+                EliminationOrder = []
+            };
+
+            await unitOfWork.CommitAsync();
+
+            var gameOverTurnAdvanced = new TurnAdvancedDto
+            {
+                NextKingdomId = null,
+                RoundNumber = game.RoundNumber,
+                CurrentPhase = game.CurrentPhase.ToString(),
+                PhaseChanged = false,
+                GameOver = gameOverDto
+            };
+
+            return Result<(TurnAdvancedDto, TurnAutoSkippedDto)>.Ok((gameOverTurnAdvanced, autoSkippedDto));
+        }
+
+        // Find next active kingdom in turn order
+        var nextKingdom = TurnRules.GetNextActiveKingdom(kingdoms, currentKingdom.TurnOrder);
+
+        TurnAdvancedDto result;
+
+        if (nextKingdom is not null)
+        {
+            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(nextKingdom.FactionTypeId!.Value);
+            var actionPoints = TurnRules.CalculateActionPoints(game.BaseActionPoints, factionType!.ActionPointModifier);
+
+            game.CurrentTurnKingdomId = nextKingdom.Id;
+            game.RemainingActionPoints = actionPoints;
+            game.TurnDeadline = game.TurnTimeLimit.HasValue
+                ? DateTime.UtcNow.AddSeconds(game.TurnTimeLimit.Value)
+                : null;
+
+            await AddTurnLogAsync(gameId, nextKingdom.Id, game.RoundNumber, EEventType.TurnStarted,
+                $"Turn started for {nextKingdom.Name}");
+            await AddTurnLogAsync(gameId, nextKingdom.Id, game.RoundNumber, EEventType.ActionPointsReceived,
+                $"Received {actionPoints} action points");
+
+            result = new TurnAdvancedDto
+            {
+                NextKingdomId = nextKingdom.Id,
+                RoundNumber = game.RoundNumber,
+                CurrentPhase = game.CurrentPhase.ToString(),
+                ActionPoints = actionPoints,
+                TurnDeadline = game.TurnDeadline,
+                PhaseChanged = false
+            };
+        }
+        else
+        {
+            // All players done this round — advance phase
+            var declaredAttacks = await unitOfWork.DeclaredAttacks
+                .GetForGameRoundAsync(gameId, game.RoundNumber);
+
+            if (declaredAttacks.Count > 0)
+            {
+                result = await EnterBattlePhaseAsync(game);
+            }
+            else
+            {
+                result = await AdvanceFromBattleAsync(game, kingdoms, onRoundResolved, onBattleResolved);
+            }
+        }
+
+        await unitOfWork.CommitAsync();
+
+        return Result<(TurnAdvancedDto, TurnAutoSkippedDto)>.Ok((result, autoSkippedDto));
+    }
+
+    private async Task<List<KingdomResultDto>> BuildFinalStandingsAsync(Guid gameId, List<Kingdom> kingdoms)
+    {
+        var standings = new List<KingdomResultDto>();
+        foreach (var kingdom in kingdoms)
+        {
+            var tiles = await unitOfWork.Tiles.GetTilesWithBuildingsAndTerrainForKingdomAsync(kingdom.Id);
+            standings.Add(new KingdomResultDto
+            {
+                KingdomId = kingdom.Id,
+                KingdomName = kingdom.Name,
+                TilesOwned = tiles.Count,
+                Status = kingdom.Status.ToString()
+            });
+        }
+        return standings;
     }
 
     private async Task AddTurnLogAsync(Guid gameId, Guid? kingdomId, int roundNumber, EEventType eventType, string description)

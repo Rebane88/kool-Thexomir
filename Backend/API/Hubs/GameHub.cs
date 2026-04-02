@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using Application.Contracts;
 using Application.Services.GameHub;
 using Application.Services.GameInitialization;
-using Application.Services.WinCondition.DTOs;
 using Domain.Game;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -72,33 +71,8 @@ public class GameHub(IGameInitializationService gameInitializationService, IUnit
                 if (connections.IsEmpty)
                 {
                     GameConnections.TryRemove(parsedGameId, out _);
-
-                    // End game if it was in progress
-                    var game = await unitOfWork.Games.GetGameWithKingdomsAsync(parsedGameId);
-                    if (game is { Status: EGameStatus.InProgress })
-                    {
-                        game.Status = EGameStatus.Completed;
-                        // No winner -- game abandoned
-                        await unitOfWork.CommitAsync();
-
-                        // Broadcast GameOver (nobody may be listening, but ensures clean state)
-                        var dto = new GameOverDto
-                        {
-                            GameId = parsedGameId,
-                            WinnerKingdomId = null,
-                            WinConditionType = game.WinCondition.ToString(),
-                            FinalStandings = game.Kingdoms?
-                                .Select(k => new KingdomResultDto
-                                {
-                                    KingdomId = k.Id,
-                                    KingdomName = k.Name,
-                                    TilesOwned = 0,
-                                    Status = k.Status.ToString(),
-                                }).ToList() ?? [],
-                            EliminationOrder = [],
-                        };
-                        await Clients.Group($"game:{parsedGameId}").GameOver(dto);
-                    }
+                    // Disconnection does NOT terminate the game — the background timeout service handles
+                    // game lifecycle. Players can reconnect and the game continues.
                 }
             }
         }
