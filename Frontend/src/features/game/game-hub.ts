@@ -7,6 +7,7 @@ import type { GamePhase } from './types/enums';
 import type {
   GameStateSnapshot,
   TurnAdvancedEvent,
+  TurnAutoSkippedEvent,
   BuildingPlacedEvent,
   PhaseChangedEvent,
   TurnStartedEvent,
@@ -113,6 +114,11 @@ export async function connectToGame(gameId: string): Promise<void> {
   connection.on('BattleResolved', (data: BattleResolvedEvent) => {
     useGameStore.getState().handleBattleResolved(data);
     // Don't call startCombatPlayback — rounds already received via BattleRoundResolved
+  });
+
+  // --- Timeout / abandonment ---
+  connection.on('TurnAutoSkipped', (data: TurnAutoSkippedEvent) => {
+    console.info(`[AutoSkip] ${data.skippedKingdomName} missed turn (${data.consecutiveMissedTurns}/3)`);
   });
 
   // --- Game over ---

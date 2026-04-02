@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { Link, useMatch } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/features/auth';
 import { useGameStore } from '@/features/game';
+import { abandonGame } from '@/features/game/game-api';
 import { API_BASE_URL } from '@/lib/constants';
 import { LogoutIcon, SwordIcon } from '@/assets/icons';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { Modal } from '@/shared/ui/Modal';
+import { Button } from '@/shared/ui/Button';
 
 export function NavBar() {
   const { t } = useTranslation();
@@ -12,6 +16,9 @@ export function NavBar() {
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const activeGameId = useGameStore((s) => s.activeGameId);
   const onGamePage = useMatch('/game/:id');
+
+  const [showAbandonModal, setShowAbandonModal] = useState(false);
+  const [isAbandoning, setIsAbandoning] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -49,15 +56,43 @@ export function NavBar() {
               {t('game.rejoinGame')}
             </Link>
             <button
-              className="px-3 py-1 text-sm bg-blood-700 text-parchment-200 opacity-50 cursor-not-allowed"
-              aria-disabled="true"
-              title="Coming soon"
-              disabled
+              className="px-3 py-1 text-sm bg-blood-700 text-parchment-200 hover:bg-blood-600 transition-colors rounded"
+              onClick={() => setShowAbandonModal(true)}
             >
               {t('game.abandonGame')}
             </button>
           </div>
           <div className="h-5 w-px bg-bronze-700" />
+
+          <Modal open={showAbandonModal} onClose={() => setShowAbandonModal(false)}>
+            <h2 className="font-heading text-gold-400 text-lg mb-2">{t('game.abandonGame')}</h2>
+            <p className="text-parchment-300 text-sm mb-4">{t('game.abandonConfirm')}</p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="secondary" size="sm" onClick={() => setShowAbandonModal(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                disabled={isAbandoning}
+                onClick={async () => {
+                  if (!activeGameId) return;
+                  setIsAbandoning(true);
+                  try {
+                    await abandonGame(activeGameId);
+                    setShowAbandonModal(false);
+                    useGameStore.getState().setActiveGameId(null);
+                  } catch (err) {
+                    console.error('Failed to abandon game:', err);
+                  } finally {
+                    setIsAbandoning(false);
+                  }
+                }}
+              >
+                {isAbandoning ? '...' : t('game.abandonGame')}
+              </Button>
+            </div>
+          </Modal>
         </>
       )}
       <div className="flex items-center gap-4">

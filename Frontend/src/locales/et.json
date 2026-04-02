@@ -163,6 +163,7 @@
   "game.done": "Valmis",
   "game.rejoinGame": "Liitu mänguga uuesti",
   "game.abandonGame": "Loobu mängust",
+  "game.abandonConfirm": "Kas olete kindel, et soovite sellest mängust loobuda? Teie kuningriik elimineeritakse.",
   "game.logout": "Logi välja",
   "game.login": "Logi sisse",
   "game.registerLink": "Registreeru",

@@ -163,6 +163,7 @@
   "game.done": "Done",
   "game.rejoinGame": "Rejoin Game",
   "game.abandonGame": "Abandon Game",
+  "game.abandonConfirm": "Are you sure you want to abandon this game? Your kingdom will be eliminated.",
   "game.logout": "Logout",
   "game.login": "Login",
   "game.registerLink": "Register",

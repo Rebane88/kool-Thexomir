@@ -142,3 +142,16 @@ export async function setLineup(
   }
   // Response body discarded -- LineupSet SignalR event is authoritative
 }
+
+// === Abandon ===
+
+export async function abandonGame(gameId: string): Promise<void> {
+  const res = await apiFetch(`/game/${gameId}/abandon`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) {
+    const p: ProblemDetails = await res.json();
+    throw new Error(p.detail || 'Failed to abandon game');
+  }
+}

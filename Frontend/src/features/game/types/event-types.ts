@@ -13,6 +13,7 @@ export interface GameStateSnapshot {
   currentPhase: string | null;
   remainingActionPoints: number | null;
   spinCostGold: number;
+  turnDeadline: string | null;
   declaredAttacks: SnapshotDeclaredAttack[];
   tiles: SnapshotTile[];
   kingdoms: SnapshotKingdom[];
@@ -210,4 +211,10 @@ export interface KingdomResult {
   kingdomName: string;
   tilesOwned: number;
   status: string;
+}
+
+export interface TurnAutoSkippedEvent {
+  skippedKingdomId: string;
+  skippedKingdomName: string;
+  consecutiveMissedTurns: number;
 }

@@ -77,6 +77,9 @@ interface GameState {
   // Military reference data
   armyTypes: ArmyTypeRef[];
 
+  // Turn deadline
+  turnDeadline: string | null;
+
   // Connection state
   connectionStatus: ConnectionStatus;
   activeGameId: string | null;
@@ -208,6 +211,7 @@ const initialState = {
   armyTypes: [] as ArmyTypeRef[],
   connectionStatus: 'disconnected' as ConnectionStatus,
   activeGameId: null,
+  turnDeadline: null as string | null,
 };
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -288,6 +292,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       // Adding MaxActionPoints to GameStateDto would fix this edge case.
       maxActionPoints: snapshot.remainingActionPoints ?? null,
       spinCostGold: snapshot.spinCostGold ?? 30,
+      turnDeadline: snapshot.turnDeadline ?? null,
       declaredAttacks: (snapshot.declaredAttacks ?? []).map((da) => ({
         attackId: da.attackId,
         targetTileId: da.targetTileId,
@@ -348,6 +353,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       buildModeTypeId: null,
       armyTypes: [],
       connectionStatus: 'disconnected',
+      turnDeadline: null,
       // activeGameId intentionally preserved — cleared only by setActiveGameId(null)
     });
   },
@@ -495,6 +501,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       currentTurnKingdomId: data.nextKingdomId,
       currentPhase: (data.currentPhase as GamePhase) ?? get().currentPhase,
       actionPoints: data.actionPoints ?? get().actionPoints,
+      turnDeadline: data.turnDeadline ?? null,
       kingdoms: newKingdoms,
       gameOver: data.gameOver ?? get().gameOver,
       lastIncomeApplied: myIncome,
@@ -567,6 +574,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   handlePhaseChanged: (data) => {
     const updates: Partial<ReturnType<typeof get>> = {
       currentPhase: data.phase as GamePhase,
+      turnDeadline: null, // Non-Action phases have no turn deadline
       // Clear declare-attack mode whenever phase changes
       declareAttackMode: 'idle' as const,
       declareAttackTargetTileId: null,
@@ -590,6 +598,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       actionPoints: data.actionPoints,
       maxActionPoints: data.actionPoints,
       roundNumber: data.roundNumber,
+      turnDeadline: data.turnDeadline ?? null,
     });
   },
 
@@ -758,6 +767,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       status: 'Completed',
       gameOver: data,
       lastBattleResult: null,
+      activeGameId: null, // Clear rejoin link — game is over
+      turnDeadline: null,
     });
   },
 }));

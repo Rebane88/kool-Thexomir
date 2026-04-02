@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../game-store';
 import { getKingdomColor } from '../canvas/hex-renderer';
 import { FACTION_VISUALS } from '../../lobby/faction-constants';
+import { TurnTimer } from './TurnTimer';
 
 const PHASE_COLOR: Record<string, string> = {
   Action: 'text-gold-400',
@@ -42,6 +43,7 @@ export function TurnIndicator() {
     ? FACTION_VISUALS[currentKingdom.factionTypeId.toLowerCase()]?.crestImage
     : undefined;
 
+  const turnDeadline = useGameStore((s) => s.turnDeadline);
   const showAp = actionPoints !== null && maxActionPoints !== null;
   const pips = showAp
     ? Array.from({ length: maxActionPoints! }, (_, i) => i < actionPoints!)
@@ -94,6 +96,12 @@ export function TurnIndicator() {
               {actionPoints}/{maxActionPoints} {t('game.ap')}
             </span>
           </div>
+        </>
+      )}
+      {turnDeadline && (
+        <>
+          <div className="w-px h-4 bg-bronze-700" />
+          <TurnTimer />
         </>
       )}
     </div>
