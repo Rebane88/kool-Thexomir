@@ -2,13 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import type { Kingdom } from './types/kingdom-types';
 import { useParams } from 'react-router';
 import { useGameStore } from './game-store';
-
-const FACTION_HEX_COLORS: Record<string, string> = {
-  'eeeeeeee-0001-0000-0000-000000000001': '#991b1b', // Iron Throne (red-800)
-  'eeeeeeee-0001-0000-0000-000000000002': '#3730a3', // Mage Council (indigo-800)
-  'eeeeeeee-0001-0000-0000-000000000003': '#92400e', // Merchant Republic (amber-800)
-  'eeeeeeee-0001-0000-0000-000000000004': '#166534', // Forest Elves (green-800)
-};
+import { FACTION_VISUALS } from '../lobby/faction-constants';
 import { connectToGame, disconnectFromGame } from './game-hub';
 import { useGameCanvas } from './canvas/useGameCanvas';
 import { textureCache } from './canvas/texture-cache';
@@ -77,7 +71,7 @@ export function GamePage() {
   const isEliminated = myKingdom?.status === 'Defeated';
 
   const factionColor = isMyTurn && myKingdom?.factionTypeId
-    ? FACTION_HEX_COLORS[myKingdom.factionTypeId.toLowerCase()] ?? null
+    ? FACTION_VISUALS[myKingdom.factionTypeId.toLowerCase()]?.hexColor ?? null
     : null;
 
   const declareAttackMode = useGameStore((s) => s.declareAttackMode);

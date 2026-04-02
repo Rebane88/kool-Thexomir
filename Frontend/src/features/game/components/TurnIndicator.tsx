@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../game-store';
 import { getKingdomColor } from '../canvas/hex-renderer';
-import { FACTION_METADATA } from '../../lobby/faction-constants';
+import { FACTION_VISUALS } from '../../lobby/faction-constants';
 
 const PHASE_COLOR: Record<string, string> = {
   Action: 'text-gold-400',
@@ -39,7 +39,7 @@ export function TurnIndicator() {
   const phaseLabel = currentPhase ? t(PHASE_KEY[currentPhase] ?? 'game.phase.action') : null;
 
   const factionCrest = currentKingdom?.factionTypeId
-    ? FACTION_METADATA[currentKingdom.factionTypeId.toLowerCase()]?.crestImage
+    ? FACTION_VISUALS[currentKingdom.factionTypeId.toLowerCase()]?.crestImage
     : undefined;
 
   const showAp = actionPoints !== null && maxActionPoints !== null;

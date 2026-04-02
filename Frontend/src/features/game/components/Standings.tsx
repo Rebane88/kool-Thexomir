@@ -3,7 +3,7 @@ import { useGameStore } from '../game-store';
 import { getKingdomColor } from '../canvas/hex-renderer';
 import { Panel } from '@/shared/ui/Panel';
 import { Badge } from '@/shared/ui/Badge';
-import { FACTION_METADATA } from '../../lobby/faction-constants';
+import { FACTION_VISUALS } from '../../lobby/faction-constants';
 
 interface StandingsProps {
   open: boolean;
@@ -45,7 +45,7 @@ export function Standings({ open, onClose }: StandingsProps) {
         <div className="space-y-1.5">
           {active.map((entry, index) => {
             const meta = entry.kingdom.factionTypeId
-              ? FACTION_METADATA[entry.kingdom.factionTypeId.toLowerCase()]
+              ? FACTION_VISUALS[entry.kingdom.factionTypeId.toLowerCase()]
               : undefined;
             return (
               <div key={entry.kingdom.id} className="flex items-center gap-2 text-xs">
@@ -76,7 +76,7 @@ export function Standings({ open, onClose }: StandingsProps) {
           <div className="space-y-1.5">
             {fallen.map((entry) => {
               const meta = entry.kingdom.factionTypeId
-                ? FACTION_METADATA[entry.kingdom.factionTypeId.toLowerCase()]
+                ? FACTION_VISUALS[entry.kingdom.factionTypeId.toLowerCase()]
                 : undefined;
               return (
                 <div key={entry.kingdom.id} className="flex items-center gap-2 text-xs opacity-50">

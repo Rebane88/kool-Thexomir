@@ -28,6 +28,16 @@ export interface FactionAvailabilityDto {
   factionTypeId: string;
   name: string;
   isAvailable: boolean;
+  description: string | null;
+  attackModifier: number;
+  hpModifier: number;
+  initiativeModifier: number;
+  chipDamageModifier: number;
+  resourceProductionModifier: number;
+  buildingCostModifier: number;
+  trainingCostModifier: number;
+  actionPointModifier: number;
+  healRateModifier: number;
 }
 
 // Display mappings for numeric enums

@@ -11,7 +11,7 @@ import { getLobby, selectFaction, leaveLobby, startGame } from './lobby-api';
 import type { LobbyResponse } from './lobby-types';
 import { GAME_STATUS } from './lobby-types';
 import { FactionCard } from './FactionCard';
-import { FACTION_METADATA } from './faction-constants';
+import { FACTION_VISUALS } from './faction-constants';
 
 export function LobbyDetailPage() {
   const { t } = useTranslation();
@@ -231,14 +231,14 @@ export function LobbyDetailPage() {
               <div className="space-y-2 mb-6">
                 <h2 className="text-parchment-200 text-sm font-heading font-medium tracking-wide mb-2">{t('lobby.players')}</h2>
                 {lobby.players.map((player) => {
-                  const factionMeta = player.factionTypeId
-                    ? FACTION_METADATA[player.factionTypeId.toLowerCase()]
+                  const factionVisuals = player.factionTypeId
+                    ? FACTION_VISUALS[player.factionTypeId.toLowerCase()]
                     : null;
                   return (
                     <div
                       key={player.kingdomId}
                       className={`flex items-center justify-between bg-ash-700/50 border border-bronze-700/50 px-3 py-2.5 border-l-4 ${
-                        factionMeta ? factionMeta.borderColor : 'border-l-bronze-700'
+                        factionVisuals ? factionVisuals.borderColor : 'border-l-bronze-700'
                       }`}
                     >
                       <div className="flex items-center gap-2">
@@ -266,7 +266,7 @@ export function LobbyDetailPage() {
                       return (
                         <FactionCard
                           key={f.factionTypeId}
-                          factionTypeId={f.factionTypeId}
+                          faction={f}
                           isSelected={currentPlayerFaction === f.factionTypeId}
                           isTaken={!f.isAvailable && currentPlayerFaction !== f.factionTypeId}
                           takenByName={takenPlayer?.userEmail}
