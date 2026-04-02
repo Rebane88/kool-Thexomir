@@ -42,7 +42,7 @@ public class ArmyController(
     [ProducesResponseType(typeof(IEnumerable<ArmyTypeDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetArmyTypes(Guid gameId)
     {
-        var types = await armyService.GetArmyTypesAsync();
+        var types = await armyService.GetArmyTypesAsync(gameId, User.UserId());
         return Ok(types);
     }
 

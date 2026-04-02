@@ -1,8 +1,9 @@
 namespace Application.Services.Building.DTOs;
 
 /// <summary>
-/// Reference data for a building type. Costs are BASE values;
-/// apply the kingdom's faction BuildingCostModifier on the client side.
+/// Reference data for a building type. Costs are faction-modified values
+/// for the requesting player's kingdom. Base costs are adjusted server-side
+/// using the player's faction BuildingCostModifier.
 /// </summary>
 public class BuildingTypeDto
 {

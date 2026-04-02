@@ -9,9 +9,19 @@ namespace Application.Services.Building;
 
 public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBuildingService
 {
-    public async Task<IEnumerable<BuildingTypeDto>> GetBuildingTypesAsync()
+    public async Task<IEnumerable<BuildingTypeDto>> GetBuildingTypesAsync(Guid gameId, Guid userId)
     {
         var types = await unitOfWork.BuildingTypes.GetAllWithPrerequisiteAsync();
+
+        // Load the player's kingdom and faction to apply cost modifiers
+        var kingdom = await unitOfWork.Kingdoms.GetKingdomByUserAndGameAsync(userId, gameId);
+        decimal costModifier = 1m;
+        if (kingdom?.FactionTypeId is not null)
+        {
+            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId.Value);
+            if (factionType is not null)
+                costModifier = factionType.BuildingCostModifier;
+        }
 
         return types.Select(bt => new BuildingTypeDto
         {
@@ -19,11 +29,11 @@ public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBu
             Name = bt.Name.Translate() ?? string.Empty,
             Tier = bt.Tier,
             Chain = bt.Chain,
-            CostGold = bt.CostGold,
-            CostFood = bt.CostFood,
-            CostWood = bt.CostWood,
-            CostStone = bt.CostStone,
-            CostMana = bt.CostMana,
+            CostGold = BuildingRules.ApplyFactionCostModifier(bt.CostGold, costModifier),
+            CostFood = BuildingRules.ApplyFactionCostModifier(bt.CostFood, costModifier),
+            CostWood = BuildingRules.ApplyFactionCostModifier(bt.CostWood, costModifier),
+            CostStone = BuildingRules.ApplyFactionCostModifier(bt.CostStone, costModifier),
+            CostMana = BuildingRules.ApplyFactionCostModifier(bt.CostMana, costModifier),
             BaseYieldGold = bt.BaseYieldGold,
             BaseYieldFood = bt.BaseYieldFood,
             BaseYieldWood = bt.BaseYieldWood,

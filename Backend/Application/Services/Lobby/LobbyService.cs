@@ -283,7 +283,17 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
             {
                 FactionTypeId = f.Id,
                 Name = f.Name.Translate() ?? string.Empty,
-                IsAvailable = !takenFactionIds.Contains(f.Id)
+                IsAvailable = !takenFactionIds.Contains(f.Id),
+                Description = f.Description.Translate(),
+                AttackModifier = f.AttackModifier,
+                HPModifier = f.HPModifier,
+                InitiativeModifier = f.InitiativeModifier,
+                ChipDamageModifier = f.ChipDamageModifier,
+                ResourceProductionModifier = f.ResourceProductionModifier,
+                BuildingCostModifier = f.BuildingCostModifier,
+                TrainingCostModifier = f.TrainingCostModifier,
+                ActionPointModifier = f.ActionPointModifier,
+                HealRateModifier = f.HealRateModifier
             })
             .ToList();
 

@@ -25,7 +25,7 @@ public class BuildingController(
     [ProducesResponseType(typeof(IEnumerable<BuildingTypeDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBuildingTypes(Guid gameId)
     {
-        var types = await buildingService.GetBuildingTypesAsync();
+        var types = await buildingService.GetBuildingTypesAsync(gameId, User.UserId());
         return Ok(types);
     }
 

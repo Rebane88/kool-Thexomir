@@ -113,9 +113,19 @@ public class ArmyService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IArmySe
         });
     }
 
-    public async Task<IEnumerable<ArmyTypeDto>> GetArmyTypesAsync()
+    public async Task<IEnumerable<ArmyTypeDto>> GetArmyTypesAsync(Guid gameId, Guid userId)
     {
         var armyTypes = await unitOfWork.ArmyTypes.GetAllWithRequiredBuildingAsync();
+
+        // Load the player's kingdom and faction to apply training cost modifiers
+        var kingdom = await unitOfWork.Kingdoms.GetKingdomByUserAndGameAsync(userId, gameId);
+        decimal trainingCostModifier = 1m;
+        if (kingdom?.FactionTypeId is not null)
+        {
+            var factionType = await unitOfWork.FactionTypes.GetByIdAsync(kingdom.FactionTypeId.Value);
+            if (factionType is not null)
+                trainingCostModifier = factionType.TrainingCostModifier;
+        }
 
         return armyTypes.Select(at => new ArmyTypeDto
         {
@@ -131,10 +141,10 @@ public class ArmyService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IArmySe
             SituationalBonusStat = at.SituationalBonusStat,
             SituationalBonusValue = at.SituationalBonusValue,
             SituationalBonusCondition = at.SituationalBonusCondition?.ToString(),
-            TrainingCostGold = at.TrainingCostGold,
-            TrainingCostFood = at.TrainingCostFood,
-            TrainingCostStone = at.TrainingCostStone,
-            TrainingCostMana = at.TrainingCostMana,
+            TrainingCostGold = BuildingRules.ApplyTrainingCostModifier(at.TrainingCostGold, trainingCostModifier),
+            TrainingCostFood = BuildingRules.ApplyTrainingCostModifier(at.TrainingCostFood, trainingCostModifier),
+            TrainingCostStone = BuildingRules.ApplyTrainingCostModifier(at.TrainingCostStone, trainingCostModifier),
+            TrainingCostMana = BuildingRules.ApplyTrainingCostModifier(at.TrainingCostMana, trainingCostModifier),
             UpkeepGold = at.UpkeepGold,
             UpkeepFood = at.UpkeepFood,
             UpkeepMana = at.UpkeepMana,
