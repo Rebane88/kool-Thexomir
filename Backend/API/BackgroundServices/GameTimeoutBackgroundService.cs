@@ -35,6 +35,8 @@ public class GameTimeoutBackgroundService(
                     onBattleResolved: result =>
                         hubContext.Clients.All.BattleResolved(result),
                     stoppingToken);
+
+                await timeoutService.CleanupStaleLobbiesAsync(stoppingToken);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {

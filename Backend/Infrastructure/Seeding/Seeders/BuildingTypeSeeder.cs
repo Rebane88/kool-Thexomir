@@ -9,7 +9,7 @@ public class BuildingTypeSeeder : ISeeder
     public int Order => 3;
 
     // Castle (special)
-    public static readonly Guid CastleId = new("BBBBBBBB-0001-0000-0000-000000000100");
+    public static readonly Guid CastleId = BuildingType.CastleId;
 
     // Food chain
     public static readonly Guid FarmId = new("BBBBBBBB-0001-0000-0000-000000000001");

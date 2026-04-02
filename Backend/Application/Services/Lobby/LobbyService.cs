@@ -28,7 +28,8 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
             WinCondition = request.WinCondition,
             LobbyCode = code,
             HostUserId = userId,
-            MaxRounds = request.MaxTurnCount ?? 100
+            MaxRounds = request.MaxTurnCount ?? 100,
+            TurnTimeLimit = 20
         };
         await unitOfWork.Games.AddAsync(game);
 
@@ -118,18 +119,15 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
 
         await unitOfWork.Kingdoms.DeleteAsync(kingdom.Id);
 
-        if (game.HostUserId == userId)
+        var remaining = kingdoms.Where(k => k.AppUserId != userId).ToList();
+        if (remaining.Count == 0)
         {
-            var remaining = kingdoms.Where(k => k.AppUserId != userId).ToList();
-            if (remaining.Count == 0)
-            {
-                game.Status = EGameStatus.Completed;
-            }
-            else
-            {
-                var newHost = remaining.OrderBy(k => k.CreatedAt).ThenBy(k => k.Id).First();
-                game.HostUserId = newHost.AppUserId;
-            }
+            game.Status = EGameStatus.Completed;
+        }
+        else if (game.HostUserId == userId)
+        {
+            var newHost = remaining.OrderBy(k => k.CreatedAt).ThenBy(k => k.Id).First();
+            game.HostUserId = newHost.AppUserId;
         }
 
         await unitOfWork.Games.UpdateAsync(game);
@@ -201,11 +199,15 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
         if (kingdoms.Any(k => k.FactionTypeId == null))
             return Result<bool>.Fail("All players must select a faction before starting.");
 
-        // Assign turn order before transitioning to InProgress — kingdoms become game players here
+        // Assign turn order and kingdom names before transitioning to InProgress
         var orderedKingdoms = kingdoms.OrderBy(k => k.CreatedAt).ThenBy(k => k.Id).ToList();
         for (int i = 0; i < orderedKingdoms.Count; i++)
         {
             orderedKingdoms[i].TurnOrder = i + 1;
+            if (string.IsNullOrEmpty(orderedKingdoms[i].Name))
+            {
+                orderedKingdoms[i].Name = orderedKingdoms[i].FactionType?.Name.ToString() ?? $"Kingdom {i + 1}";
+            }
             await unitOfWork.Kingdoms.UpdateAsync(orderedKingdoms[i]);
         }
 

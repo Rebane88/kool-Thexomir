@@ -82,4 +82,33 @@ public class GameTimeoutService(
             }
         }
     }
+
+    public async Task CleanupStaleLobbiesAsync(CancellationToken ct)
+    {
+        var cutoff = DateTime.UtcNow.AddMinutes(-30);
+        var staleLobbies = await unitOfWork.Games.GetStaleLobbiesAsync(cutoff);
+
+        if (staleLobbies.Count == 0) return;
+
+        logger.LogInformation("[LobbyCleanup] Closing {Count} stale lobby/lobbies", staleLobbies.Count);
+
+        foreach (var game in staleLobbies)
+        {
+            if (ct.IsCancellationRequested) break;
+
+            try
+            {
+                game.Status = Domain.Game.EGameStatus.Completed;
+                game.FinishedAt = DateTime.UtcNow;
+                await unitOfWork.CommitAsync();
+
+                logger.LogInformation("[LobbyCleanup] Closed stale lobby Game={GameId} Code={Code} (created {CreatedAt})",
+                    game.Id, game.LobbyCode, game.CreatedAt);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[LobbyCleanup] Error closing lobby Game={GameId}", game.Id);
+            }
+        }
+    }
 }

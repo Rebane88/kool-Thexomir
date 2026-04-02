@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Application.Contracts;
 using Application.Services.GameHub;
 using Application.Services.GameInitialization;
 using Domain.Game;
@@ -9,7 +8,7 @@ using Microsoft.AspNetCore.SignalR;
 namespace API.Hubs;
 
 [Authorize]
-public class GameHub(IGameInitializationService gameInitializationService, IUnitOfWork unitOfWork) : Hub<IGameClient>
+public class GameHub(IGameInitializationService gameInitializationService) : Hub<IGameClient>
 {
     private static readonly ConcurrentDictionary<Guid, ConcurrentDictionary<string, byte>> GameConnections = new();
 

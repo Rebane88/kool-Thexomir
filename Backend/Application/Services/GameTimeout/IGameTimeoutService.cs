@@ -14,4 +14,6 @@ public interface IGameTimeoutService
         Func<BattleRoundResultDto, string, Task> onRoundResolved,
         Func<BattleResultDto, Task> onBattleResolved,
         CancellationToken ct);
+
+    Task CleanupStaleLobbiesAsync(CancellationToken ct);
 }

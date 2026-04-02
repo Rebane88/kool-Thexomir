@@ -13,10 +13,11 @@ using Infrastructure.Repositories.Map;
 using Infrastructure.Repositories.Military;
 using Infrastructure.Repositories.Resources;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure;
 
-public class UnitOfWork(AppDbContext context) : IUnitOfWork
+public class UnitOfWork(AppDbContext context, ILogger<UnitOfWork> logger) : IUnitOfWork
 {
     // Game
     private readonly Lazy<IGameRepository> _games = new(() => new GameRepository(context));
@@ -66,6 +67,22 @@ public class UnitOfWork(AppDbContext context) : IUnitOfWork
     {
         try
         {
+            // Log Kingdom changes before saving
+            foreach (var entry in context.ChangeTracker.Entries<Kingdom>())
+            {
+                if (entry.State == EntityState.Modified)
+                {
+                    var orig = entry.OriginalValues["ConsecutiveMissedTurns"];
+                    var curr = entry.CurrentValues["ConsecutiveMissedTurns"];
+                    logger.LogWarning("[UoW] Kingdom {Id} state=Modified: ConsecutiveMissedTurns {Orig} -> {Curr}",
+                        entry.Entity.Id, orig, curr);
+                }
+                else
+                {
+                    logger.LogInformation("[UoW] Kingdom {Id} state={State} ConsecutiveMissedTurns={Val}",
+                        entry.Entity.Id, entry.State, entry.Entity.ConsecutiveMissedTurns);
+                }
+            }
             return await context.SaveChangesAsync(ct);
         }
         catch (DbUpdateConcurrencyException ex)

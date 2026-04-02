@@ -9,4 +9,5 @@ public interface IGameRepository : IBaseRepository<Game>
     Task<Game?> GetByIdWithLockAsync(Guid id);
     Task<bool> ExistsByLobbyCodeAsync(string code);
     Task<List<Game>> GetInProgressGamesWithExpiredTurnsAsync();
+    Task<List<Game>> GetStaleLobbiesAsync(DateTime olderThan);
 }

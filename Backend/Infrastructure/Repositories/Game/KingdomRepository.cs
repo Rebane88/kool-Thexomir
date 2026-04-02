@@ -9,6 +9,7 @@ public class KingdomRepository(AppDbContext context)
     public async Task<List<Kingdom>> GetKingdomsForGameAsync(Guid gameId)
     {
         return await Context.Kingdoms
+            .AsTracking()
             .Where(k => k.GameId == gameId)
             .Include(k => k.FactionType)
             .ToListAsync();

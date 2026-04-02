@@ -5,6 +5,8 @@ namespace Domain.Buildings;
 
 public class BuildingType : BaseEntity, IHasName
 {
+    public static readonly Guid CastleId = new("BBBBBBBB-0001-0000-0000-000000000100");
+
     [Column(TypeName = "jsonb")]
     public LangStr Name { get; set; } = new();
 

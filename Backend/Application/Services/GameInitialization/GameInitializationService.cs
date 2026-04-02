@@ -37,7 +37,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork, ILogger<GameIniti
         // Build terrain arrays matching seeder order: Plains, Forest, Mountain, Desert, MagicGrove
         var terrainTypeIds = terrainTypes.Select(t => t.Id).ToArray();
         int[] terrainWeights = [30, 25, 20, 15, 10];
-        var plainsId = terrainTypes.First(t => t.Name.ToString() == "Plains").Id;
+        var plainsId = TerrainType.PlainsId;
 
         // Assign terrain with anti-clustering
         var terrainMap = MapGenerator.AssignTerrainWithAntiClustering(
@@ -65,9 +65,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork, ILogger<GameIniti
             tilesByCoord[coord] = tile;
         }
 
-        // Load castle building type from DB
-        var buildingTypes = (await unitOfWork.BuildingTypes.GetAllAsync()).ToList();
-        var castleBuildingTypeId = buildingTypes.First(bt => bt.Name.ToString() == "Castle").Id;
+        var castleBuildingTypeId = Domain.Buildings.BuildingType.CastleId;
 
         // Place castles and claim territory for each kingdom
         for (int i = 0; i < kingdoms.Count; i++)
@@ -117,6 +115,9 @@ public class GameInitializationService(IUnitOfWork unitOfWork, ILogger<GameIniti
 
         var firstFaction = await unitOfWork.FactionTypes.GetByIdAsync(firstKingdom.FactionTypeId!.Value);
         game.RemainingActionPoints = game.BaseActionPoints + (firstFaction?.ActionPointModifier ?? 0);
+        game.TurnDeadline = game.TurnTimeLimit.HasValue
+            ? DateTime.UtcNow.AddSeconds(game.TurnTimeLimit.Value)
+            : null;
 
         logger.LogInformation("[InitGame] Game={GameId} started. FirstTurn={KingdomName} (Id={KingdomId}) AP={AP} Phase={Phase}",
             gameId, firstKingdom.Name, firstKingdom.Id, game.RemainingActionPoints, game.CurrentPhase);

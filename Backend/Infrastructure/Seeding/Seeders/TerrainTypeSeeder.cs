@@ -8,7 +8,7 @@ public class TerrainTypeSeeder : ISeeder
 {
     public int Order => 1;
 
-    public static readonly Guid PlainsId = new("AAAAAAAA-0001-0000-0000-000000000001");
+    public static readonly Guid PlainsId = TerrainType.PlainsId;
     public static readonly Guid ForestId = new("AAAAAAAA-0001-0000-0000-000000000002");
     public static readonly Guid MountainId = new("AAAAAAAA-0001-0000-0000-000000000003");
     public static readonly Guid DesertId = new("AAAAAAAA-0001-0000-0000-000000000004");

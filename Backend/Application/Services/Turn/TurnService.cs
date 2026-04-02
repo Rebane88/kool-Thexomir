@@ -58,8 +58,8 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
         // 5. Get all kingdoms for this game
         var kingdoms = await unitOfWork.Kingdoms.GetKingdomsForGameAsync(gameId);
 
-        logger.LogDebug("[EndTurn] Kingdoms: {Kingdoms}",
-            string.Join(", ", kingdoms.Select(k => $"{k.Name}(Order={k.TurnOrder}, Status={k.Status})")));
+        logger.LogInformation("[EndTurn] Kingdoms: {Kingdoms}",
+            string.Join(", ", kingdoms.Select(k => $"{k.Name}(Id={k.Id}, Order={k.TurnOrder}, Status={k.Status}, Missed={k.ConsecutiveMissedTurns})")));
 
         // 6. Find next active kingdom
         var nextKingdom = TurnRules.GetNextActiveKingdom(kingdoms, kingdom.TurnOrder);
@@ -114,7 +114,9 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
             }
         }
 
-        await unitOfWork.CommitAsync();
+        var endTurnSaved = await unitOfWork.CommitAsync();
+        logger.LogInformation("[EndTurn] CommitAsync saved {Count} changes. Kingdoms after: {KingdomStates}",
+            endTurnSaved, string.Join(", ", kingdoms.Select(k => $"{k.Name}(Id={k.Id}, Missed={k.ConsecutiveMissedTurns})")));
 
         logger.LogInformation("[EndTurn] Result: NextKingdom={NextKingdomId} Phase={Phase} Round={Round} PhaseChanged={PhaseChanged}",
             result.NextKingdomId, result.CurrentPhase, result.RoundNumber, result.PhaseChanged);
@@ -441,11 +443,14 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
         Func<BattleRoundResultDto, string, Task> onRoundResolved,
         Func<BattleResultDto, Task> onBattleResolved)
     {
-        logger.LogInformation("[AutoSkip] Game={GameId}", gameId);
+        logger.LogInformation("[AutoSkip] Game={GameId} CurrentTurnKingdom={KingdomId}", gameId, null as Guid?);
 
         var game = await unitOfWork.Games.GetByIdWithLockAsync(gameId);
         if (game is null)
             return Result<(TurnAdvancedDto, TurnAutoSkippedDto)>.Fail("Game not found.");
+
+        logger.LogInformation("[AutoSkip] Game={GameId} Status={Status} CurrentTurnKingdom={KingdomId} TurnDeadline={Deadline}",
+            gameId, game.Status, game.CurrentTurnKingdomId, game.TurnDeadline);
 
         if (game.Status != EGameStatus.InProgress)
             return Result<(TurnAdvancedDto, TurnAutoSkippedDto)>.Fail("Game is not in progress.");
@@ -463,11 +468,14 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
         if (currentKingdom is null)
             return Result<(TurnAdvancedDto, TurnAutoSkippedDto)>.Fail("Current turn kingdom not found.");
 
+        logger.LogInformation("[AutoSkip] Kingdom={KingdomName} (Id={KingdomId}) ConsecutiveMissedTurns BEFORE increment: {Before}",
+            currentKingdom.Name, currentKingdom.Id, currentKingdom.ConsecutiveMissedTurns);
+
         // Increment missed turns
         currentKingdom.ConsecutiveMissedTurns++;
 
-        logger.LogInformation("[AutoSkip] Kingdom={KingdomName} missed turn {Count}/3",
-            currentKingdom.Name, currentKingdom.ConsecutiveMissedTurns);
+        logger.LogInformation("[AutoSkip] Kingdom={KingdomName} (Id={KingdomId}) missed turn {Count}/3",
+            currentKingdom.Name, currentKingdom.Id, currentKingdom.ConsecutiveMissedTurns);
 
         await AddTurnLogAsync(gameId, currentKingdom.Id, game.RoundNumber, EEventType.TurnEnded,
             $"Turn auto-skipped (timeout) for {currentKingdom.Name} — missed {currentKingdom.ConsecutiveMissedTurns}/3");
@@ -624,7 +632,9 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
             }
         }
 
-        await unitOfWork.CommitAsync();
+        var saved = await unitOfWork.CommitAsync();
+        logger.LogInformation("[AutoSkip] CommitAsync saved {Count} changes. All kingdoms after commit: {KingdomStates}",
+            saved, string.Join(", ", kingdoms.Select(k => $"{k.Name}(Id={k.Id}, Missed={k.ConsecutiveMissedTurns})")));
 
         return Result<(TurnAdvancedDto, TurnAutoSkippedDto)>.Ok((result, autoSkippedDto));
     }

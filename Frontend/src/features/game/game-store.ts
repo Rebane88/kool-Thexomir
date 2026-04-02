@@ -574,7 +574,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   handlePhaseChanged: (data) => {
     const updates: Partial<ReturnType<typeof get>> = {
       currentPhase: data.phase as GamePhase,
-      turnDeadline: null, // Non-Action phases have no turn deadline
+      turnDeadline: data.phase === 'Action' ? get().turnDeadline : null, // Preserve deadline for Action phase (already set by TurnAdvanced)
       // Clear declare-attack mode whenever phase changes
       declareAttackMode: 'idle' as const,
       declareAttackTargetTileId: null,

@@ -5,6 +5,8 @@ namespace Domain.Map;
 
 public class TerrainType : BaseEntity, IHasName
 {
+    public static readonly Guid PlainsId = new("AAAAAAAA-0001-0000-0000-000000000001");
+
     [Column(TypeName = "jsonb")]
     public LangStr Name { get; set; } = new();
 
