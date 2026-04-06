@@ -1,7 +1,9 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using Application.Contracts;
+using Application.Services.Army;
 using Application.Services.Building;
+using Application.Services.Building.DTOs;
 using Application.Services.GameInitialization;
 using Application.Services.GameInitialization.DTOs;
 using Application.Services.Lobby;
@@ -138,10 +140,28 @@ public class PublicGameTests : IntegrationTestBase
     // MVCGAME-05: Train army — valid POST trains army via service
     // =========================================================================
 
-    [Fact(Skip = "Wave 0 placeholder")]
+    [Fact]
     public async Task MVCGAME_05_TrainArmy_ValidPost_TrainsArmyViaService()
     {
-        await Task.CompletedTask;
+        var ctx = await SeedActiveGameCtxAsync();
+        var (tileId, buildingId, armyTypeId) = await SeedMilitaryBuildingAsync(ctx.gameId, ctx.hostUserId);
+
+        var (token, afCookies) = await GetAntiforgeryAsync(
+            ctx.client, $"/Public/Game/Index/{ctx.gameId}?selectedTileId={tileId}", ctx.hostCookie);
+
+        var form = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("BuildingId", buildingId.ToString()),
+            new KeyValuePair<string, string>("ArmyTypeId", armyTypeId.ToString()),
+            new KeyValuePair<string, string>("__RequestVerificationToken", token)
+        });
+        var req = new HttpRequestMessage(HttpMethod.Post,
+            $"/Public/Game/{ctx.gameId}/Train?selectedTileId={tileId}") { Content = form };
+        AddCookies(req, ctx.hostCookie, afCookies);
+
+        var resp = await ctx.client.SendAsync(req);
+        resp.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        resp.Headers.Location!.ToString().ShouldContain($"/Public/Game/Index/{ctx.gameId}", Case.Insensitive);
     }
 
     // =========================================================================
@@ -543,6 +563,44 @@ public class PublicGameTests : IntegrationTestBase
         if (!string.IsNullOrEmpty(authCookie))
             request.Headers.Add("Cookie", authCookie);
         return await client.SendAsync(request);
+    }
+
+    /// <summary>
+    /// Places a Tier 1 military building (Barracks) on an empty tile owned by the given user,
+    /// then returns (tileId, buildingId, armyTypeId) so the caller can POST Train.
+    /// The seeded game starts with 4 AP; placing costs 1 AP, leaving 3 for training.
+    /// </summary>
+    private async Task<(Guid tileId, Guid buildingId, Guid armyTypeId)> SeedMilitaryBuildingAsync(Guid gameId, Guid userId)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var gameInit = scope.ServiceProvider.GetRequiredService<IGameInitializationService>();
+        var buildingService = scope.ServiceProvider.GetRequiredService<IBuildingService>();
+        var armyService = scope.ServiceProvider.GetRequiredService<IArmyService>();
+
+        var state = await gameInit.BuildGameStateSnapshotAsync(gameId);
+        var myKingdom = state.Kingdoms.First(k => k.UserId == userId);
+
+        // Find an empty owned tile
+        var emptyOwnedTile = state.Tiles.First(t => t.KingdomId == myKingdom.Id && t.Buildings.Count == 0);
+
+        // Get building types and pick the first one that has ArmyCapacity > 0 (i.e. Barracks)
+        var buildingTypes = (await buildingService.GetBuildingTypesAsync(gameId, userId)).ToList();
+        var militaryBuildingType = buildingTypes.First(bt => bt.ArmyCapacity > 0 && bt.Tier == 1);
+
+        // Place the military building
+        var placeResult = await buildingService.PlaceBuildingAsync(gameId, userId, new PlaceBuildingRequest
+        {
+            TileId = emptyOwnedTile.Id,
+            BuildingTypeId = militaryBuildingType.Id
+        });
+        placeResult.IsSuccess.ShouldBeTrue($"PlaceBuildingAsync failed: {placeResult.Error}");
+        var buildingId = placeResult.Value!.BuildingId;
+
+        // Get an army type that requires this building type
+        var armyTypes = (await armyService.GetArmyTypesAsync(gameId, userId)).ToList();
+        var armyType = armyTypes.First(at => at.RequiredBuildingTypeId == militaryBuildingType.Id);
+
+        return (emptyOwnedTile.Id, buildingId, armyType.Id);
     }
 
     /// <summary>

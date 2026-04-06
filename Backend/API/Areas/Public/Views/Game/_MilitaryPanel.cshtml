@@ -1,0 +1,42 @@
+@model API.Areas.Public.ViewModels.GameIndexViewModel
+@{
+    if (Model.SelectedTileId is null || Model.MyKingdom is null) { return; }
+    var tile = Model.State.Tiles.FirstOrDefault(t => t.Id == Model.SelectedTileId);
+    if (tile is null || tile.KingdomId != Model.MyKingdom.Id) { return; }
+
+    // For each building on the tile, show army types whose RequiredBuildingTypeId matches
+    var trainable = tile.Buildings.SelectMany(b =>
+        Model.ArmyTypes
+            .Where(at => at.RequiredBuildingTypeId == b.BuildingTypeId)
+            .Select(at => (Building: b, ArmyType: at))
+    ).ToList();
+
+    var trainError = TempData["TrainError"] as string;
+}
+<section class="military-panel" data-region="military-panel">
+    <h4>Military</h4>
+    @if (trainError is not null)
+    {
+        <div class="alert alert-danger" data-region="train-error">@trainError</div>
+    }
+    @if (trainable.Count == 0)
+    {
+        <p class="text-muted">No military buildings on this tile.</p>
+    }
+    @foreach (var (building, at) in trainable)
+    {
+        <form method="post"
+              action="@Url.Action("Train", "PublicGame", new { area = "Public", id = Model.GameId, selectedTileId = Model.SelectedTileId })"
+              class="unit-row"
+              data-army-type="@at.Id"
+              data-building="@building.Id">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="BuildingId" value="@building.Id" />
+            <input type="hidden" name="ArmyTypeId" value="@at.Id" />
+            <span class="at-name" data-region="at-name">@at.Name</span>
+            <span class="at-cost">G@at.TrainingCostGold F@at.TrainingCostFood S@at.TrainingCostStone M@at.TrainingCostMana</span>
+            <span class="at-stats">HP@at.HP ATK@at.Attack INIT@at.Initiative</span>
+            <button type="submit">Train</button>
+        </form>
+    }
+</section>

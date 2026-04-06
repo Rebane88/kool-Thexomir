@@ -17,7 +17,7 @@
             <p>Owner: @(Model.State.Kingdoms.FirstOrDefault(k => k.Id == tile.KingdomId)?.Name ?? "Unclaimed")</p>
             <p>Buildings: @tile.Buildings.Count</p>
             <partial name="~/Areas/Public/Views/Game/_BuildingPanel.cshtml" model="Model" />
-            <!-- Plan 04 injects _MilitaryPanel for own military buildings -->
+            <partial name="~/Areas/Public/Views/Game/_MilitaryPanel.cshtml" model="Model" />
             <!-- Plan 08 injects _BattlePlaceholder for enemy/adjacent-enemy tiles -->
         }
     }
