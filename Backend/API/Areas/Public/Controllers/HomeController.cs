@@ -20,6 +20,10 @@ public class HomeController : Controller
     [AllowAnonymous]
     public IActionResult Index()
     {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return RedirectToAction("Index", "Lobby", new { area = "Public" });
+        }
         return View();
     }
 }
