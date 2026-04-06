@@ -26,6 +26,22 @@ public class GameIndexViewModel
         MyKingdom is not null && State.CurrentTurnKingdomId == MyKingdom.Id;
 
     /// <summary>
+    /// Returns the catalog entries visible for the given tile, applying the tier-aware
+    /// filter mirroring BuildingPanel.tsx:
+    ///   - Empty tile → show only Tier 1 entries
+    ///   - Tile with a building → show only entries in the same chain with a higher tier
+    /// </summary>
+    public IEnumerable<BuildingCatalogEntryViewModel> IsBuildingAvailable(TileDto tile)
+    {
+        if (tile.Buildings.Count == 0)
+            return Catalog.Where(c => c.BuildingType.Tier == 1);
+        var existingInstance = tile.Buildings[0];
+        var existingType = Catalog.FirstOrDefault(c => c.BuildingType.Id == existingInstance.BuildingTypeId)?.BuildingType;
+        if (existingType is null) return Enumerable.Empty<BuildingCatalogEntryViewModel>();
+        return Catalog.Where(c => c.BuildingType.Chain == existingType.Chain && c.BuildingType.Tier > existingType.Tier);
+    }
+
+    /// <summary>
     /// Finds the tile that contains a building whose id matches army.BuildingId.
     /// ArmyDto has no TileId; garrison location is inferred by scanning Tile.Buildings.
     /// </summary>
