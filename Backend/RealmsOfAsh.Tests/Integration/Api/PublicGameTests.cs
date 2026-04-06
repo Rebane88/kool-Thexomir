@@ -289,10 +289,33 @@ public class PublicGameTests : IntegrationTestBase
     // MVCRT-04: SignalR game event triggers client reload
     // =========================================================================
 
-    [Fact(Skip = "Wave 0 placeholder")]
+    [Fact]
     public async Task MVCRT_04_SignalRGameEvent_TriggersClientReload()
     {
-        await Task.CompletedTask;
+        var ctx = await SeedActiveGameCtxAsync();
+        var resp = await SendAuthedGetAsync(ctx.client, $"/Public/Game/Index/{ctx.gameId}", ctx.hostCookie);
+        resp.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var html = await resp.Content.ReadAsStringAsync();
+
+        // Script tag loaded
+        html.ShouldContain("signalr.min.js");
+        html.ShouldContain("data-region=\"signalr-script\"");
+
+        // Connection wired to /hubs/game
+        html.ShouldContain("/hubs/game?gameId=");
+
+        // All event subscriptions present
+        html.ShouldContain("connection.on('turnAdvanced'");
+        html.ShouldContain("connection.on('phaseChanged'");
+        html.ShouldContain("connection.on('buildingPlaced'");
+        html.ShouldContain("connection.on('armyTrained'");
+        html.ShouldContain("connection.on('slotMachineSpun'");
+        html.ShouldContain("connection.on('battleResolved'");
+        html.ShouldContain("connection.on('gameOver'");
+
+        // Debounce present
+        html.ShouldContain("reloadPending");
+        html.ShouldContain("setTimeout");
     }
 
     // =========================================================================

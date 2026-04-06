@@ -10,4 +10,41 @@
     <partial name="~/Areas/Public/Views/Game/_ActionPanel.cshtml" model="Model" />
 </main>
 <partial name="~/Areas/Public/Views/Game/_ArmyRoster.cshtml" model="Model" />
-<!-- Plan 07 inserts Scripts section -->
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@@8/dist/browser/signalr.min.js"
+            data-region="signalr-script"></script>
+    <script>
+        (function () {
+            var gameId = '@Model.GameId';
+            var connection = new signalR.HubConnectionBuilder()
+                .withUrl('/hubs/game?gameId=' + gameId)
+                .withAutomaticReconnect()
+                .configureLogging(signalR.LogLevel.Warning)
+                .build();
+
+            var reloadPending = false;
+            function reload() {
+                if (reloadPending) return;
+                reloadPending = true;
+                setTimeout(function () { window.location.reload(); }, 200);
+            }
+
+            connection.on('turnAdvanced', reload);
+            connection.on('phaseChanged', reload);
+            connection.on('turnStarted', reload);
+            connection.on('roundStarted', reload);
+            connection.on('buildingPlaced', reload);
+            connection.on('armyTrained', reload);
+            connection.on('slotMachineSpun', reload);
+            connection.on('attackDeclared', reload);
+            connection.on('armiesSelected', reload);
+            connection.on('lineupSet', reload);
+            connection.on('battleResolved', reload);
+            connection.on('gameOver', reload);
+            connection.on('gameStateSnapshot', reload);
+            connection.on('turnAutoSkipped', reload);
+
+            connection.start().catch(function (err) { console.error('SignalR error:', err); });
+        })();
+    </script>
+}
