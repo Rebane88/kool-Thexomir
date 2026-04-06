@@ -1,7 +1,9 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using Application.Contracts;
+using Application.Services.Building;
 using Application.Services.GameInitialization;
+using Application.Services.GameInitialization.DTOs;
 using Application.Services.Lobby;
 using Application.Services.Lobby.DTOs;
 using Domain.Game;
@@ -107,10 +109,29 @@ public class PublicGameTests : IntegrationTestBase
     // MVCGAME-04: Place building — valid POST places building via service
     // =========================================================================
 
-    [Fact(Skip = "Wave 0 placeholder")]
+    [Fact]
     public async Task MVCGAME_04_PlaceBuilding_ValidPost_PlacesBuildingViaService()
     {
-        await Task.CompletedTask;
+        var ctx = await SeedActiveGameCtxAsync();
+        var (token, afCookies) = await GetAntiforgeryAsync(
+            ctx.client, $"/Public/Game/Index/{ctx.gameId}", ctx.hostCookie);
+
+        // Find a tile owned by the host kingdom and a Tier 1 building type they can afford
+        var (tileId, buildingTypeId) = await SeedBuildablePlacementAsync(ctx.gameId, ctx.hostUserId);
+
+        var form = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("TileId", tileId.ToString()),
+            new KeyValuePair<string, string>("BuildingTypeId", buildingTypeId.ToString()),
+            new KeyValuePair<string, string>("__RequestVerificationToken", token)
+        });
+        var req = new HttpRequestMessage(HttpMethod.Post, $"/Public/Game/{ctx.gameId}/Build") { Content = form };
+        AddCookies(req, ctx.hostCookie, afCookies);
+
+        var resp = await ctx.client.SendAsync(req);
+        resp.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        resp.Headers.Location!.ToString().ShouldContain($"/Public/Game/Index/{ctx.gameId}", Case.Insensitive);
+        resp.Headers.Location!.ToString().ShouldContain($"selectedTileId={tileId}", Case.Insensitive);
     }
 
     // =========================================================================
@@ -157,10 +178,32 @@ public class PublicGameTests : IntegrationTestBase
     // MVCGAME-13: Building catalog — renders all types with costs, prereqs, affordability
     // =========================================================================
 
-    [Fact(Skip = "Wave 0 placeholder")]
+    [Fact]
     public async Task MVCGAME_13_BuildingCatalog_RendersAllTypesWithCostsPrereqsAndAffordability()
     {
-        await Task.CompletedTask;
+        var ctx = await SeedActiveGameCtxAsync();
+        // Use a dedicated client with no cookie jar to avoid cross-user cookie pollution
+        var cleanClient = Factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            HandleCookies = false
+        });
+
+        // Pick an empty owned tile for the host so the Tier 1 catalog rows are visible
+        var snapshot = await GetGameStateAsync(ctx.gameId);
+        var myKingdom = snapshot.Kingdoms.First(k => k.UserId == ctx.hostUserId);
+        // Prefer an empty (no-building) tile so we get Tier-1 rows; fall back to any owned tile
+        var ownTile = snapshot.Tiles.FirstOrDefault(t => t.KingdomId == myKingdom.Id && t.Buildings.Count == 0)
+                   ?? snapshot.Tiles.First(t => t.KingdomId == myKingdom.Id);
+
+        var resp = await SendAuthedGetAsync(cleanClient, $"/Public/Game/Index/{ctx.gameId}?selectedTileId={ownTile.Id}", ctx.hostCookie);
+        resp.StatusCode.ShouldBe(HttpStatusCode.OK, $"Game index page should return 200");
+        var html = await resp.Content.ReadAsStringAsync();
+
+        html.ShouldContain("data-region=\"building-panel\"");
+        html.ShouldContain("data-can-afford=\"");
+        html.ShouldContain("data-building-type=\"");
+        html.ShouldContain("data-region=\"bt-name\"");
     }
 
     // =========================================================================
@@ -462,5 +505,66 @@ public class PublicGameTests : IntegrationTestBase
         var email = await identity.GetEmailAsync(userId);
         email.ShouldNotBeNull($"Email lookup should succeed for user id {userId}");
         return email!;
+    }
+
+    /// <summary>
+    /// Named-context wrapper around SeedActiveGameAsync for tests that need ctx.client, ctx.gameId, etc.
+    /// </summary>
+    private sealed record GameTestContext(
+        HttpClient client,
+        Guid gameId,
+        string hostCookie,
+        string player2Cookie,
+        Guid hostUserId,
+        Guid player2UserId);
+
+    private async Task<GameTestContext> SeedActiveGameCtxAsync()
+    {
+        var (gameId, hostCookie, player2Cookie, hostUserId, player2UserId) = await SeedActiveGameAsync();
+        return new GameTestContext(Client, gameId, hostCookie, player2Cookie, hostUserId, player2UserId);
+    }
+
+    /// <summary>
+    /// Returns the game state snapshot for the given gameId via IGameInitializationService.
+    /// </summary>
+    private async Task<GameStateDto> GetGameStateAsync(Guid gameId)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var gameInit = scope.ServiceProvider.GetRequiredService<IGameInitializationService>();
+        return await gameInit.BuildGameStateSnapshotAsync(gameId);
+    }
+
+    /// <summary>
+    /// GETs a URL with the given auth cookie and returns the response.
+    /// </summary>
+    private async Task<HttpResponseMessage> SendAuthedGetAsync(HttpClient client, string url, string authCookie)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        if (!string.IsNullOrEmpty(authCookie))
+            request.Headers.Add("Cookie", authCookie);
+        return await client.SendAsync(request);
+    }
+
+    /// <summary>
+    /// Finds a tile owned by the given user's kingdom with no existing building,
+    /// and the first Tier 1 building type available (from IBuildingService.GetBuildingTypesAsync).
+    /// Returns (tileId, buildingTypeId).
+    /// </summary>
+    private async Task<(Guid tileId, Guid buildingTypeId)> SeedBuildablePlacementAsync(Guid gameId, Guid userId)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var gameInit = scope.ServiceProvider.GetRequiredService<IGameInitializationService>();
+        var buildingService = scope.ServiceProvider.GetRequiredService<IBuildingService>();
+
+        var state = await gameInit.BuildGameStateSnapshotAsync(gameId);
+        var myKingdom = state.Kingdoms.First(k => k.UserId == userId);
+
+        // Find an owned tile with no existing building so a Tier 1 building can be placed
+        var emptyOwnedTile = state.Tiles.First(t => t.KingdomId == myKingdom.Id && t.Buildings.Count == 0);
+
+        var buildingTypes = (await buildingService.GetBuildingTypesAsync(gameId, userId)).ToList();
+        var tier1Type = buildingTypes.First(bt => bt.Tier == 1);
+
+        return (emptyOwnedTile.Id, tier1Type.Id);
     }
 }

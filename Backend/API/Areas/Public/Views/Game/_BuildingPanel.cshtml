@@ -1,0 +1,46 @@
+@model API.Areas.Public.ViewModels.GameIndexViewModel
+@{
+    if (Model.SelectedTileId is null || Model.MyKingdom is null) { return; }
+    var tile = Model.State.Tiles.FirstOrDefault(t => t.Id == Model.SelectedTileId);
+    if (tile is null || tile.KingdomId != Model.MyKingdom.Id) { return; }
+
+    // Tier-aware filter mirroring BuildingPanel.tsx
+    // Empty tile → show Tier 1 entries; tile with building → show upgrades in same chain
+    var visible = Model.IsBuildingAvailable(tile).ToList();
+
+    var buildError = TempData["BuildError"] as string;
+}
+<section class="building-panel" data-region="building-panel">
+    <h4>Buildings</h4>
+    @if (buildError is not null)
+    {
+        <div class="alert alert-danger" data-region="build-error">@buildError</div>
+    }
+    @if (visible.Count == 0)
+    {
+        <p class="text-muted">No buildings available on this tile.</p>
+    }
+    @foreach (var entry in visible)
+    {
+        var bt = entry.BuildingType;
+        var disabled = !entry.CanAfford || !entry.PrereqMet;
+        <form method="post"
+              action="@Url.Action("Build", "PublicGame", new { area = "Public", id = Model.GameId })"
+              class="building-row"
+              data-building-type="@bt.Id"
+              data-can-afford="@entry.CanAfford.ToString().ToLowerInvariant()"
+              data-prereq-met="@entry.PrereqMet.ToString().ToLowerInvariant()">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="TileId" value="@Model.SelectedTileId" />
+            <input type="hidden" name="BuildingTypeId" value="@bt.Id" />
+            <span class="bt-name" data-region="bt-name">@bt.Name</span>
+            <span class="bt-tier">T@bt.Tier</span>
+            <span class="bt-cost">G@bt.CostGold F@bt.CostFood W@bt.CostWood S@bt.CostStone M@bt.CostMana</span>
+            @if (!entry.PrereqMet)
+            {
+                <span class="bt-prereq" data-region="prereq-missing">Locked</span>
+            }
+            <button type="submit" disabled="@(disabled ? "disabled" : null)">Build</button>
+        </form>
+    }
+</section>

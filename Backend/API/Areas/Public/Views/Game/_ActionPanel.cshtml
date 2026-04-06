@@ -16,7 +16,7 @@
             <h3 data-region="selected-tile">Tile @tile.CoordQ,@tile.CoordR — @tile.TerrainName</h3>
             <p>Owner: @(Model.State.Kingdoms.FirstOrDefault(k => k.Id == tile.KingdomId)?.Name ?? "Unclaimed")</p>
             <p>Buildings: @tile.Buildings.Count</p>
-            <!-- Plan 03 injects _BuildingPanel here for own tiles -->
+            <partial name="~/Areas/Public/Views/Game/_BuildingPanel.cshtml" model="Model" />
             <!-- Plan 04 injects _MilitaryPanel for own military buildings -->
             <!-- Plan 08 injects _BattlePlaceholder for enemy/adjacent-enemy tiles -->
         }
