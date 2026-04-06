@@ -1,0 +1,16 @@
+@model API.Areas.Public.ViewModels.GameIndexViewModel
+@{
+    if (Model.SelectedTileId is null) { return; }
+    var tile = Model.State.Tiles.FirstOrDefault(t => t.Id == Model.SelectedTileId);
+    if (tile is null) { return; }
+    // Render only when tile is NOT owned by current user
+    if (Model.MyKingdom is not null && tile.KingdomId == Model.MyKingdom.Id) { return; }
+
+    var owner = Model.State.Kingdoms.FirstOrDefault(k => k.Id == tile.KingdomId);
+    var ownerLabel = owner is null ? "Unclaimed" : $"{owner.Name} ({owner.FactionName})";
+}
+<section class="battle-placeholder alert alert-warning" data-region="battle-placeholder">
+    <h4>Tile Owner: @ownerLabel</h4>
+    <p>Battle flow available in Phase 37.5.</p>
+    <p class="text-muted">In a future phase you'll be able to declare attacks on enemy tiles and resolve battles directly from this panel.</p>
+</section>

@@ -62,18 +62,16 @@ public class PublicGameTests : IntegrationTestBase
     [Fact]
     public async Task MVCGAME_02_TileClickDrivesContextualActionPanel()
     {
-        var (gameId, hostCookie, _, _, _) = await SeedActiveGameAsync();
+        var ctx = await SeedActiveGameCtxAsync();
 
         // First fetch the game page to get the first tile id from the state
-        using var scope = Factory.Services.CreateScope();
-        var gameInit = scope.ServiceProvider.GetRequiredService<IGameInitializationService>();
-        var state = await gameInit.BuildGameStateSnapshotAsync(gameId);
-        state.Tiles.Count.ShouldBeGreaterThan(0);
-        var firstTileId = state.Tiles[0].Id;
+        var snapshot = await GetGameStateAsync(ctx.gameId);
+        snapshot.Tiles.Count.ShouldBeGreaterThan(0);
+        var firstTileId = snapshot.Tiles[0].Id;
 
         var request = new HttpRequestMessage(HttpMethod.Get,
-            $"/Public/Game/Index/{gameId}?selectedTileId={firstTileId}");
-        request.Headers.Add("Cookie", hostCookie);
+            $"/Public/Game/Index/{ctx.gameId}?selectedTileId={firstTileId}");
+        request.Headers.Add("Cookie", ctx.hostCookie);
 
         var response = await Client.SendAsync(request);
 
@@ -82,6 +80,20 @@ public class PublicGameTests : IntegrationTestBase
         body.ShouldContain("data-selected=\"true\"");
         body.ShouldContain("data-region=\"action-panel\"");
         body.ShouldContain("data-region=\"selected-tile\"");
+
+        // Second leg: select an enemy or unclaimed tile and confirm battle placeholder appears
+        var myKingdomId = snapshot.Kingdoms.First(k => k.UserId == ctx.hostUserId).Id;
+        var enemyOrUnclaimedTile = snapshot.Tiles.First(t => t.KingdomId != myKingdomId);
+
+        var resp2 = await SendAuthedGetAsync(
+            ctx.client,
+            $"/Public/Game/Index/{ctx.gameId}?selectedTileId={enemyOrUnclaimedTile.Id}",
+            ctx.hostCookie);
+        resp2.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var html2 = await resp2.Content.ReadAsStringAsync();
+        html2.ShouldContain("data-region=\"battle-placeholder\"");
+        html2.ShouldContain("Phase 37.5");
+        html2.ShouldNotContain("data-region=\"building-panel\""); // BuildingPanel must NOT render for non-own tiles
     }
 
     // =========================================================================
