@@ -109,6 +109,14 @@ public static class DependencyInjection
                 policy.RequireAuthenticatedUser();
                 // No RequireRole — public players have no role requirement
             });
+
+            options.AddPolicy("PublicOrJwtPolicy", policy =>
+            {
+                policy.AddAuthenticationSchemes(
+                    JwtBearerDefaults.AuthenticationScheme,
+                    "PublicCookie");
+                policy.RequireAuthenticatedUser();
+            });
         });
 
         // Unit of Work

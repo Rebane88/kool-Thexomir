@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace API.Hubs;
 
-[Authorize]
+[Authorize(Policy = "PublicOrJwtPolicy")]
 public class GameHub(IGameInitializationService gameInitializationService) : Hub<IGameClient>
 {
     private static readonly ConcurrentDictionary<Guid, ConcurrentDictionary<string, byte>> GameConnections = new();
