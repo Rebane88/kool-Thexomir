@@ -89,7 +89,10 @@ public class LobbyController : Controller
 
         if (!result.IsSuccess)
         {
-            ModelState.AddModelError(nameof(model.InviteCode), result.Error!);
+            // The view binds to LobbyIndexViewModel.JoinForm.InviteCode, so the
+            // ModelState key must include the JoinForm prefix for the field-level
+            // <span asp-validation-for="JoinForm.InviteCode"> to render the error.
+            ModelState.AddModelError($"JoinForm.{nameof(model.InviteCode)}", result.Error!);
             return await ReRenderIndex(createForm: new CreateLobbyViewModel(), joinForm: model);
         }
 
