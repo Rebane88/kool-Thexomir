@@ -43,5 +43,6 @@
     <main class="public-main">
         @RenderBody()
     </main>
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
