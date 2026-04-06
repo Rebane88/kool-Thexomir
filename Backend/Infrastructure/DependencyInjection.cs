@@ -80,6 +80,17 @@ public static class DependencyInjection
                 options.Cookie.Name = ".Thexomir.Admin";
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+            })
+            .AddCookie("PublicCookie", options =>
+            {
+                options.LoginPath = "/public/account/login";
+                options.LogoutPath = "/public/account/logout";
+                options.AccessDeniedPath = "/public/account/login";
+                options.SlidingExpiration = true;
+                options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                options.Cookie.Name = ".Thexomir.Public";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
             });
 
         // Authorization policies
@@ -90,6 +101,13 @@ public static class DependencyInjection
                 policy.AddAuthenticationSchemes("AdminCookie");
                 policy.RequireAuthenticatedUser();
                 policy.RequireRole("Admin");
+            });
+
+            options.AddPolicy("PublicAreaPolicy", policy =>
+            {
+                policy.AddAuthenticationSchemes("PublicCookie");
+                policy.RequireAuthenticatedUser();
+                // No RequireRole — public players have no role requirement
             });
         });
 
