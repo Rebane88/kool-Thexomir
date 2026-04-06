@@ -556,4 +556,116 @@ public class LobbyServiceTests
         result.Error.ShouldNotBeNullOrEmpty();
     }
 
+    // -------------------------------------------------------------------------
+    // Get open lobbies tests (MVCLOBBY-01, Phase 36-02)
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task GetOpenLobbies_MixedStatuses_ReturnsOnlyLobbyStatus()
+    {
+        var lobby1Id = Guid.Parse("10000000-0000-0000-0000-000000000001");
+        var lobby2Id = Guid.Parse("10000000-0000-0000-0000-000000000002");
+        var inProgressId = Guid.Parse("10000000-0000-0000-0000-000000000003");
+
+        var now = DateTime.UtcNow;
+        var lobby1 = new Game { Id = lobby1Id, Status = EGameStatus.Lobby, LobbyCode = "AAAAAA", MaxPlayers = 4, WinCondition = EWinCondition.Elimination, CreatedAt = now.AddMinutes(-10) };
+        var lobby2 = new Game { Id = lobby2Id, Status = EGameStatus.Lobby, LobbyCode = "BBBBBB", MaxPlayers = 4, WinCondition = EWinCondition.Elimination, CreatedAt = now.AddMinutes(-5) };
+        var inProgress = new Game { Id = inProgressId, Status = EGameStatus.InProgress, LobbyCode = "CCCCCC", MaxPlayers = 4, WinCondition = EWinCondition.Elimination, CreatedAt = now };
+
+        _gamesMock.Setup(g => g.GetAllAsync())
+            .ReturnsAsync(new List<Game> { lobby1, lobby2, inProgress });
+
+        var lobby1Full = new Game { Id = lobby1Id, Status = EGameStatus.Lobby, LobbyCode = "AAAAAA", MaxPlayers = 4, WinCondition = EWinCondition.Elimination, Kingdoms = new List<Kingdom>() };
+        var lobby2Full = new Game { Id = lobby2Id, Status = EGameStatus.Lobby, LobbyCode = "BBBBBB", MaxPlayers = 4, WinCondition = EWinCondition.Elimination, Kingdoms = new List<Kingdom>() };
+        _gamesMock.Setup(g => g.GetGameWithKingdomsAsync(lobby1Id)).ReturnsAsync(lobby1Full);
+        _gamesMock.Setup(g => g.GetGameWithKingdomsAsync(lobby2Id)).ReturnsAsync(lobby2Full);
+        _factionTypesMock.Setup(f => f.GetAllAsync()).ReturnsAsync(new List<FactionType>());
+
+        var result = await _sut.GetOpenLobbiesAsync();
+
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.ShouldNotBeNull();
+        result.Value.Count.ShouldBe(2);
+        result.Value.ShouldAllBe(r => r.Status == EGameStatus.Lobby);
+    }
+
+    [Fact]
+    public async Task GetOpenLobbies_OrdersByCreatedAtDescending()
+    {
+        var oldId = Guid.Parse("20000000-0000-0000-0000-000000000001");
+        var newId = Guid.Parse("20000000-0000-0000-0000-000000000002");
+
+        var now = DateTime.UtcNow;
+        var oldLobby = new Game { Id = oldId, Status = EGameStatus.Lobby, LobbyCode = "OLDDDD", MaxPlayers = 4, WinCondition = EWinCondition.Elimination, CreatedAt = now.AddHours(-2) };
+        var newLobby = new Game { Id = newId, Status = EGameStatus.Lobby, LobbyCode = "NEWWWW", MaxPlayers = 4, WinCondition = EWinCondition.Elimination, CreatedAt = now };
+
+        _gamesMock.Setup(g => g.GetAllAsync())
+            .ReturnsAsync(new List<Game> { oldLobby, newLobby });
+
+        _gamesMock.Setup(g => g.GetGameWithKingdomsAsync(oldId)).ReturnsAsync(
+            new Game { Id = oldId, Status = EGameStatus.Lobby, LobbyCode = "OLDDDD", MaxPlayers = 4, WinCondition = EWinCondition.Elimination, Kingdoms = new List<Kingdom>() });
+        _gamesMock.Setup(g => g.GetGameWithKingdomsAsync(newId)).ReturnsAsync(
+            new Game { Id = newId, Status = EGameStatus.Lobby, LobbyCode = "NEWWWW", MaxPlayers = 4, WinCondition = EWinCondition.Elimination, Kingdoms = new List<Kingdom>() });
+        _factionTypesMock.Setup(f => f.GetAllAsync()).ReturnsAsync(new List<FactionType>());
+
+        var result = await _sut.GetOpenLobbiesAsync();
+
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.Count.ShouldBe(2);
+        // Newest first
+        result.Value[0].Id.ShouldBe(newId);
+        result.Value[1].Id.ShouldBe(oldId);
+    }
+
+    [Fact]
+    public async Task GetOpenLobbies_PopulatesPlayersAndFactions()
+    {
+        var lobbyId = Guid.Parse("30000000-0000-0000-0000-000000000001");
+        var now = DateTime.UtcNow;
+        var stub = new Game { Id = lobbyId, Status = EGameStatus.Lobby, LobbyCode = "POPPPP", MaxPlayers = 4, WinCondition = EWinCondition.Elimination, CreatedAt = now };
+
+        _gamesMock.Setup(g => g.GetAllAsync()).ReturnsAsync(new List<Game> { stub });
+
+        var faction1 = MakeFaction(FactionId1, "Warriors");
+        var full = new Game
+        {
+            Id = lobbyId,
+            Status = EGameStatus.Lobby,
+            LobbyCode = "POPPPP",
+            MaxPlayers = 4,
+            WinCondition = EWinCondition.Elimination,
+            HostUserId = UserId1,
+            Kingdoms = new List<Kingdom>
+            {
+                MakeKingdom(UserId1, lobbyId, factionTypeId: FactionId1),
+                MakeKingdom(UserId2, lobbyId)
+            }
+        };
+        full.Kingdoms!.First().FactionType = faction1;
+        _gamesMock.Setup(g => g.GetGameWithKingdomsAsync(lobbyId)).ReturnsAsync(full);
+        _factionTypesMock.Setup(f => f.GetAllAsync()).ReturnsAsync(new List<FactionType> { faction1 });
+
+        var result = await _sut.GetOpenLobbiesAsync();
+
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.Count.ShouldBe(1);
+        var resp = result.Value[0];
+        resp.Players.ShouldNotBeNull();
+        resp.Players.Count.ShouldBe(2);
+        resp.Factions.ShouldNotBeNull();
+        resp.Factions.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task GetOpenLobbies_NoLobbies_ReturnsEmptyList()
+    {
+        _gamesMock.Setup(g => g.GetAllAsync()).ReturnsAsync(new List<Game>());
+
+        var result = await _sut.GetOpenLobbiesAsync();
+
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.ShouldNotBeNull();
+        result.Value.ShouldBeEmpty();
+    }
+
 }
