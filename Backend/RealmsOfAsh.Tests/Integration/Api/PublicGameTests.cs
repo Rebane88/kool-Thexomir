@@ -168,20 +168,40 @@ public class PublicGameTests : IntegrationTestBase
     // MVCGAME-08: Gamble spin — valid POST spins slot machine via service
     // =========================================================================
 
-    [Fact(Skip = "Wave 0 placeholder")]
+    [Fact]
     public async Task MVCGAME_08_GambleSpin_ValidPost_SpinsSlotMachineViaService()
     {
-        await Task.CompletedTask;
+        var ctx = await SeedActiveGameCtxAsync();
+        var (token, afCookies) = await GetAntiforgeryAsync(ctx.client, $"/Public/Game/Index/{ctx.gameId}", ctx.hostCookie);
+        var form = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("__RequestVerificationToken", token)
+        });
+        var req = new HttpRequestMessage(HttpMethod.Post, $"/Public/Game/{ctx.gameId}/Spin") { Content = form };
+        AddCookies(req, ctx.hostCookie, afCookies);
+        var resp = await ctx.client.SendAsync(req);
+        resp.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        resp.Headers.Location!.ToString().ShouldContain($"/Public/Game/Index/{ctx.gameId}", Case.Insensitive);
     }
 
     // =========================================================================
     // MVCGAME-09: End turn — valid POST ends turn via service
     // =========================================================================
 
-    [Fact(Skip = "Wave 0 placeholder")]
+    [Fact]
     public async Task MVCGAME_09_EndTurn_ValidPost_EndsTurnViaService()
     {
-        await Task.CompletedTask;
+        var ctx = await SeedActiveGameCtxAsync();
+        var (token, afCookies) = await GetAntiforgeryAsync(ctx.client, $"/Public/Game/Index/{ctx.gameId}", ctx.hostCookie);
+        var form = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("__RequestVerificationToken", token)
+        });
+        var req = new HttpRequestMessage(HttpMethod.Post, $"/Public/Game/{ctx.gameId}/EndTurn") { Content = form };
+        AddCookies(req, ctx.hostCookie, afCookies);
+        var resp = await ctx.client.SendAsync(req);
+        resp.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        resp.Headers.Location!.ToString().ShouldContain($"/Public/Game/Index/{ctx.gameId}", Case.Insensitive);
     }
 
     // =========================================================================
@@ -249,10 +269,20 @@ public class PublicGameTests : IntegrationTestBase
     // MVCGAME-14: Abandon game — valid POST abandons and redirects to lobby
     // =========================================================================
 
-    [Fact(Skip = "Wave 0 placeholder")]
+    [Fact]
     public async Task MVCGAME_14_AbandonGame_ValidPost_AbandonsAndRedirectsToLobby()
     {
-        await Task.CompletedTask;
+        var ctx = await SeedActiveGameCtxAsync();
+        var (token, afCookies) = await GetAntiforgeryAsync(ctx.client, $"/Public/Game/Index/{ctx.gameId}", ctx.hostCookie);
+        var form = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("__RequestVerificationToken", token)
+        });
+        var req = new HttpRequestMessage(HttpMethod.Post, $"/Public/Game/{ctx.gameId}/Abandon") { Content = form };
+        AddCookies(req, ctx.hostCookie, afCookies);
+        var resp = await ctx.client.SendAsync(req);
+        resp.StatusCode.ShouldBe(HttpStatusCode.Redirect);
+        resp.Headers.Location!.ToString().ShouldContain("/Public/Lobby", Case.Insensitive);
     }
 
     // =========================================================================

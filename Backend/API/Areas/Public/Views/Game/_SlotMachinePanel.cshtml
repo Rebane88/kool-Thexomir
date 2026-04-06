@@ -1,0 +1,26 @@
+@model API.Areas.Public.ViewModels.GameIndexViewModel
+@{
+    var outcome = TempData.Peek("SpinOutcome") as int?;
+    var apAfter = TempData.Peek("SpinApAfter") as int?;
+    var goldAfter = TempData.Peek("SpinGoldAfter") as int?;
+    var goldSpent = TempData.Peek("SpinGoldSpent") as int?;
+    var spinError = TempData["SpinError"] as string;
+}
+@if (outcome.HasValue)
+{
+    TempData.Remove("SpinOutcome");
+    TempData.Remove("SpinApAfter");
+    TempData.Remove("SpinGoldAfter");
+    TempData.Remove("SpinGoldSpent");
+    <div class="slot-machine-result alert alert-info" data-region="slot-machine-result">
+        <strong>Spin result:</strong>
+        <span data-region="spin-outcome">Outcome @outcome</span>
+        <span data-region="spin-gold-spent">Spent @goldSpent gold</span>
+        <span data-region="spin-gold-after">Gold now: @goldAfter</span>
+        <span data-region="spin-ap-after">AP now: @apAfter</span>
+    </div>
+}
+@if (spinError is not null)
+{
+    <div class="alert alert-danger" data-region="spin-error">@spinError</div>
+}

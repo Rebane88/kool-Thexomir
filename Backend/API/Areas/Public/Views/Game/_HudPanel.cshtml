@@ -29,5 +29,25 @@
             }
         </span>
     </div>
-    <!-- Plan 06 will add gamble/end-turn forms; Plan 06 also adds abandon link -->
+    <div class="hud-actions" data-region="hud-actions">
+        <form method="post"
+              action="@Url.Action("Spin", "PublicGame", new { area = "Public", id = Model.GameId })"
+              class="d-inline">
+            @Html.AntiForgeryToken()
+            <button type="submit" data-action="spin" disabled="@(!Model.IsMyTurn ? "disabled" : null)">Gamble</button>
+        </form>
+        <form method="post"
+              action="@Url.Action("EndTurn", "PublicGame", new { area = "Public", id = Model.GameId })"
+              class="d-inline">
+            @Html.AntiForgeryToken()
+            <button type="submit" data-action="end-turn" disabled="@(!Model.IsMyTurn ? "disabled" : null)">End Turn</button>
+        </form>
+        <form method="post"
+              action="@Url.Action("Abandon", "PublicGame", new { area = "Public", id = Model.GameId })"
+              class="d-inline"
+              onsubmit="return confirm('Abandon this game?');">
+            @Html.AntiForgeryToken()
+            <button type="submit" data-action="abandon" class="btn-danger">Abandon</button>
+        </form>
+    </div>
 </header>
