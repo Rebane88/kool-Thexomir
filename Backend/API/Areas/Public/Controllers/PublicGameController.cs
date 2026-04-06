@@ -3,12 +3,16 @@ using API.Areas.Public.ViewModels;
 using API.Extensions;
 using API.Hubs;
 using Application.Contracts;
+using Application.Services.Abandon;
 using Application.Services.Army;
 using Application.Services.Army.DTOs;
 using Application.Services.Building;
 using Application.Services.Building.DTOs;
 using Application.Services.GameHub;
 using Application.Services.GameInitialization;
+using Application.Services.SlotMachine;
+using Application.Services.Turn;
+using Application.Services.Turn.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -23,6 +27,9 @@ public class PublicGameController : Controller
     private readonly IGameInitializationService _gameInit;
     private readonly IBuildingService _buildingService;
     private readonly IArmyService _armyService;
+    private readonly ISlotMachineService _slotMachineService;
+    private readonly ITurnService _turnService;
+    private readonly IAbandonService _abandonService;
     private readonly IGameLockManager _gameLockManager;
     private readonly IHubContext<GameHub, IGameClient> _hubContext;
 
@@ -30,12 +37,18 @@ public class PublicGameController : Controller
         IGameInitializationService gameInit,
         IBuildingService buildingService,
         IArmyService armyService,
+        ISlotMachineService slotMachineService,
+        ITurnService turnService,
+        IAbandonService abandonService,
         IGameLockManager gameLockManager,
         IHubContext<GameHub, IGameClient> hubContext)
     {
         _gameInit = gameInit;
         _buildingService = buildingService;
         _armyService = armyService;
+        _slotMachineService = slotMachineService;
+        _turnService = turnService;
+        _abandonService = abandonService;
         _gameLockManager = gameLockManager;
         _hubContext = hubContext;
     }
@@ -113,6 +126,82 @@ public class PublicGameController : Controller
 
         await _hubContext.Clients.Group($"game:{id}").ArmyTrained(result.Value!);
         return RedirectToAction(nameof(Index), new { id, selectedTileId });
+    }
+
+    [HttpPost("{id:guid}/Spin")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Spin(Guid id, Guid? selectedTileId)
+    {
+        using var gameLock = await _gameLockManager.AcquireAsync(id);
+        var result = await _slotMachineService.SpinAsync(id, User.UserId());
+        if (!result.IsSuccess)
+        {
+            TempData["SpinError"] = result.Error;
+            return RedirectToAction(nameof(Index), new { id, selectedTileId });
+        }
+        await _hubContext.Clients.Group($"game:{id}").SlotMachineSpun(result.Value!);
+        TempData["SpinOutcome"] = result.Value!.Outcome;
+        TempData["SpinApAfter"] = result.Value!.ActionPointsAfter;
+        TempData["SpinGoldAfter"] = result.Value!.GoldAfter;
+        TempData["SpinGoldSpent"] = result.Value!.GoldSpent;
+        return RedirectToAction(nameof(Index), new { id, selectedTileId });
+    }
+
+    [HttpPost("{id:guid}/EndTurn")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EndTurn(Guid id)
+    {
+        using var gameLock = await _gameLockManager.AcquireAsync(id);
+
+        var result = await _turnService.EndTurnAsync(
+            id,
+            User.UserId(),
+            onRoundResolved: async (round, battleId) =>
+                await _hubContext.Clients.Group($"game:{id}").BattleRoundResolved(round),
+            onBattleResolved: async (battleResult) =>
+                await _hubContext.Clients.Group($"game:{id}").BattleResolved(battleResult));
+
+        if (!result.IsSuccess)
+        {
+            TempData["EndTurnError"] = result.Error;
+            return RedirectToAction(nameof(Index), new { id });
+        }
+
+        await _hubContext.Clients.Group($"game:{id}").TurnAdvanced(result.Value!);
+
+        if (result.Value!.PhaseChanged)
+        {
+            await _hubContext.Clients.Group($"game:{id}")
+                .PhaseChanged(new PhaseChangedDto
+                {
+                    Phase = result.Value!.CurrentPhase,
+                    PreviousPhase = "Action",
+                    RoundNumber = result.Value!.RoundNumber
+                });
+        }
+
+        if (result.Value!.GameOver is not null)
+            await _hubContext.Clients.Group($"game:{id}").GameOver(result.Value!.GameOver);
+
+        return RedirectToAction(nameof(Index), new { id });
+    }
+
+    [HttpPost("{id:guid}/Abandon")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Abandon(Guid id)
+    {
+        using var gameLock = await _gameLockManager.AcquireAsync(id);
+        var result = await _abandonService.AbandonGameAsync(id, User.UserId());
+        if (!result.IsSuccess)
+        {
+            TempData["AbandonError"] = result.Error;
+            return RedirectToAction(nameof(Index), new { id });
+        }
+        if (result.Value is not null)
+        {
+            await _hubContext.Clients.Group($"game:{id}").GameOver(result.Value);
+        }
+        return RedirectToAction("Index", "Lobby", new { area = "Public" });
     }
 
     private static List<BuildingCatalogEntryViewModel> BuildCatalog(
