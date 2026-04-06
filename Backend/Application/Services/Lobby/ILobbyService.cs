@@ -11,4 +11,5 @@ public interface ILobbyService
     Task<Result<bool>> SelectFactionAsync(Guid userId, Guid lobbyId, Guid factionTypeId);
     Task<Result<bool>> StartGameAsync(Guid userId, Guid lobbyId);
     Task<Result<LobbyResponse>> GetLobbyAsync(Guid lobbyId);
+    Task<Result<List<LobbyResponse>>> GetOpenLobbiesAsync();
 }

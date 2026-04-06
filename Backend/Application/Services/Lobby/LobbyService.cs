@@ -236,6 +236,32 @@ public class LobbyService(IUnitOfWork unitOfWork, IIdentityService identityServi
     }
 
     // -------------------------------------------------------------------------
+    // Get Open Lobbies (Phase 36-02, MVCLOBBY-01)
+    // -------------------------------------------------------------------------
+
+    public async Task<Result<List<LobbyResponse>>> GetOpenLobbiesAsync()
+    {
+        var allGames = await unitOfWork.Games.GetAllAsync();
+        var openGameIds = allGames
+            .Where(g => g.Status == EGameStatus.Lobby)
+            .OrderByDescending(g => g.CreatedAt)
+            .Select(g => g.Id)
+            .ToList();
+
+        var responses = new List<LobbyResponse>();
+        foreach (var id in openGameIds)
+        {
+            var fullGame = await unitOfWork.Games.GetGameWithKingdomsAsync(id);
+            if (fullGame != null)
+            {
+                responses.Add(await BuildLobbyResponseAsync(fullGame));
+            }
+        }
+
+        return Result<List<LobbyResponse>>.Ok(responses);
+    }
+
+    // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
 

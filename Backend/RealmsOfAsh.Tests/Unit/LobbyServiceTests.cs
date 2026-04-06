@@ -611,7 +611,8 @@ public class LobbyServiceTests
         var result = await _sut.GetOpenLobbiesAsync();
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value.Count.ShouldBe(2);
+        result.Value.ShouldNotBeNull();
+        result.Value!.Count.ShouldBe(2);
         // Newest first
         result.Value[0].Id.ShouldBe(newId);
         result.Value[1].Id.ShouldBe(oldId);
@@ -648,7 +649,8 @@ public class LobbyServiceTests
         var result = await _sut.GetOpenLobbiesAsync();
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value.Count.ShouldBe(1);
+        result.Value.ShouldNotBeNull();
+        result.Value!.Count.ShouldBe(1);
         var resp = result.Value[0];
         resp.Players.ShouldNotBeNull();
         resp.Players.Count.ShouldBe(2);
