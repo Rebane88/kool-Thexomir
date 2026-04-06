@@ -1,0 +1,69 @@
+@model API.Areas.Public.ViewModels.LobbyIndexViewModel
+@using Domain.Game
+@{
+    ViewData["Title"] = "Lobbies";
+}
+
+<h1>@Localizer["Lobbies"]</h1>
+
+<section data-region="open-lobbies">
+    <h2>@Localizer["Open Lobbies"]</h2>
+    @if (!Model.OpenLobbies.Any())
+    {
+        <p data-empty="open-lobbies">@Localizer["No lobbies open right now."]</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var lobby in Model.OpenLobbies)
+            {
+                <li class="list-group-item">
+                    <a asp-action="Detail" asp-route-id="@lobby.Id">
+                        @lobby.LobbyCode
+                    </a>
+                    &mdash; @lobby.PlayerCount / @lobby.MaxPlayers @Localizer["players"]
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+<section data-region="create-lobby">
+    <h2>@Localizer["Create Lobby"]</h2>
+    <form method="post" asp-area="Public" asp-controller="Lobby" asp-action="Create">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-danger" data-region="form-error-summary"></div>
+
+        <div class="mb-3">
+            <label asp-for="CreateForm.MaxPlayers" class="form-label"></label>
+            <input asp-for="CreateForm.MaxPlayers" type="number" min="2" max="8" class="form-control" />
+            <span asp-validation-for="CreateForm.MaxPlayers" class="text-danger" data-field-error="MaxPlayers"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="CreateForm.WinCondition" class="form-label"></label>
+            <select asp-for="CreateForm.WinCondition" class="form-control"
+                    asp-items="Html.GetEnumSelectList<EWinCondition>()">
+            </select>
+            <span asp-validation-for="CreateForm.WinCondition" class="text-danger" data-field-error="WinCondition"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary" data-action="public-lobby-create-submit">@Localizer["Create"]</button>
+    </form>
+</section>
+
+<section data-region="join-lobby">
+    <h2>@Localizer["Join Lobby"]</h2>
+    <form method="post" asp-area="Public" asp-controller="Lobby" asp-action="Join">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-danger" data-region="join-error-summary"></div>
+
+        <div class="mb-3">
+            <label asp-for="JoinForm.InviteCode" class="form-label"></label>
+            <input asp-for="JoinForm.InviteCode" maxlength="6" class="form-control" />
+            <span asp-validation-for="JoinForm.InviteCode" class="text-danger" data-field-error="InviteCode"></span>
+        </div>
+
+        <button type="submit" class="btn btn-secondary" data-action="public-lobby-join-submit">@Localizer["Join"]</button>
+    </form>
+</section>
