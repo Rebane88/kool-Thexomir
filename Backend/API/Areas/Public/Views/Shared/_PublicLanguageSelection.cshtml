@@ -1,0 +1,28 @@
+@using Microsoft.Extensions.Options
+@using Microsoft.AspNetCore.Builder
+@using System.Threading
+@inject IOptions<RequestLocalizationOptions> _localizationOptions
+@{
+    var cultureItems = _localizationOptions.Value.SupportedUICultures!
+        .Select(c => new { Value = c.Name, Text = c.NativeName }).ToList();
+    var currentCulture = Thread.CurrentThread.CurrentUICulture.Name;
+}
+
+<div class="dropdown">
+    <button class="sidebar-logout dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        @currentCulture.ToUpperInvariant()
+    </button>
+    <ul class="dropdown-menu dropdown-menu-dark" style="font-size:0.8rem;">
+        @foreach (var item in cultureItems)
+        {
+            <li>
+                <a class="dropdown-item @(currentCulture == item.Value ? "active" : "")"
+                   asp-area="" asp-controller="Home" asp-action="SetLanguage"
+                   asp-route-culture="@item.Value"
+                   asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString">
+                    @item.Text
+                </a>
+            </li>
+        }
+    </ul>
+</div>

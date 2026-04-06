@@ -1,0 +1,38 @@
+@using Microsoft.Extensions.Localization
+@using Base.Resources
+@inject IStringLocalizer<Common> SharedLocalizer
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Realms of Ash — @ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+</head>
+<body data-layout="public">
+    <header class="public-header" data-region="public-nav">
+        <nav aria-label="public-primary">
+            <a asp-area="Public" asp-controller="Home" asp-action="Index">
+                @SharedLocalizer["Nav_Dashboard"]
+            </a>
+        </nav>
+        <div data-region="public-language-switcher">
+            <partial name="_PublicLanguageSelection" />
+        </div>
+        <div data-region="public-auth-state">
+            @* Placeholder login/logout state region — Phase 35 populates this *@
+            @if (User?.Identity?.IsAuthenticated == true)
+            {
+                <span data-state="authenticated">@User.Identity.Name</span>
+            }
+            else
+            {
+                <span data-state="anonymous">@SharedLocalizer["Login_SignIn"]</span>
+            }
+        </div>
+    </header>
+    <main class="public-main">
+        @RenderBody()
+    </main>
+</body>
+</html>
