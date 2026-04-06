@@ -1,0 +1,108 @@
+@model API.Areas.Public.ViewModels.LobbyDetailViewModel
+@using Domain.Game
+@{
+    ViewData["Title"] = $"Lobby {Model.Lobby.LobbyCode}";
+}
+
+<h1>@Localizer["Lobby"] @Model.Lobby.LobbyCode</h1>
+
+<div asp-validation-summary="All" class="text-danger" data-region="form-error-summary"></div>
+
+<section data-region="lobby-settings">
+    <p><strong>@Localizer["Invite Code"]:</strong> <code data-field="invite-code">@Model.Lobby.LobbyCode</code></p>
+    <p><strong>@Localizer["Max Players"]:</strong> @Model.Lobby.MaxPlayers</p>
+    <p><strong>@Localizer["Status"]:</strong> @Model.Lobby.Status</p>
+</section>
+
+<section data-region="player-list">
+    <h2>@Localizer["Players"] (@Model.Lobby.Players.Count / @Model.Lobby.MaxPlayers)</h2>
+    <ul>
+        @foreach (var player in Model.Lobby.Players)
+        {
+            var factionName = Model.Lobby.Factions
+                .FirstOrDefault(f => f.FactionTypeId == player.FactionTypeId)?.Name
+                ?? Localizer["No faction"].Value;
+            <li>
+                @player.UserEmail
+                @if (Model.Lobby.HostUserId.HasValue && player.UserId == Model.Lobby.HostUserId.Value)
+                {
+                    <span class="badge bg-warning" data-marker="host">@Localizer["Host"]</span>
+                }
+                &mdash; @factionName
+            </li>
+        }
+    </ul>
+</section>
+
+@if (Model.Lobby.Status == EGameStatus.Lobby)
+{
+    <section data-region="faction-picker">
+        <h2>@Localizer["Pick Faction"]</h2>
+        <form method="post" asp-area="Public" asp-controller="Lobby" asp-action="SelectFaction">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="LobbyId" value="@Model.Lobby.Id" />
+            <select name="FactionTypeId" class="form-control">
+                @foreach (var f in Model.Lobby.Factions)
+                {
+                    var isMine = Model.MyFactionTypeId.HasValue && f.FactionTypeId == Model.MyFactionTypeId.Value;
+                    var disabled = !f.IsAvailable && !isMine;
+                    <option value="@f.FactionTypeId"
+                            selected="@(isMine ? "selected" : null)"
+                            disabled="@(disabled ? "disabled" : null)">
+                        @f.Name @(disabled ? "(taken)" : "")
+                    </option>
+                }
+            </select>
+            <button type="submit" class="btn btn-primary" data-action="public-lobby-select-faction-submit">@Localizer["Confirm Faction"]</button>
+        </form>
+    </section>
+
+    <section data-region="leave-lobby">
+        <form method="post" asp-area="Public" asp-controller="Lobby" asp-action="Leave" asp-route-id="@Model.Lobby.Id">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger" data-action="public-lobby-leave-submit">@Localizer["Leave Lobby"]</button>
+        </form>
+    </section>
+
+    @if (Model.IsHost)
+    {
+        <section data-region="start-game">
+            <form method="post" asp-area="Public" asp-controller="Lobby" asp-action="Start" asp-route-id="@Model.Lobby.Id">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success" disabled="@(Model.CanStart ? null : "disabled")"
+                        data-action="public-lobby-start-submit">
+                    @Localizer["Start Game"]
+                </button>
+            </form>
+            @if (!Model.CanStart)
+            {
+                <p class="text-muted" data-region="start-disabled-reason">@Localizer["Need at least 2 players, all with factions selected."]</p>
+            }
+        </section>
+    }
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@@8/dist/browser/signalr.min.js"></script>
+    <script>
+        (function () {
+            var lobbyId = '@Model.Lobby.Id';
+            var gameUrl = '/Public/Game/Index/' + lobbyId;
+
+            var connection = new signalR.HubConnectionBuilder()
+                .withUrl('/hubs/game?gameId=' + lobbyId)
+                .withAutomaticReconnect()
+                .configureLogging(signalR.LogLevel.Warning)
+                .build();
+
+            connection.on('lobbyPlayerJoined', function () { location.reload(); });
+            connection.on('lobbyPlayerLeft', function () { location.reload(); });
+            connection.on('lobbyFactionSelected', function () { location.reload(); });
+            connection.on('lobbyGameStarting', function () { window.location.href = gameUrl; });
+
+            connection.start().catch(function (err) {
+                console.error('SignalR connection error:', err);
+            });
+        })();
+    </script>
+}
