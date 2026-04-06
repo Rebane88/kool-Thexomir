@@ -1,0 +1,31 @@
+@model LoginViewModel
+@using Microsoft.Extensions.Localization
+@using Base.Resources
+@inject IStringLocalizer<Common> SharedLocalizer
+@{
+    ViewData["Title"] = SharedLocalizer["Login_Title"].Value;
+}
+<section data-page="public-login">
+    <h1>@SharedLocalizer["Login_Title"]</h1>
+
+    <div asp-validation-summary="ModelOnly" class="text-danger" data-region="form-error-summary"></div>
+
+    <form method="post" asp-area="Public" asp-controller="Account" asp-action="Login"
+          asp-route-returnUrl="@Model.ReturnUrl">
+        @Html.AntiForgeryToken()
+
+        <div class="mb-3">
+            <label asp-for="Email" class="form-label">@SharedLocalizer["Login_Email"]</label>
+            <input asp-for="Email" class="form-control" type="email" autocomplete="username" />
+            <span asp-validation-for="Email" class="text-danger" data-field-error="Email"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Password" class="form-label">@SharedLocalizer["Login_Password"]</label>
+            <input asp-for="Password" class="form-control" type="password" autocomplete="current-password" />
+            <span asp-validation-for="Password" class="text-danger" data-field-error="Password"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary" data-action="public-login-submit">@SharedLocalizer["Login_SignIn"]</button>
+    </form>
+</section>
