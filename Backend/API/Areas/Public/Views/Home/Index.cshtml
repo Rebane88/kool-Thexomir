@@ -1,7 +1,8 @@
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
     ViewData["Title"] = "Public";
 }
 <section data-page="public-home">
-    <h1>@Localizer["Nav_Dashboard"]</h1>
+    <h1>@SharedLocalizer["Nav_Dashboard"]</h1>
     <p data-marker="public-home-loaded">Public area online.</p>
 </section>
