@@ -188,10 +188,29 @@ public class PublicGameTests : IntegrationTestBase
     // MVCGAME-12: Army roster — renders all owned armies with type, HP, location
     // =========================================================================
 
-    [Fact(Skip = "Wave 0 placeholder")]
+    [Fact]
     public async Task MVCGAME_12_ArmyRoster_RendersAllOwnedArmiesWithTypeHpAndLocation()
     {
-        await Task.CompletedTask;
+        var ctx = await SeedActiveGameCtxAsync();
+        var (_, _, _) = await SeedMilitaryBuildingAndTrainAsync(ctx.gameId, ctx.hostUserId);
+
+        // Use a clean client (no cookie jar) to avoid cross-user cookie pollution.
+        // The shared Client has player2's cookie in its jar from registration;
+        // a clean client ensures the explicit hostCookie is the only auth cookie sent.
+        var cleanClient = Factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            HandleCookies = false
+        });
+
+        var resp = await SendAuthedGetAsync(cleanClient, $"/Public/Game/Index/{ctx.gameId}", ctx.hostCookie);
+        resp.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var html = await resp.Content.ReadAsStringAsync();
+        html.ShouldContain("data-region=\"army-roster\"");
+        html.ShouldContain("data-region=\"army-type\"");
+        html.ShouldContain("data-region=\"army-hp\"");
+        html.ShouldContain("data-region=\"army-location\"");
+        html.ShouldContain("data-army-id=\"");
     }
 
     // =========================================================================
@@ -601,6 +620,52 @@ public class PublicGameTests : IntegrationTestBase
         var armyType = armyTypes.First(at => at.RequiredBuildingTypeId == militaryBuildingType.Id);
 
         return (emptyOwnedTile.Id, buildingId, armyType.Id);
+    }
+
+    /// <summary>
+    /// Places a Tier 1 military building on an empty owned tile, then trains one army in that building.
+    /// Returns (tileId, buildingId, armyId). Requires sufficient AP in game state.
+    /// </summary>
+    private async Task<(Guid tileId, Guid buildingId, Guid armyId)> SeedMilitaryBuildingAndTrainAsync(Guid gameId, Guid userId)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var gameInit = scope.ServiceProvider.GetRequiredService<IGameInitializationService>();
+        var buildingService = scope.ServiceProvider.GetRequiredService<IBuildingService>();
+        var armyService = scope.ServiceProvider.GetRequiredService<IArmyService>();
+
+        var state = await gameInit.BuildGameStateSnapshotAsync(gameId);
+        var myKingdom = state.Kingdoms.First(k => k.UserId == userId);
+
+        // Find an empty owned tile
+        var emptyOwnedTile = state.Tiles.First(t => t.KingdomId == myKingdom.Id && t.Buildings.Count == 0);
+
+        // Get a Tier 1 military building type (army capacity > 0)
+        var buildingTypes = (await buildingService.GetBuildingTypesAsync(gameId, userId)).ToList();
+        var militaryBuildingType = buildingTypes.First(bt => bt.ArmyCapacity > 0 && bt.Tier == 1);
+
+        // Place the military building
+        var placeResult = await buildingService.PlaceBuildingAsync(gameId, userId, new PlaceBuildingRequest
+        {
+            TileId = emptyOwnedTile.Id,
+            BuildingTypeId = militaryBuildingType.Id
+        });
+        placeResult.IsSuccess.ShouldBeTrue($"PlaceBuildingAsync failed: {placeResult.Error}");
+        var buildingId = placeResult.Value!.BuildingId;
+
+        // Get the army type that requires this building type
+        var armyTypes = (await armyService.GetArmyTypesAsync(gameId, userId)).ToList();
+        var armyType = armyTypes.First(at => at.RequiredBuildingTypeId == militaryBuildingType.Id);
+
+        // Train one army
+        var trainResult = await armyService.TrainArmyAsync(gameId, userId, new Application.Services.Army.DTOs.TrainArmyRequest
+        {
+            BuildingId = buildingId,
+            ArmyTypeId = armyType.Id
+        });
+        trainResult.IsSuccess.ShouldBeTrue($"TrainArmyAsync failed: {trainResult.Error}");
+        var armyId = trainResult.Value!.ArmyId;
+
+        return (emptyOwnedTile.Id, buildingId, armyId);
     }
 
     /// <summary>
