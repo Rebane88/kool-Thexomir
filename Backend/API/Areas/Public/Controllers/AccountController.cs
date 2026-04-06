@@ -106,4 +106,12 @@ public class AccountController : Controller
         var redirectUrl = returnUrl ?? Url.Action("Index", "Home", new { area = "Public" })!;
         return LocalRedirect(redirectUrl);
     }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync("PublicCookie");
+        return RedirectToAction("Index", "Home", new { area = "Public" });
+    }
 }
