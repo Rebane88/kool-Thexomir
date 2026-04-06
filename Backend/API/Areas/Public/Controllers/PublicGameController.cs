@@ -3,6 +3,8 @@ using API.Areas.Public.ViewModels;
 using API.Extensions;
 using API.Hubs;
 using Application.Contracts;
+using Application.Services.Army;
+using Application.Services.Army.DTOs;
 using Application.Services.Building;
 using Application.Services.Building.DTOs;
 using Application.Services.GameHub;
@@ -20,17 +22,20 @@ public class PublicGameController : Controller
 {
     private readonly IGameInitializationService _gameInit;
     private readonly IBuildingService _buildingService;
+    private readonly IArmyService _armyService;
     private readonly IGameLockManager _gameLockManager;
     private readonly IHubContext<GameHub, IGameClient> _hubContext;
 
     public PublicGameController(
         IGameInitializationService gameInit,
         IBuildingService buildingService,
+        IArmyService armyService,
         IGameLockManager gameLockManager,
         IHubContext<GameHub, IGameClient> hubContext)
     {
         _gameInit = gameInit;
         _buildingService = buildingService;
+        _armyService = armyService;
         _gameLockManager = gameLockManager;
         _hubContext = hubContext;
     }
@@ -49,6 +54,7 @@ public class PublicGameController : Controller
             State = state,
             Layout = layout,
             Catalog = BuildCatalog(buildingTypes, state, User.UserId()),
+            ArmyTypes = (await _armyService.GetArmyTypesAsync(id, User.UserId())).ToList(),
         };
         return View("~/Areas/Public/Views/Game/Index.cshtml", vm);
     }
@@ -79,6 +85,34 @@ public class PublicGameController : Controller
 
         await _hubContext.Clients.Group($"game:{id}").BuildingPlaced(result.Value!);
         return RedirectToAction(nameof(Index), new { id, selectedTileId = form.TileId });
+    }
+
+    [HttpPost("{id:guid}/Train")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Train(Guid id, TrainArmyFormModel form, Guid? selectedTileId)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["TrainError"] = "Invalid form.";
+            return RedirectToAction(nameof(Index), new { id, selectedTileId });
+        }
+
+        using var gameLock = await _gameLockManager.AcquireAsync(id);
+        var result = await _armyService.TrainArmyAsync(id, User.UserId(),
+            new TrainArmyRequest
+            {
+                BuildingId = form.BuildingId,
+                ArmyTypeId = form.ArmyTypeId
+            });
+
+        if (!result.IsSuccess)
+        {
+            TempData["TrainError"] = result.Error;
+            return RedirectToAction(nameof(Index), new { id, selectedTileId });
+        }
+
+        await _hubContext.Clients.Group($"game:{id}").ArmyTrained(result.Value!);
+        return RedirectToAction(nameof(Index), new { id, selectedTileId });
     }
 
     private static List<BuildingCatalogEntryViewModel> BuildCatalog(
