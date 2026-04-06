@@ -20,14 +20,23 @@
             <partial name="_PublicLanguageSelection" />
         </div>
         <div data-region="public-auth-state">
-            @* Placeholder login/logout state region — Phase 35 populates this *@
             @if (User?.Identity?.IsAuthenticated == true)
             {
                 <span data-state="authenticated">@User.Identity.Name</span>
+                <form method="post" asp-area="Public" asp-controller="Account" asp-action="Logout"
+                      data-form="public-logout" style="display:inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" data-action="public-logout-submit">@SharedLocalizer["Nav_SignOut"]</button>
+                </form>
             }
             else
             {
-                <span data-state="anonymous">@SharedLocalizer["Login_SignIn"]</span>
+                <span data-state="anonymous">
+                    <a asp-area="Public" asp-controller="Account" asp-action="Login"
+                       data-link="public-login">@SharedLocalizer["Login_SignIn"]</a>
+                    <a asp-area="Public" asp-controller="Account" asp-action="Register"
+                       data-link="public-register">@SharedLocalizer["Form_Create"]</a>
+                </span>
             }
         </div>
     </header>
