@@ -31,30 +31,76 @@ public class PublicGameTests : IntegrationTestBase
     // MVCGAME-01: Hex map renders terrain, ownership, capitals, buildings, armies
     // =========================================================================
 
-    [Fact(Skip = "Wave 0 placeholder")]
+    [Fact]
     public async Task MVCGAME_01_HexMapRendersTerrainOwnershipCapitalsBuildingsArmies()
     {
-        await Task.CompletedTask;
+        var (gameId, hostCookie, _, _, _) = await SeedActiveGameAsync();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/Public/Game/Index/{gameId}");
+        request.Headers.Add("Cookie", hostCookie);
+
+        var response = await Client.SendAsync(request);
+
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.OK);
+        var body = await response.Content.ReadAsStringAsync();
+        body.ShouldContain("data-region=\"hex-map\"");
+        body.ShouldContain("<polygon ", Case.Sensitive);
+        // A seeded game generates tiles (radius >= 2 → at least 7 tiles; should have more than 7 polygons)
+        var polygonCount = System.Text.RegularExpressions.Regex.Matches(body, "<polygon ").Count;
+        polygonCount.ShouldBeGreaterThan(0);
+        body.ShouldContain("data-marker=\"castle\"");
     }
 
     // =========================================================================
     // MVCGAME-02: Tile click drives contextual action panel
     // =========================================================================
 
-    [Fact(Skip = "Wave 0 placeholder")]
+    [Fact]
     public async Task MVCGAME_02_TileClickDrivesContextualActionPanel()
     {
-        await Task.CompletedTask;
+        var (gameId, hostCookie, _, _, _) = await SeedActiveGameAsync();
+
+        // First fetch the game page to get the first tile id from the state
+        using var scope = Factory.Services.CreateScope();
+        var gameInit = scope.ServiceProvider.GetRequiredService<IGameInitializationService>();
+        var state = await gameInit.BuildGameStateSnapshotAsync(gameId);
+        state.Tiles.Count.ShouldBeGreaterThan(0);
+        var firstTileId = state.Tiles[0].Id;
+
+        var request = new HttpRequestMessage(HttpMethod.Get,
+            $"/Public/Game/Index/{gameId}?selectedTileId={firstTileId}");
+        request.Headers.Add("Cookie", hostCookie);
+
+        var response = await Client.SendAsync(request);
+
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.OK);
+        var body = await response.Content.ReadAsStringAsync();
+        body.ShouldContain("data-selected=\"true\"");
+        body.ShouldContain("data-region=\"action-panel\"");
+        body.ShouldContain("data-region=\"selected-tile\"");
     }
 
     // =========================================================================
     // MVCGAME-03: HUD shows resources, phase, turn, and action points
     // =========================================================================
 
-    [Fact(Skip = "Wave 0 placeholder")]
+    [Fact]
     public async Task MVCGAME_03_HudShowsResourcesPhaseTurnAndActionPoints()
     {
-        await Task.CompletedTask;
+        var (gameId, hostCookie, _, _, _) = await SeedActiveGameAsync();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"/Public/Game/Index/{gameId}");
+        request.Headers.Add("Cookie", hostCookie);
+
+        var response = await Client.SendAsync(request);
+
+        response.StatusCode.ShouldBe(System.Net.HttpStatusCode.OK);
+        var body = await response.Content.ReadAsStringAsync();
+        body.ShouldContain("data-region=\"hud\"");
+        body.ShouldContain("data-resource=\"Gold\"");
+        body.ShouldContain("data-region=\"turn\"");
+        body.ShouldContain("Phase: Action");
+        body.ShouldContain("data-ap=\"");
     }
 
     // =========================================================================

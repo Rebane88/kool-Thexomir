@@ -1,0 +1,70 @@
+@model API.Areas.Public.ViewModels.GameIndexViewModel
+@using System.Globalization
+@using System.Web
+@using Application.Services.GameInitialization.DTOs
+@functions {
+    static string TerrainColor(string terrain) => terrain switch {
+        "Forest" => "#2d5016",
+        "Plains" => "#7c8c3a",
+        "Mountain" => "#6e6357",
+        "Desert" => "#c2a878",
+        "Water" => "#3a6e8c",
+        _ => "#555"
+    };
+
+    static string KingdomColor(Guid kingdomId, IEnumerable<KingdomDto> kingdoms)
+    {
+        var k = kingdoms.FirstOrDefault(kk => kk.Id == kingdomId);
+        return k?.FactionName switch {
+            "Sunforged" => "#d97706",
+            "Frostborn" => "#0ea5e9",
+            "Ashen" => "#6b21a8",
+            "Wildkin" => "#16a34a",
+            _ => "#666"
+        };
+    }
+}
+<svg viewBox="0 0 @Model.Layout.ViewBoxWidth.ToString("F1", CultureInfo.InvariantCulture) @Model.Layout.ViewBoxHeight.ToString("F1", CultureInfo.InvariantCulture)"
+     xmlns="http://www.w3.org/2000/svg"
+     data-region="hex-map"
+     width="100%" style="max-height:60vh;background:#1a1a1a">
+    @foreach (var tile in Model.State.Tiles)
+    {
+        var corners = Model.Layout.CornersByTileId[tile.Id];
+        var pts = string.Join(" ", corners.Select(c =>
+            $"{c.X.ToString("F1", CultureInfo.InvariantCulture)},{c.Y.ToString("F1", CultureInfo.InvariantCulture)}"));
+        var fill = tile.KingdomId.HasValue
+            ? KingdomColor(tile.KingdomId.Value, Model.State.Kingdoms)
+            : TerrainColor(tile.TerrainName);
+        var isSelected = Model.SelectedTileId == tile.Id;
+        var stroke = isSelected ? "#ffd700" : "#333";
+        var strokeW = isSelected ? 3 : 1;
+        var center = Model.Layout.CentersByTileId[tile.Id];
+        var cx = center.X.ToString("F1", CultureInfo.InvariantCulture);
+        var cy = center.Y.ToString("F1", CultureInfo.InvariantCulture);
+        var cyBuilding = (center.Y + 12).ToString("F1", CultureInfo.InvariantCulture);
+        <a href="@Url.Action("Index", "PublicGame", new { area = "Public", id = Model.GameId, selectedTileId = tile.Id })"
+           data-tile-id="@tile.Id"
+           data-selected="@isSelected.ToString().ToLowerInvariant()">
+            <polygon points="@pts" fill="@fill" stroke="@stroke" stroke-width="@strokeW" />
+            @if (tile.IsCastle)
+            {
+                @Html.Raw($"<text x=\"{cx}\" y=\"{cy}\" text-anchor=\"middle\" dominant-baseline=\"central\" fill=\"#fff\" font-size=\"20\" data-marker=\"castle\">&#x265A;</text>")
+            }
+            @foreach (var b in tile.Buildings)
+            {
+                @Html.Raw($"<text x=\"{cx}\" y=\"{cyBuilding}\" text-anchor=\"middle\" font-size=\"10\" fill=\"#eee\" data-marker=\"building\" data-building-id=\"{b.Id}\">&#x2302;</text>")
+            }
+        </a>
+    }
+    @foreach (var army in Model.State.Armies)
+    {
+        var tile = Model.FindTileForArmy(army);
+        if (tile is null) { continue; }
+        var c = Model.Layout.CentersByTileId[tile.Id];
+        <circle cx="@c.X.ToString("F1", CultureInfo.InvariantCulture)"
+                cy="@((c.Y + 6).ToString("F1", CultureInfo.InvariantCulture))"
+                r="4" fill="#f44"
+                data-marker="army" data-army-id="@army.Id" />
+    }
+</svg>

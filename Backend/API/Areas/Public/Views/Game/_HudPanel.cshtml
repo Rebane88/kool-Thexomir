@@ -1,0 +1,33 @@
+@model API.Areas.Public.ViewModels.GameIndexViewModel
+@{
+    var me = Model.MyKingdom;
+    var currentTurnKingdom = Model.State.Kingdoms.FirstOrDefault(k => k.Id == Model.State.CurrentTurnKingdomId);
+    var turnLabel = Model.IsMyTurn ? "Your Turn" : $"{currentTurnKingdom?.Name}'s Turn";
+    const int apMax = 4;
+}
+<header class="game-hud" data-region="hud">
+    <div class="hud-resources">
+        <dl class="resources">
+            @if (me is not null)
+            {
+                foreach (var r in me.Resources)
+                {
+                    <dt>@r.ResourceType</dt>
+                    <dd data-resource="@r.ResourceType">@r.Amount</dd>
+                }
+            }
+        </dl>
+    </div>
+    <div class="hud-turn" data-region="turn">
+        <span class="turn-label">@turnLabel</span>
+        <span class="phase">Phase: @Model.State.CurrentPhase</span>
+        <span class="round">Round @Model.State.RoundNumber</span>
+        <span class="ap-pips" data-ap="@Model.State.RemainingActionPoints">
+            @for (int i = 0; i < apMax; i++)
+            {
+                @(i < (Model.State.RemainingActionPoints ?? 0) ? "●" : "○")
+            }
+        </span>
+    </div>
+    <!-- Plan 06 will add gamble/end-turn forms; Plan 06 also adds abandon link -->
+</header>
