@@ -8,6 +8,8 @@ using Application.Services.Army;
 using Application.Services.Army.DTOs;
 using Application.Services.Building;
 using Application.Services.Building.DTOs;
+using Application.Services.Combat;
+using Application.Services.Combat.DTOs;
 using Application.Services.GameHub;
 using Application.Services.GameInitialization;
 using Application.Services.SlotMachine;
@@ -30,6 +32,7 @@ public class PublicGameController : Controller
     private readonly ISlotMachineService _slotMachineService;
     private readonly ITurnService _turnService;
     private readonly IAbandonService _abandonService;
+    private readonly ICombatService _combatService;
     private readonly IGameLockManager _gameLockManager;
     private readonly IHubContext<GameHub, IGameClient> _hubContext;
 
@@ -40,6 +43,7 @@ public class PublicGameController : Controller
         ISlotMachineService slotMachineService,
         ITurnService turnService,
         IAbandonService abandonService,
+        ICombatService combatService,
         IGameLockManager gameLockManager,
         IHubContext<GameHub, IGameClient> hubContext)
     {
@@ -49,6 +53,7 @@ public class PublicGameController : Controller
         _slotMachineService = slotMachineService;
         _turnService = turnService;
         _abandonService = abandonService;
+        _combatService = combatService;
         _gameLockManager = gameLockManager;
         _hubContext = hubContext;
     }
@@ -69,6 +74,8 @@ public class PublicGameController : Controller
             Catalog = BuildCatalog(buildingTypes, state, User.UserId()),
             ArmyTypes = (await _armyService.GetArmyTypesAsync(id, User.UserId())).ToList(),
         };
+        if (TempData["AttackError"] is string attackError)
+            vm.AttackError = attackError;
         return View("~/Areas/Public/Views/Game/Index.cshtml", vm);
     }
 
@@ -145,6 +152,26 @@ public class PublicGameController : Controller
         TempData["SpinGoldAfter"] = result.Value!.GoldAfter;
         TempData["SpinGoldSpent"] = result.Value!.GoldSpent;
         return RedirectToAction(nameof(Index), new { id, selectedTileId });
+    }
+
+    [HttpPost("{id:guid}/DeclareAttack")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeclareAttack(Guid id, DeclareAttackFormModel form)
+    {
+        using var gameLock = await _gameLockManager.AcquireAsync(id);
+        var result = await _combatService.DeclareAttackAsync(id, User.UserId(),
+            new DeclareAttackRequest
+            {
+                TargetTileId = form.TargetTileId,
+                RiskedTileId = form.RiskedTileId
+            });
+        if (!result.IsSuccess)
+        {
+            TempData["AttackError"] = result.Error;
+            return RedirectToAction(nameof(Index), new { id, selectedTileId = form.TargetTileId });
+        }
+        await _hubContext.Clients.Group($"game:{id}").AttackDeclared(result.Value!);
+        return RedirectToAction(nameof(Index), new { id });
     }
 
     [HttpPost("{id:guid}/EndTurn")]
