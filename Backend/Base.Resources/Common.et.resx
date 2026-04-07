@@ -697,4 +697,234 @@
     <data name="Page_Public" xml:space="preserve">
         <value>Avalik</value>
     </data>
+
+    <!-- Game views (public) -->
+    <data name="Page_Game" xml:space="preserve">
+        <value>Mäng</value>
+    </data>
+    <data name="Game_Buildings" xml:space="preserve">
+        <value>Ehitised</value>
+    </data>
+    <data name="Game_Military" xml:space="preserve">
+        <value>Sõjavägi</value>
+    </data>
+    <data name="Game_NoBuildingsAvailable" xml:space="preserve">
+        <value>Sellel maatükil pole ehitisi saadaval.</value>
+    </data>
+    <data name="Game_NoMilitaryHere" xml:space="preserve">
+        <value>Sellel maatükil pole sõjalisi ehitisi.</value>
+    </data>
+    <data name="Game_Locked" xml:space="preserve">
+        <value>Lukus</value>
+    </data>
+    <data name="Game_Build" xml:space="preserve">
+        <value>Ehita</value>
+    </data>
+    <data name="Game_Train" xml:space="preserve">
+        <value>Värba</value>
+    </data>
+    <data name="Game_Hud_YourTurn" xml:space="preserve">
+        <value>Sinu käik</value>
+    </data>
+    <data name="Game_Hud_PlayerTurn" xml:space="preserve">
+        <value>{0}i käik</value>
+    </data>
+    <data name="Game_Hud_Phase" xml:space="preserve">
+        <value>Faas:</value>
+    </data>
+    <data name="Game_Hud_Round" xml:space="preserve">
+        <value>Voor</value>
+    </data>
+    <data name="Game_Hud_Gamble" xml:space="preserve">
+        <value>Hasartmäng</value>
+    </data>
+    <data name="Game_Hud_EndTurn" xml:space="preserve">
+        <value>Lõpeta käik</value>
+    </data>
+    <data name="Game_Hud_Abandon" xml:space="preserve">
+        <value>Loobu</value>
+    </data>
+    <data name="Game_ConfirmAbandon" xml:space="preserve">
+        <value>Kas oled kindel, et soovid sellest mängust loobuda?</value>
+    </data>
+    <data name="Game_TimerExpired" xml:space="preserve">
+        <value>Aeg sai otsa!</value>
+    </data>
+    <data name="Game_Roster_Title" xml:space="preserve">
+        <value>Sõjaväe nimekiri</value>
+    </data>
+    <data name="Game_Roster_Empty" xml:space="preserve">
+        <value>Veel ei ole värvatud sõjavägesid.</value>
+    </data>
+    <data name="Game_Roster_Type" xml:space="preserve">
+        <value>Tüüp</value>
+    </data>
+    <data name="Game_Roster_HP" xml:space="preserve">
+        <value>HP</value>
+    </data>
+    <data name="Game_Roster_Location" xml:space="preserve">
+        <value>Asukoht</value>
+    </data>
+    <data name="Game_Roster_Building" xml:space="preserve">
+        <value>Ehitis</value>
+    </data>
+    <data name="Game_Roster_Unknown" xml:space="preserve">
+        <value>Tundmatu</value>
+    </data>
+    <data name="Game_Action_NoSelection" xml:space="preserve">
+        <value>Klõpsa maatüki valimiseks.</value>
+    </data>
+    <data name="Game_Action_TileNotFound" xml:space="preserve">
+        <value>Valitud maatükki ei leitud.</value>
+    </data>
+    <data name="Game_Action_Owner" xml:space="preserve">
+        <value>Omanik:</value>
+    </data>
+    <data name="Game_Action_Buildings" xml:space="preserve">
+        <value>Ehitised:</value>
+    </data>
+    <data name="Game_Action_Unclaimed" xml:space="preserve">
+        <value>Vaba</value>
+    </data>
+    <data name="Game_Slot_SpinResult" xml:space="preserve">
+        <value>Pööramise tulemus:</value>
+    </data>
+    <data name="Game_Slot_Outcome" xml:space="preserve">
+        <value>Tulemus</value>
+    </data>
+    <data name="Game_Slot_Spent" xml:space="preserve">
+        <value>Kulutatud</value>
+    </data>
+    <data name="Game_Slot_Gold" xml:space="preserve">
+        <value>kulda</value>
+    </data>
+    <data name="Game_Slot_GoldNow" xml:space="preserve">
+        <value>Kuld nüüd:</value>
+    </data>
+    <data name="Game_Slot_ApNow" xml:space="preserve">
+        <value>AP nüüd:</value>
+    </data>
+    <data name="Game_Attack_Declare" xml:space="preserve">
+        <value>Kuuluta rünnak</value>
+    </data>
+    <data name="Game_Attack_SelectAttacking" xml:space="preserve">
+        <value>Vali ründav maatükk (riskid):</value>
+    </data>
+    <data name="Game_Attack_Army" xml:space="preserve">
+        <value>sõjavägi</value>
+    </data>
+    <data name="Game_Attack_Armies" xml:space="preserve">
+        <value>sõjaväed</value>
+    </data>
+    <data name="Game_Attack_OnlyAction" xml:space="preserve">
+        <value>Rünnaku kuulutamine on saadaval ainult Tegevuse faasis.</value>
+    </data>
+    <data name="Game_Attack_NotEnoughAp" xml:space="preserve">
+        <value>Rünnaku kuulutamiseks pole piisavalt tegevuspunkte.</value>
+    </data>
+    <data name="Game_Attack_NoArmies" xml:space="preserve">
+        <value>Sul pole saadaval ühtegi sõjaväge, mida riskida.</value>
+    </data>
+    <data name="Game_Battle_Title" xml:space="preserve">
+        <value>Lahing</value>
+    </data>
+    <data name="Game_Battle_WaitingOpponentSelect" xml:space="preserve">
+        <value>Ootan vastast sõjavägede valimiseks...</value>
+    </data>
+    <data name="Game_Battle_WaitingOpponentLineup" xml:space="preserve">
+        <value>Ootan vastast lineupi kinnitamiseks...</value>
+    </data>
+    <data name="Game_Battle_Resolving" xml:space="preserve">
+        <value>Lahing lahendub...</value>
+    </data>
+    <data name="Game_Battle_Spectating" xml:space="preserve">
+        <value>Vaatan lahingut...</value>
+    </data>
+    <data name="Game_Battle_NoActiveAttack" xml:space="preserve">
+        <value>Sinu kuningriiki kaasav aktiivne rünnak puudub.</value>
+    </data>
+    <data name="Game_Battle_HP" xml:space="preserve">
+        <value>HP</value>
+    </data>
+    <data name="Game_Battle_Unknown" xml:space="preserve">
+        <value>Tundmatu</value>
+    </data>
+    <data name="Game_Battle_ConfirmArmies" xml:space="preserve">
+        <value>Kinnita sõjaväed</value>
+    </data>
+    <data name="Game_Battle_ConfirmLineup" xml:space="preserve">
+        <value>Kinnita lineup</value>
+    </data>
+    <data name="Game_PostBattle_Title" xml:space="preserve">
+        <value>Lahing lahendatud</value>
+    </data>
+    <data name="Game_PostBattle_Outcome" xml:space="preserve">
+        <value>Tulemus:</value>
+    </data>
+    <data name="Game_PostBattle_TileCaptured" xml:space="preserve">
+        <value>Maatükk vallutatud.</value>
+    </data>
+    <data name="Game_PostBattle_Round" xml:space="preserve">
+        <value>Voor</value>
+    </data>
+    <data name="Game_PostBattle_Initiative" xml:space="preserve">
+        <value>Initsiatiiv</value>
+    </data>
+    <data name="Game_PostBattle_Damage" xml:space="preserve">
+        <value>Kahjustus</value>
+    </data>
+    <data name="Game_PostBattle_AttackerHP" xml:space="preserve">
+        <value>Ründaja HP</value>
+    </data>
+    <data name="Game_PostBattle_DefenderHP" xml:space="preserve">
+        <value>Kaitsja HP</value>
+    </data>
+    <data name="Game_PostBattle_Destroyed" xml:space="preserve">
+        <value>Hävitatud</value>
+    </data>
+    <data name="Game_Standings_Active" xml:space="preserve">
+        <value>Aktiivsed kuningriigid</value>
+    </data>
+    <data name="Game_Standings_Fallen" xml:space="preserve">
+        <value>Langenud kuningriigid</value>
+    </data>
+    <data name="Game_Over_Title" xml:space="preserve">
+        <value>Mäng läbi</value>
+    </data>
+    <data name="Game_Over_Victory" xml:space="preserve">
+        <value>Võit</value>
+    </data>
+    <data name="Game_Over_VictoryMessage" xml:space="preserve">
+        <value>Sa võitsid mängu.</value>
+    </data>
+    <data name="Game_Over_Defeat" xml:space="preserve">
+        <value>Kaotus</value>
+    </data>
+    <data name="Game_Over_DefeatMessage" xml:space="preserve">
+        <value>Mäng on lõppenud. Sa seekord ei võitnud.</value>
+    </data>
+    <data name="Game_Over_Ended" xml:space="preserve">
+        <value>Mäng lõppes</value>
+    </data>
+    <data name="Game_Over_EndedMessage" xml:space="preserve">
+        <value>Mäng on jõudnud lõpule.</value>
+    </data>
+    <data name="Game_Over_FinalStandings" xml:space="preserve">
+        <value>Lõpptulemused</value>
+    </data>
+    <data name="Game_Over_Kingdom" xml:space="preserve">
+        <value>Kuningriik</value>
+    </data>
+    <data name="Game_Over_TilesOwned" xml:space="preserve">
+        <value>Maatükke</value>
+    </data>
+    <data name="Game_Over_Status" xml:space="preserve">
+        <value>Olek</value>
+    </data>
+    <data name="Game_Over_WinCondition" xml:space="preserve">
+        <value>Võidu tingimus:</value>
+    </data>
+    <data name="Game_Over_ReturnToLobby" xml:space="preserve">
+        <value>Tagasi mängulauda</value>
+    </data>
 </root>

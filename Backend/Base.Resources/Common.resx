@@ -704,4 +704,234 @@
     <data name="Page_Public" xml:space="preserve">
         <value>Public</value>
     </data>
+
+    <!-- Game views (public) -->
+    <data name="Page_Game" xml:space="preserve">
+        <value>Game</value>
+    </data>
+    <data name="Game_Buildings" xml:space="preserve">
+        <value>Buildings</value>
+    </data>
+    <data name="Game_Military" xml:space="preserve">
+        <value>Military</value>
+    </data>
+    <data name="Game_NoBuildingsAvailable" xml:space="preserve">
+        <value>No buildings available on this tile.</value>
+    </data>
+    <data name="Game_NoMilitaryHere" xml:space="preserve">
+        <value>No military buildings on this tile.</value>
+    </data>
+    <data name="Game_Locked" xml:space="preserve">
+        <value>Locked</value>
+    </data>
+    <data name="Game_Build" xml:space="preserve">
+        <value>Build</value>
+    </data>
+    <data name="Game_Train" xml:space="preserve">
+        <value>Train</value>
+    </data>
+    <data name="Game_Hud_YourTurn" xml:space="preserve">
+        <value>Your Turn</value>
+    </data>
+    <data name="Game_Hud_PlayerTurn" xml:space="preserve">
+        <value>{0}'s Turn</value>
+    </data>
+    <data name="Game_Hud_Phase" xml:space="preserve">
+        <value>Phase:</value>
+    </data>
+    <data name="Game_Hud_Round" xml:space="preserve">
+        <value>Round</value>
+    </data>
+    <data name="Game_Hud_Gamble" xml:space="preserve">
+        <value>Gamble</value>
+    </data>
+    <data name="Game_Hud_EndTurn" xml:space="preserve">
+        <value>End Turn</value>
+    </data>
+    <data name="Game_Hud_Abandon" xml:space="preserve">
+        <value>Abandon</value>
+    </data>
+    <data name="Game_ConfirmAbandon" xml:space="preserve">
+        <value>Abandon this game?</value>
+    </data>
+    <data name="Game_TimerExpired" xml:space="preserve">
+        <value>Time's up!</value>
+    </data>
+    <data name="Game_Roster_Title" xml:space="preserve">
+        <value>Army Roster</value>
+    </data>
+    <data name="Game_Roster_Empty" xml:space="preserve">
+        <value>No armies trained yet.</value>
+    </data>
+    <data name="Game_Roster_Type" xml:space="preserve">
+        <value>Type</value>
+    </data>
+    <data name="Game_Roster_HP" xml:space="preserve">
+        <value>HP</value>
+    </data>
+    <data name="Game_Roster_Location" xml:space="preserve">
+        <value>Location</value>
+    </data>
+    <data name="Game_Roster_Building" xml:space="preserve">
+        <value>Building</value>
+    </data>
+    <data name="Game_Roster_Unknown" xml:space="preserve">
+        <value>Unknown</value>
+    </data>
+    <data name="Game_Action_NoSelection" xml:space="preserve">
+        <value>Click a tile to select it.</value>
+    </data>
+    <data name="Game_Action_TileNotFound" xml:space="preserve">
+        <value>Selected tile not found.</value>
+    </data>
+    <data name="Game_Action_Owner" xml:space="preserve">
+        <value>Owner:</value>
+    </data>
+    <data name="Game_Action_Buildings" xml:space="preserve">
+        <value>Buildings:</value>
+    </data>
+    <data name="Game_Action_Unclaimed" xml:space="preserve">
+        <value>Unclaimed</value>
+    </data>
+    <data name="Game_Slot_SpinResult" xml:space="preserve">
+        <value>Spin result:</value>
+    </data>
+    <data name="Game_Slot_Outcome" xml:space="preserve">
+        <value>Outcome</value>
+    </data>
+    <data name="Game_Slot_Spent" xml:space="preserve">
+        <value>Spent</value>
+    </data>
+    <data name="Game_Slot_Gold" xml:space="preserve">
+        <value>gold</value>
+    </data>
+    <data name="Game_Slot_GoldNow" xml:space="preserve">
+        <value>Gold now:</value>
+    </data>
+    <data name="Game_Slot_ApNow" xml:space="preserve">
+        <value>AP now:</value>
+    </data>
+    <data name="Game_Attack_Declare" xml:space="preserve">
+        <value>Declare Attack</value>
+    </data>
+    <data name="Game_Attack_SelectAttacking" xml:space="preserve">
+        <value>Select attacking tile (risked):</value>
+    </data>
+    <data name="Game_Attack_Army" xml:space="preserve">
+        <value>army</value>
+    </data>
+    <data name="Game_Attack_Armies" xml:space="preserve">
+        <value>armies</value>
+    </data>
+    <data name="Game_Attack_OnlyAction" xml:space="preserve">
+        <value>Attack declarations are only available during the Action phase.</value>
+    </data>
+    <data name="Game_Attack_NotEnoughAp" xml:space="preserve">
+        <value>Not enough action points to declare an attack.</value>
+    </data>
+    <data name="Game_Attack_NoArmies" xml:space="preserve">
+        <value>You have no armies available to risk.</value>
+    </data>
+    <data name="Game_Battle_Title" xml:space="preserve">
+        <value>Battle</value>
+    </data>
+    <data name="Game_Battle_WaitingOpponentSelect" xml:space="preserve">
+        <value>Waiting for opponent to select armies...</value>
+    </data>
+    <data name="Game_Battle_WaitingOpponentLineup" xml:space="preserve">
+        <value>Waiting for opponent to confirm lineup...</value>
+    </data>
+    <data name="Game_Battle_Resolving" xml:space="preserve">
+        <value>Resolving battle...</value>
+    </data>
+    <data name="Game_Battle_Spectating" xml:space="preserve">
+        <value>Watching battle...</value>
+    </data>
+    <data name="Game_Battle_NoActiveAttack" xml:space="preserve">
+        <value>No active attack involving your kingdom.</value>
+    </data>
+    <data name="Game_Battle_HP" xml:space="preserve">
+        <value>HP</value>
+    </data>
+    <data name="Game_Battle_Unknown" xml:space="preserve">
+        <value>Unknown</value>
+    </data>
+    <data name="Game_Battle_ConfirmArmies" xml:space="preserve">
+        <value>Confirm Armies</value>
+    </data>
+    <data name="Game_Battle_ConfirmLineup" xml:space="preserve">
+        <value>Confirm Lineup</value>
+    </data>
+    <data name="Game_PostBattle_Title" xml:space="preserve">
+        <value>Battle Resolved</value>
+    </data>
+    <data name="Game_PostBattle_Outcome" xml:space="preserve">
+        <value>Outcome:</value>
+    </data>
+    <data name="Game_PostBattle_TileCaptured" xml:space="preserve">
+        <value>Tile captured.</value>
+    </data>
+    <data name="Game_PostBattle_Round" xml:space="preserve">
+        <value>Round</value>
+    </data>
+    <data name="Game_PostBattle_Initiative" xml:space="preserve">
+        <value>Initiative</value>
+    </data>
+    <data name="Game_PostBattle_Damage" xml:space="preserve">
+        <value>Damage</value>
+    </data>
+    <data name="Game_PostBattle_AttackerHP" xml:space="preserve">
+        <value>Attacker HP</value>
+    </data>
+    <data name="Game_PostBattle_DefenderHP" xml:space="preserve">
+        <value>Defender HP</value>
+    </data>
+    <data name="Game_PostBattle_Destroyed" xml:space="preserve">
+        <value>Destroyed</value>
+    </data>
+    <data name="Game_Standings_Active" xml:space="preserve">
+        <value>Active Kingdoms</value>
+    </data>
+    <data name="Game_Standings_Fallen" xml:space="preserve">
+        <value>Fallen Kingdoms</value>
+    </data>
+    <data name="Game_Over_Title" xml:space="preserve">
+        <value>Game Over</value>
+    </data>
+    <data name="Game_Over_Victory" xml:space="preserve">
+        <value>Victory</value>
+    </data>
+    <data name="Game_Over_VictoryMessage" xml:space="preserve">
+        <value>You have won the game.</value>
+    </data>
+    <data name="Game_Over_Defeat" xml:space="preserve">
+        <value>Defeat</value>
+    </data>
+    <data name="Game_Over_DefeatMessage" xml:space="preserve">
+        <value>The game has ended. You did not win this round.</value>
+    </data>
+    <data name="Game_Over_Ended" xml:space="preserve">
+        <value>Game Ended</value>
+    </data>
+    <data name="Game_Over_EndedMessage" xml:space="preserve">
+        <value>The game has concluded.</value>
+    </data>
+    <data name="Game_Over_FinalStandings" xml:space="preserve">
+        <value>Final Standings</value>
+    </data>
+    <data name="Game_Over_Kingdom" xml:space="preserve">
+        <value>Kingdom</value>
+    </data>
+    <data name="Game_Over_TilesOwned" xml:space="preserve">
+        <value>Tiles Owned</value>
+    </data>
+    <data name="Game_Over_Status" xml:space="preserve">
+        <value>Status</value>
+    </data>
+    <data name="Game_Over_WinCondition" xml:space="preserve">
+        <value>Win condition:</value>
+    </data>
+    <data name="Game_Over_ReturnToLobby" xml:space="preserve">
+        <value>Return to Lobby</value>
+    </data>
 </root>
