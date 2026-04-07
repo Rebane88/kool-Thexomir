@@ -1,16 +1,17 @@
 @model API.Areas.Public.ViewModels.LobbyIndexViewModel
 @using Domain.Game
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
-    ViewData["Title"] = "Lobbies";
+    ViewData["Title"] = SharedLocalizer["Lobby_Title"].Value;
 }
 
-<h1>@Localizer["Lobbies"]</h1>
+<h1>@SharedLocalizer["Lobby_Title"]</h1>
 
 <section data-region="open-lobbies">
-    <h2>@Localizer["Open Lobbies"]</h2>
+    <h2>@SharedLocalizer["Lobby_OpenLobbies"]</h2>
     @if (!Model.OpenLobbies.Any())
     {
-        <p data-empty="open-lobbies">@Localizer["No lobbies open right now."]</p>
+        <p data-empty="open-lobbies">@SharedLocalizer["Lobby_NoneOpen"]</p>
     }
     else
     {
@@ -21,7 +22,7 @@
                     <a asp-action="Detail" asp-route-id="@lobby.Id">
                         @lobby.LobbyCode
                     </a>
-                    &mdash; @lobby.PlayerCount / @lobby.MaxPlayers @Localizer["players"]
+                    &mdash; @lobby.PlayerCount / @lobby.MaxPlayers @SharedLocalizer["Lobby_PlayersWord"]
                 </li>
             }
         </ul>
@@ -29,7 +30,7 @@
 </section>
 
 <section data-region="create-lobby">
-    <h2>@Localizer["Create Lobby"]</h2>
+    <h2>@SharedLocalizer["Lobby_CreateTitle"]</h2>
     <form method="post" asp-area="Public" asp-controller="Lobby" asp-action="Create">
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="text-danger" data-region="form-error-summary"></div>
@@ -48,12 +49,12 @@
             <span asp-validation-for="CreateForm.WinCondition" class="text-danger" data-field-error="WinCondition"></span>
         </div>
 
-        <button type="submit" class="btn btn-primary" data-action="public-lobby-create-submit">@Localizer["Create"]</button>
+        <button type="submit" class="btn btn-primary" data-action="public-lobby-create-submit">@SharedLocalizer["Lobby_CreateButton"]</button>
     </form>
 </section>
 
 <section data-region="join-lobby">
-    <h2>@Localizer["Join Lobby"]</h2>
+    <h2>@SharedLocalizer["Lobby_JoinTitle"]</h2>
     <form method="post" asp-area="Public" asp-controller="Lobby" asp-action="Join">
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="text-danger" data-region="join-error-summary"></div>
@@ -64,6 +65,6 @@
             <span asp-validation-for="JoinForm.InviteCode" class="text-danger" data-field-error="InviteCode"></span>
         </div>
 
-        <button type="submit" class="btn btn-secondary" data-action="public-lobby-join-submit">@Localizer["Join"]</button>
+        <button type="submit" class="btn btn-secondary" data-action="public-lobby-join-submit">@SharedLocalizer["Lobby_JoinButton"]</button>
     </form>
 </section>

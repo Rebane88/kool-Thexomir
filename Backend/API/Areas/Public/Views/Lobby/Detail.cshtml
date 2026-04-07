@@ -1,32 +1,33 @@
 @model API.Areas.Public.ViewModels.LobbyDetailViewModel
 @using Domain.Game
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
-    ViewData["Title"] = $"Lobby {Model.Lobby.LobbyCode}";
+    ViewData["Title"] = $"{SharedLocalizer["Lobby_Detail"].Value} {Model.Lobby.LobbyCode}";
 }
 
-<h1>@Localizer["Lobby"] @Model.Lobby.LobbyCode</h1>
+<h1>@SharedLocalizer["Lobby_Detail"] @Model.Lobby.LobbyCode</h1>
 
 <div asp-validation-summary="All" class="text-danger" data-region="form-error-summary"></div>
 
 <section data-region="lobby-settings">
-    <p><strong>@Localizer["Invite Code"]:</strong> <code data-field="invite-code">@Model.Lobby.LobbyCode</code></p>
-    <p><strong>@Localizer["Max Players"]:</strong> @Model.Lobby.MaxPlayers</p>
-    <p><strong>@Localizer["Status"]:</strong> @Model.Lobby.Status</p>
+    <p><strong>@SharedLocalizer["Lobby_InviteCode"]:</strong> <code data-field="invite-code">@Model.Lobby.LobbyCode</code></p>
+    <p><strong>@SharedLocalizer["Lobby_MaxPlayers"]:</strong> @Model.Lobby.MaxPlayers</p>
+    <p><strong>@SharedLocalizer["Lobby_Status"]:</strong> @Model.Lobby.Status</p>
 </section>
 
 <section data-region="player-list">
-    <h2>@Localizer["Players"] (@Model.Lobby.Players.Count / @Model.Lobby.MaxPlayers)</h2>
+    <h2>@SharedLocalizer["Lobby_Players"] (@Model.Lobby.Players.Count / @Model.Lobby.MaxPlayers)</h2>
     <ul>
         @foreach (var player in Model.Lobby.Players)
         {
             var factionName = Model.Lobby.Factions
                 .FirstOrDefault(f => f.FactionTypeId == player.FactionTypeId)?.Name
-                ?? Localizer["No faction"].Value;
+                ?? SharedLocalizer["Lobby_NoFaction"].Value;
             <li>
                 @player.UserEmail
                 @if (Model.Lobby.HostUserId.HasValue && player.UserId == Model.Lobby.HostUserId.Value)
                 {
-                    <span class="badge bg-warning" data-marker="host">@Localizer["Host"]</span>
+                    <span class="badge bg-warning" data-marker="host">@SharedLocalizer["Lobby_Host"]</span>
                 }
                 &mdash; @factionName
             </li>
@@ -37,7 +38,7 @@
 @if (Model.Lobby.Status == EGameStatus.Lobby)
 {
     <section data-region="faction-picker">
-        <h2>@Localizer["Pick Faction"]</h2>
+        <h2>@SharedLocalizer["Lobby_PickFaction"]</h2>
         <form method="post" asp-area="Public" asp-controller="Lobby" asp-action="SelectFaction">
             @Html.AntiForgeryToken()
             <input type="hidden" name="LobbyId" value="@Model.Lobby.Id" />
@@ -49,18 +50,18 @@
                     <option value="@f.FactionTypeId"
                             selected="@(isMine ? "selected" : null)"
                             disabled="@(disabled ? "disabled" : null)">
-                        @f.Name @(disabled ? "(taken)" : "")
+                        @f.Name @(disabled ? SharedLocalizer["Lobby_Taken"].Value : "")
                     </option>
                 }
             </select>
-            <button type="submit" class="btn btn-primary" data-action="public-lobby-select-faction-submit">@Localizer["Confirm Faction"]</button>
+            <button type="submit" class="btn btn-primary" data-action="public-lobby-select-faction-submit">@SharedLocalizer["Lobby_ConfirmFaction"]</button>
         </form>
     </section>
 
     <section data-region="leave-lobby">
         <form method="post" asp-area="Public" asp-controller="Lobby" asp-action="Leave" asp-route-id="@Model.Lobby.Id">
             @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-danger" data-action="public-lobby-leave-submit">@Localizer["Leave Lobby"]</button>
+            <button type="submit" class="btn btn-danger" data-action="public-lobby-leave-submit">@SharedLocalizer["Lobby_LeaveButton"]</button>
         </form>
     </section>
 
@@ -71,12 +72,12 @@
                 @Html.AntiForgeryToken()
                 <button type="submit" class="btn btn-success" disabled="@(Model.CanStart ? null : "disabled")"
                         data-action="public-lobby-start-submit">
-                    @Localizer["Start Game"]
+                    @SharedLocalizer["Lobby_StartGame"]
                 </button>
             </form>
             @if (!Model.CanStart)
             {
-                <p class="text-muted" data-region="start-disabled-reason">@Localizer["Need at least 2 players, all with factions selected."]</p>
+                <p class="text-muted" data-region="start-disabled-reason">@SharedLocalizer["Lobby_StartHint"]</p>
             }
         </section>
     }
