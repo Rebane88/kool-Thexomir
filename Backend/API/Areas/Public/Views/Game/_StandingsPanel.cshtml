@@ -1,0 +1,27 @@
+@model API.Areas.Public.ViewModels.GameIndexViewModel
+@{
+    var active = Model.State.Kingdoms.Where(k => k.Status == "Active").ToList();
+    var fallen = Model.State.Kingdoms.Where(k => k.Status == "Defeated").ToList();
+}
+<aside data-region="standings-panel">
+    <h4>Active Kingdoms</h4>
+    <ul>
+        @foreach (var k in active)
+        {
+            var meClass = (Model.MyKingdom is not null && k.Id == Model.MyKingdom.Id) ? "standings-me" : "";
+            <li data-kingdom-id="@k.Id" class="@meClass">
+                @k.Name (@k.FactionName)
+            </li>
+        }
+    </ul>
+    @if (fallen.Count > 0)
+    {
+        <h4>Fallen Kingdoms</h4>
+        <ul>
+            @foreach (var k in fallen)
+            {
+                <li data-kingdom-id="@k.Id">@k.Name (@k.FactionName)</li>
+            }
+        </ul>
+    }
+</aside>
