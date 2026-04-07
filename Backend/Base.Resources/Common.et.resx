@@ -927,4 +927,13 @@
     <data name="Game_Over_ReturnToLobby" xml:space="preserve">
         <value>Tagasi mängulauda</value>
     </data>
+    <data name="Game_BattlePlaceholder_TileOwner" xml:space="preserve">
+        <value>Maatüki omanik:</value>
+    </data>
+    <data name="Game_BattlePlaceholder_Unclaimed" xml:space="preserve">
+        <value>Hõivamata</value>
+    </data>
+    <data name="Game_BattlePlaceholder_BattleWizardHint" xml:space="preserve">
+        <value>Lahinguviisard aktiveerub Lahingu faasis — kuuluta enne rünnak välja.</value>
+    </data>
 </root>

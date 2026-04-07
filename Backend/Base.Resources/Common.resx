@@ -934,4 +934,13 @@
     <data name="Game_Over_ReturnToLobby" xml:space="preserve">
         <value>Return to Lobby</value>
     </data>
+    <data name="Game_BattlePlaceholder_TileOwner" xml:space="preserve">
+        <value>Tile Owner:</value>
+    </data>
+    <data name="Game_BattlePlaceholder_Unclaimed" xml:space="preserve">
+        <value>Unclaimed</value>
+    </data>
+    <data name="Game_BattlePlaceholder_BattleWizardHint" xml:space="preserve">
+        <value>Battle wizard activates during the Battle phase — declare an attack first.</value>
+    </data>
 </root>

@@ -1,4 +1,5 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
     if (Model.SelectedTileId is null) { return; }
     var tile = Model.State.Tiles.FirstOrDefault(t => t.Id == Model.SelectedTileId);
@@ -7,9 +8,11 @@
     if (Model.MyKingdom is not null && tile.KingdomId == Model.MyKingdom.Id) { return; }
 
     var owner = Model.State.Kingdoms.FirstOrDefault(k => k.Id == tile.KingdomId);
-    var ownerLabel = owner is null ? "Unclaimed" : $"{owner.Name} ({owner.FactionName})";
+    var ownerLabel = owner is null
+        ? SharedLocalizer["Game_BattlePlaceholder_Unclaimed"].Value
+        : $"{owner.Name} ({owner.FactionName})";
 }
 <section class="battle-placeholder alert alert-warning" data-region="battle-placeholder">
-    <h4>Tile Owner: @ownerLabel</h4>
-    <p>Battle wizard activates during the Battle phase — declare an attack first.</p>
+    <h4>@SharedLocalizer["Game_BattlePlaceholder_TileOwner"] @ownerLabel</h4>
+    <p>@SharedLocalizer["Game_BattlePlaceholder_BattleWizardHint"]</p>
 </section>
