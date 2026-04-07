@@ -6,8 +6,7 @@
 }
 <partial name="~/Areas/Public/Views/Game/_HudPanel.cshtml" model="Model" />
 <partial name="~/Areas/Public/Views/Game/_SlotMachinePanel.cshtml" model="Model" />
-@if (Model.State.CurrentPhase == "Battle"
-     && Model.GetBattleStep() != BattleWizardStep.None)
+@if (Model.GetBattleStep() != BattleWizardStep.None)
 {
     <partial name="_BattleWizardPanel" model="Model" />
 }

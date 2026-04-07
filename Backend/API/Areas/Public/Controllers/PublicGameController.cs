@@ -81,6 +81,10 @@ public class PublicGameController : Controller
             vm.SelectArmiesError = selectArmiesError;
         if (TempData["LineupError"] is string lineupError)
             vm.LineupError = lineupError;
+        if (TempData["LastBattleResult"] is string battleJson)
+        {
+            vm.LastBattleResult = JsonSerializer.Deserialize<BattleResultDto>(battleJson);
+        }
         return View("~/Areas/Public/Views/Game/Index.cshtml", vm);
     }
 

@@ -25,6 +25,9 @@
         case BattleWizardStep.WaitingForResolution:
             <p data-state="waiting">Resolving battle...</p>
             break;
+        case BattleWizardStep.PostBattle:
+            <partial name="_PostBattlePanel" model="Model" />
+            break;
         default:
             <p data-state="spectator">Watching battle...</p>
             break;

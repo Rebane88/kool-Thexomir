@@ -1,0 +1,40 @@
+@model API.Areas.Public.ViewModels.GameIndexViewModel
+@{
+    var battle = Model.LastBattleResult;
+}
+@if (battle is not null)
+{
+    <section data-region="post-battle">
+        <h3>Battle Resolved</h3>
+        <p data-outcome="@battle.Outcome">Outcome: @battle.Outcome</p>
+        @if (battle.TileCapturedId != Guid.Empty)
+        {
+            <p>Tile @battle.TileCapturedId captured.</p>
+        }
+        <table data-table="battle-rounds">
+            <thead>
+                <tr>
+                    <th>Round</th>
+                    <th>Initiative</th>
+                    <th>Damage</th>
+                    <th>Attacker HP</th>
+                    <th>Defender HP</th>
+                    <th>Destroyed</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var round in battle.Rounds)
+                {
+                    <tr>
+                        <td>@round.RoundNumber</td>
+                        <td>@round.InitiativeWinner</td>
+                        <td>@round.DamageDealt</td>
+                        <td>@round.AttackerArmyHPAfter</td>
+                        <td>@round.DefenderArmyHPAfter</td>
+                        <td>@(round.ArmyDestroyedId?.ToString() ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </section>
+}
