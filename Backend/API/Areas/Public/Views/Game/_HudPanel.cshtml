@@ -28,6 +28,7 @@
                 @(i < (Model.State.RemainingActionPoints ?? 0) ? "●" : "○")
             }
         </span>
+        <span id="turn-timer" class="turn-timer" aria-live="polite"></span>
     </div>
     <div class="hud-actions" data-region="hud-actions">
         <form method="post"

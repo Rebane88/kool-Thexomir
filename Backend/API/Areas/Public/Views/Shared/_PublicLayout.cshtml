@@ -8,6 +8,528 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Realms of Ash — @ViewData["Title"]</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        :root {
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --page-bg: #fafafa;
+            --card-border: #e4e4e7;
+            --header-bg: #111113;
+            --header-text: #e4e4e7;
+            --header-muted: #9a9a9f;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body { height: 100%; }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--page-bg);
+            color: #18181b;
+            font-size: 0.9rem;
+        }
+
+        /* Header */
+        .public-header {
+            background: var(--header-bg);
+            color: var(--header-text);
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 1px 0 rgba(255,255,255,0.05);
+        }
+
+        .public-header nav[aria-label="public-primary"] a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        .public-header [data-region="public-language-switcher"] {
+            margin-left: auto;
+        }
+
+        .public-header [data-region="public-language-switcher"] select,
+        .public-header [data-region="public-language-switcher"] form select {
+            background: transparent;
+            color: var(--header-text);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .public-header [data-region="public-auth-state"] {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--header-muted);
+        }
+
+        .public-header [data-region="public-auth-state"] a {
+            color: var(--header-text);
+            text-decoration: none;
+            font-size: 0.8rem;
+            padding: 0.3rem 0.65rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.12);
+            transition: background 0.15s;
+        }
+
+        .public-header [data-region="public-auth-state"] a:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .public-header [data-region="public-auth-state"] [data-state="authenticated"] {
+            color: #fff;
+        }
+
+        .public-header [data-region="public-auth-state"] button {
+            background: transparent;
+            color: var(--header-text);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            padding: 0.3rem 0.65rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .public-header [data-region="public-auth-state"] button:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        /* Main */
+        .public-main {
+            max-width: 960px;
+            margin: 2rem auto;
+            padding: 0 1.5rem 3rem;
+        }
+
+        .public-main h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin: 0 0 1.5rem;
+            color: #18181b;
+        }
+
+        .public-main h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 0 1rem;
+            color: #27272a;
+        }
+
+        /* Each section becomes a card */
+        .public-main section {
+            background: #fff;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+
+        .public-main section[data-page] {
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Forms */
+        .public-main .form-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #3f3f46;
+            margin-bottom: 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .public-main .form-control,
+        .public-main .form-select,
+        .public-main select {
+            font-size: 0.85rem;
+            border-radius: 6px;
+            border: 1px solid #d4d4d8;
+            padding: 0.5rem 0.7rem;
+        }
+
+        .public-main .form-control:focus,
+        .public-main .form-select:focus,
+        .public-main select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+            outline: none;
+        }
+
+        /* Buttons */
+        .public-main .btn {
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+        }
+
+        .public-main .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .public-main .btn-primary:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+
+        .public-main .btn-secondary {
+            background: #52525b;
+            border-color: #52525b;
+        }
+
+        .public-main .btn-secondary:hover {
+            background: #3f3f46;
+            border-color: #3f3f46;
+        }
+
+        /* Lists */
+        .public-main .list-group {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .public-main .list-group-item {
+            border-color: var(--card-border);
+            font-size: 0.85rem;
+            padding: 0.65rem 0.85rem;
+        }
+
+        .public-main .list-group-item a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .public-main .list-group-item a:hover {
+            text-decoration: underline;
+        }
+
+        /* Empty / muted text */
+        .public-main p[data-empty],
+        .public-main p[data-marker] {
+            color: #71717a;
+            font-style: italic;
+            margin: 0;
+        }
+
+        /* Validation */
+        .public-main .text-danger {
+            color: #dc2626 !important;
+            font-size: 0.75rem;
+        }
+
+        /* ---------- Game page ---------- */
+
+        /* Widen the container when the game is rendered (hex map needs space) */
+        body:has(.game-main) .public-main {
+            max-width: 1400px;
+        }
+
+        /* HUD bar */
+        .game-hud {
+            background: #fff;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 0.85rem 1.25rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+
+        .hud-resources { flex: 1 1 auto; min-width: 0; }
+
+        .resources {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0;
+            margin: 0;
+        }
+        .resources dt {
+            font-weight: 600;
+            color: #71717a;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-right: 0.4rem;
+        }
+        .resources dd {
+            margin: 0 1.4rem 0 0;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #18181b;
+            font-variant-numeric: tabular-nums;
+        }
+        .resources dd:last-of-type { margin-right: 0; }
+
+        .hud-turn {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.78rem;
+            color: #52525b;
+            padding: 0 1rem;
+            border-left: 1px solid var(--card-border);
+            border-right: 1px solid var(--card-border);
+        }
+        .hud-turn .turn-label {
+            font-weight: 600;
+            color: #18181b;
+            font-size: 0.85rem;
+        }
+        .hud-turn .ap-pips {
+            color: var(--accent);
+            letter-spacing: 0.1em;
+            font-size: 0.9rem;
+        }
+
+        .hud-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .hud-actions button {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.45rem 0.85rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .hud-actions button:hover:not(:disabled) { background: var(--accent-hover); }
+        .hud-actions button:disabled {
+            background: #e4e4e7;
+            color: #a1a1aa;
+            cursor: not-allowed;
+        }
+        .hud-actions button.btn-danger {
+            background: #dc2626;
+        }
+        .hud-actions button.btn-danger:hover:not(:disabled) { background: #b91c1c; }
+
+        /* Game main layout: hex map | action panel */
+        .game-main {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+        }
+        .game-main > :first-child {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        /* Hex map container (whatever wraps the SVG) */
+        .game-main [data-region="hex-map"],
+        .game-main svg {
+            background: #18181b;
+            border-radius: 10px;
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 80vh;
+        }
+
+        /* Action panel sidebar */
+        .action-panel {
+            flex: 0 0 340px;
+            max-width: 340px;
+            background: #fff;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .action-panel h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem;
+            color: #18181b;
+        }
+        .action-panel h4 {
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #71717a;
+            margin: 1.25rem 0 0.5rem;
+        }
+        .action-panel > p { font-size: 0.8rem; color: #52525b; margin: 0.25rem 0; }
+
+        /* Building / unit rows */
+        .building-panel,
+        .military-panel {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+        }
+
+        .building-row,
+        .unit-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            padding: 0.55rem 0;
+            border-bottom: 1px solid #f4f4f5;
+        }
+        .building-row:last-child,
+        .unit-row:last-child { border-bottom: none; }
+
+        .bt-name, .at-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #18181b;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .bt-tier {
+            font-size: 0.65rem;
+            font-weight: 600;
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .bt-cost, .at-cost, .at-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            flex-basis: 100%;
+        }
+        .cost-pill, .stat-pill {
+            font-size: 0.65rem;
+            font-weight: 600;
+            background: #f4f4f5;
+            color: #52525b;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+        .stat-pill { background: #fef3c7; color: #92400e; }
+        .bt-prereq {
+            font-size: 0.65rem;
+            font-weight: 600;
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .building-row button,
+        .unit-row button {
+            margin-left: auto;
+        }
+        .btn-sm {
+            padding: 0.3rem 0.7rem !important;
+            font-size: 0.75rem !important;
+        }
+
+        /* Army roster drawer */
+        .army-roster {
+            background: #fff;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .army-roster summary {
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: #18181b;
+            list-style: none;
+        }
+        .army-roster summary::-webkit-details-marker { display: none; }
+        .army-roster summary::before {
+            content: '▸ ';
+            color: #a1a1aa;
+            transition: transform 0.15s;
+            display: inline-block;
+        }
+        .army-roster[open] summary::before { content: '▾ '; }
+        .army-roster .table {
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+        }
+        .army-roster .table th {
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #71717a;
+            letter-spacing: 0.04em;
+        }
+
+        /* Selected tile heading lives in <aside.action-panel>; the public-main h1 rule is too aggressive */
+        .public-main .action-panel h3[data-region="selected-tile"] {
+            font-size: 1rem;
+            margin-top: 0;
+        }
+
+        /* Stack on narrow viewports */
+        @@media (max-width: 900px) {
+            .game-main { flex-direction: column; }
+            .action-panel { flex: 1 1 auto; max-width: 100%; width: 100%; }
+        }
+
+        @@media (max-width: 640px) {
+            .public-header {
+                padding: 0.75rem 1rem;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+            }
+            .public-main {
+                margin: 1rem auto;
+                padding: 0 1rem 2rem;
+            }
+        }
+
+        .turn-timer {
+            font-family: ui-monospace, 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            font-variant-numeric: tabular-nums;
+            color: #52525b;
+            min-width: 3ch;
+            margin-left: 0.5rem;
+        }
+        .turn-timer--warning { color: #dc2626; animation: turn-timer-pulse 1s infinite; }
+        .turn-timer--critical { color: #dc2626; font-weight: 700; animation: turn-timer-pulse 0.5s infinite; }
+        .turn-timer--expired { color: #dc2626; font-weight: 700; }
+        @@keyframes turn-timer-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
 </head>
 <body data-layout="public">
     <header class="public-header" data-region="public-nav">

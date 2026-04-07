@@ -56,4 +56,36 @@
             connection.start().catch(function (err) { console.error('SignalR error:', err); });
         })();
     </script>
+        @if (Model.State.TurnDeadline.HasValue)
+        {
+            <script>
+                (function () {
+                    var deadlineMs = new Date('@Model.State.TurnDeadline.Value.ToString("O")').getTime();
+                    var timerEl = document.getElementById('turn-timer');
+                    if (!timerEl || !deadlineMs) return;
+
+                    var interval;
+                    function tick() {
+                        var remaining = Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000));
+                        var m = Math.floor(remaining / 60);
+                        var s = remaining % 60;
+                        timerEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+
+                        timerEl.className = 'turn-timer';
+                        if (remaining === 0) {
+                            timerEl.textContent = "Time's up!";
+                            timerEl.classList.add('turn-timer--expired');
+                            clearInterval(interval);
+                        } else if (remaining <= 10) {
+                            timerEl.classList.add('turn-timer--critical');
+                        } else if (remaining <= 30) {
+                            timerEl.classList.add('turn-timer--warning');
+                        }
+                    }
+
+                    tick();
+                    interval = setInterval(tick, 1000);
+                })();
+            </script>
+        }
 }
