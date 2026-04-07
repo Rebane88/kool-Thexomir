@@ -1,10 +1,11 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
     var active = Model.State.Kingdoms.Where(k => k.Status == "Active").ToList();
     var fallen = Model.State.Kingdoms.Where(k => k.Status == "Defeated").ToList();
 }
 <aside data-region="standings-panel">
-    <h4>Active Kingdoms</h4>
+    <h4>@SharedLocalizer["Game_Standings_Active"]</h4>
     <ul>
         @foreach (var k in active)
         {
@@ -16,7 +17,7 @@
     </ul>
     @if (fallen.Count > 0)
     {
-        <h4>Fallen Kingdoms</h4>
+        <h4>@SharedLocalizer["Game_Standings_Fallen"]</h4>
         <ul>
             @foreach (var k in fallen)
             {

@@ -1,4 +1,5 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
     var myAttack = Model.State.DeclaredAttacks.FirstOrDefault(da =>
         Model.MyKingdom is not null
@@ -6,10 +7,12 @@
     var myArmies = Model.State.Armies
         .Where(a => Model.MyKingdom is not null && a.KingdomId == Model.MyKingdom.Id)
         .ToList();
+    var unknownLabel = SharedLocalizer["Game_Battle_Unknown"].Value;
+    var hpLabel = SharedLocalizer["Game_Battle_HP"].Value;
 }
 @if (myAttack is null)
 {
-    <p>No active attack involving your kingdom.</p>
+    <p>@SharedLocalizer["Game_Battle_NoActiveAttack"]</p>
 }
 else
 {
@@ -27,11 +30,11 @@ else
                 <li>
                     <label>
                         <input type="checkbox" name="ArmyIds" value="@army.Id" />
-                        @(armyType?.Name ?? "Unknown") (HP @army.CurrentHP / @army.MaxHP)
+                        @(armyType?.Name ?? unknownLabel) (@hpLabel @army.CurrentHP / @army.MaxHP)
                     </label>
                 </li>
             }
         </ul>
-        <button type="submit">Confirm Armies</button>
+        <button type="submit">@SharedLocalizer["Game_Battle_ConfirmArmies"]</button>
     </form>
 }

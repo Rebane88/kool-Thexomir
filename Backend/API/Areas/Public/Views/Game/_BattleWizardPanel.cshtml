@@ -1,5 +1,6 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
 @using API.Areas.Public.ViewModels
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
     var step = Model.GetBattleStep();
     var myAttack = Model.State.DeclaredAttacks.FirstOrDefault(da =>
@@ -7,29 +8,29 @@
         && (da.AttackerKingdomId == Model.MyKingdom.Id || da.DefenderKingdomId == Model.MyKingdom.Id));
 }
 <section data-region="battle-wizard">
-    <h3>Battle</h3>
+    <h3>@SharedLocalizer["Game_Battle_Title"]</h3>
     @switch (step)
     {
         case BattleWizardStep.SelectArmies:
             <partial name="~/Areas/Public/Views/Game/_SelectArmiesPanel.cshtml" model="Model" />
             break;
         case BattleWizardStep.WaitForOpponentSelect:
-            <p data-state="waiting">Waiting for opponent to select armies...</p>
+            <p data-state="waiting">@SharedLocalizer["Game_Battle_WaitingOpponentSelect"]</p>
             break;
         case BattleWizardStep.SetLineup:
             <partial name="~/Areas/Public/Views/Game/_LineupPanel.cshtml" model="Model" />
             break;
         case BattleWizardStep.WaitForOpponentLineup:
-            <p data-state="waiting">Waiting for opponent to confirm lineup...</p>
+            <p data-state="waiting">@SharedLocalizer["Game_Battle_WaitingOpponentLineup"]</p>
             break;
         case BattleWizardStep.WaitingForResolution:
-            <p data-state="waiting">Resolving battle...</p>
+            <p data-state="waiting">@SharedLocalizer["Game_Battle_Resolving"]</p>
             break;
         case BattleWizardStep.PostBattle:
             <partial name="~/Areas/Public/Views/Game/_PostBattlePanel.cshtml" model="Model" />
             break;
         default:
-            <p data-state="spectator">Watching battle...</p>
+            <p data-state="spectator">@SharedLocalizer["Game_Battle_Spectating"]</p>
             break;
     }
 </section>

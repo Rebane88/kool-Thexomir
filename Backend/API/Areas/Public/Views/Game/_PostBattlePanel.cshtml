@@ -1,25 +1,26 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
     var battle = Model.LastBattleResult;
 }
 @if (battle is not null)
 {
     <section data-region="post-battle">
-        <h3>Battle Resolved</h3>
-        <p data-outcome="@battle.Outcome">Outcome: @battle.Outcome</p>
+        <h3>@SharedLocalizer["Game_PostBattle_Title"]</h3>
+        <p data-outcome="@battle.Outcome">@SharedLocalizer["Game_PostBattle_Outcome"] @battle.Outcome</p>
         @if (battle.TileCapturedId != Guid.Empty)
         {
-            <p>Tile @battle.TileCapturedId captured.</p>
+            <p>@SharedLocalizer["Game_PostBattle_TileCaptured"]</p>
         }
         <table data-table="battle-rounds">
             <thead>
                 <tr>
-                    <th>Round</th>
-                    <th>Initiative</th>
-                    <th>Damage</th>
-                    <th>Attacker HP</th>
-                    <th>Defender HP</th>
-                    <th>Destroyed</th>
+                    <th>@SharedLocalizer["Game_PostBattle_Round"]</th>
+                    <th>@SharedLocalizer["Game_PostBattle_Initiative"]</th>
+                    <th>@SharedLocalizer["Game_PostBattle_Damage"]</th>
+                    <th>@SharedLocalizer["Game_PostBattle_AttackerHP"]</th>
+                    <th>@SharedLocalizer["Game_PostBattle_DefenderHP"]</th>
+                    <th>@SharedLocalizer["Game_PostBattle_Destroyed"]</th>
                 </tr>
             </thead>
             <tbody>

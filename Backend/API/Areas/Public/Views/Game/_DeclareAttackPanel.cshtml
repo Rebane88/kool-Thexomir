@@ -1,4 +1,5 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
     if (Model.SelectedTileId is null || Model.MyKingdom is null) { return; }
     var tile = Model.State.Tiles.FirstOrDefault(t => t.Id == Model.SelectedTileId);
@@ -23,9 +24,11 @@
     var canDeclare = Model.State.CurrentPhase == "Action"
         && (Model.State.RemainingActionPoints ?? 0) >= 1
         && tilesWithArmies.Count > 0;
+    var armyWord = SharedLocalizer["Game_Attack_Army"].Value;
+    var armiesWord = SharedLocalizer["Game_Attack_Armies"].Value;
 }
 <section class="declare-attack-panel" data-region="declare-attack-panel">
-    <h3>Declare Attack</h3>
+    <h3>@SharedLocalizer["Game_Attack_Declare"]</h3>
     @if (Model.AttackError is not null)
     {
         <p class="error" data-region="attack-error">@Model.AttackError</p>
@@ -34,32 +37,32 @@
         @Html.AntiForgeryToken()
         <input type="hidden" name="TargetTileId" value="@tile.Id" />
         <div>
-            <label for="RiskedTileId">Select attacking tile (risked):</label>
+            <label for="RiskedTileId">@SharedLocalizer["Game_Attack_SelectAttacking"]</label>
             <select name="RiskedTileId" id="RiskedTileId">
                 @foreach (var entry in tilesWithArmies)
                 {
                     <option value="@entry.Tile.Id">
-                        @entry.Tile.CoordQ,@entry.Tile.CoordR (@entry.ArmyCount @(entry.ArmyCount == 1 ? "army" : "armies"))
+                        @entry.Tile.CoordQ,@entry.Tile.CoordR (@entry.ArmyCount @(entry.ArmyCount == 1 ? armyWord : armiesWord))
                     </option>
                 }
             </select>
         </div>
         <button type="submit" class="btn btn-sm btn-danger" disabled="@(!canDeclare ? "disabled" : null)">
-            Declare Attack
+            @SharedLocalizer["Game_Attack_Declare"]
         </button>
         @if (!canDeclare)
         {
             @if (Model.State.CurrentPhase != "Action")
             {
-                <p class="text-muted">Attack declarations are only available during the Action phase.</p>
+                <p class="text-muted">@SharedLocalizer["Game_Attack_OnlyAction"]</p>
             }
             else if ((Model.State.RemainingActionPoints ?? 0) < 1)
             {
-                <p class="text-muted">Not enough action points to declare an attack.</p>
+                <p class="text-muted">@SharedLocalizer["Game_Attack_NotEnoughAp"]</p>
             }
             else
             {
-                <p class="text-muted">You have no armies available to risk.</p>
+                <p class="text-muted">@SharedLocalizer["Game_Attack_NoArmies"]</p>
             }
         }
     </form>

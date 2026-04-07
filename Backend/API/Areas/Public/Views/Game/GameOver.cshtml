@@ -1,33 +1,34 @@
 @model API.Areas.Public.ViewModels.GameOverViewModel
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
-    ViewData["Title"] = "Game Over";
+    ViewData["Title"] = SharedLocalizer["Game_Over_Title"].Value;
     Layout = "_PublicLayout";
 }
 
 <section data-region="game-over">
     @if (Model.IWon)
     {
-        <h1 data-result="win">Victory</h1>
-        <p>You have won the game.</p>
+        <h1 data-result="win">@SharedLocalizer["Game_Over_Victory"]</h1>
+        <p>@SharedLocalizer["Game_Over_VictoryMessage"]</p>
     }
     else if (Model.GameOver.WinnerKingdomId.HasValue)
     {
-        <h1 data-result="loss">Defeat</h1>
-        <p>The game has ended. You did not win this round.</p>
+        <h1 data-result="loss">@SharedLocalizer["Game_Over_Defeat"]</h1>
+        <p>@SharedLocalizer["Game_Over_DefeatMessage"]</p>
     }
     else
     {
-        <h1 data-result="draw">Game Ended</h1>
-        <p>The game has concluded.</p>
+        <h1 data-result="draw">@SharedLocalizer["Game_Over_Ended"]</h1>
+        <p>@SharedLocalizer["Game_Over_EndedMessage"]</p>
     }
 
-    <h2>Final Standings</h2>
+    <h2>@SharedLocalizer["Game_Over_FinalStandings"]</h2>
     <table data-table="final-standings">
         <thead>
             <tr>
-                <th>Kingdom</th>
-                <th>Tiles Owned</th>
-                <th>Status</th>
+                <th>@SharedLocalizer["Game_Over_Kingdom"]</th>
+                <th>@SharedLocalizer["Game_Over_TilesOwned"]</th>
+                <th>@SharedLocalizer["Game_Over_Status"]</th>
             </tr>
         </thead>
         <tbody>
@@ -42,9 +43,9 @@
         </tbody>
     </table>
 
-    <p>Win condition: @Model.GameOver.WinConditionType</p>
+    <p>@SharedLocalizer["Game_Over_WinCondition"] @Model.GameOver.WinConditionType</p>
 
     <a asp-area="Public" asp-controller="Lobby" asp-action="Index" data-action="return-to-lobby">
-        Return to Lobby
+        @SharedLocalizer["Game_Over_ReturnToLobby"]
     </a>
 </section>
