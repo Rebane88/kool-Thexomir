@@ -24,6 +24,8 @@ public class GameIndexViewModel
     public BattleResultDto? LastBattleResult { get; set; }
     public GameOverDto? GameOverData { get; set; }
     public string? AttackError { get; set; }
+    public string? SelectArmiesError { get; set; }
+    public string? LineupError { get; set; }
 
     public KingdomDto? MyKingdom =>
         State.Kingdoms.FirstOrDefault(k => k.UserId == MyUserId);

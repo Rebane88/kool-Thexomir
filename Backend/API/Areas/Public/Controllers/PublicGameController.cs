@@ -1,3 +1,4 @@
+using System.Text.Json;
 using API.Areas.Public.Helpers;
 using API.Areas.Public.ViewModels;
 using API.Extensions;
@@ -76,6 +77,10 @@ public class PublicGameController : Controller
         };
         if (TempData["AttackError"] is string attackError)
             vm.AttackError = attackError;
+        if (TempData["SelectArmiesError"] is string selectArmiesError)
+            vm.SelectArmiesError = selectArmiesError;
+        if (TempData["LineupError"] is string lineupError)
+            vm.LineupError = lineupError;
         return View("~/Areas/Public/Views/Game/Index.cshtml", vm);
     }
 
@@ -171,6 +176,66 @@ public class PublicGameController : Controller
             return RedirectToAction(nameof(Index), new { id, selectedTileId = form.TargetTileId });
         }
         await _hubContext.Clients.Group($"game:{id}").AttackDeclared(result.Value!);
+        return RedirectToAction(nameof(Index), new { id });
+    }
+
+    [HttpPost("{id:guid}/SelectArmies")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SelectArmies(Guid id, SelectArmiesFormModel form)
+    {
+        using var gameLock = await _gameLockManager.AcquireAsync(id);
+        var result = await _combatService.SelectArmiesAsync(id, User.UserId(),
+            new SelectArmiesRequest
+            {
+                DeclaredAttackId = form.DeclaredAttackId,
+                ArmyIds = form.ArmyIds
+            });
+        if (!result.IsSuccess)
+        {
+            TempData["SelectArmiesError"] = result.Error;
+            return RedirectToAction(nameof(Index), new { id });
+        }
+        await _hubContext.Clients.Group($"game:{id}").ArmiesSelected(result.Value!);
+        return RedirectToAction(nameof(Index), new { id });
+    }
+
+    [HttpPost("{id:guid}/SetLineup")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetLineup(Guid id, SetLineupFormModel form)
+    {
+        using var gameLock = await _gameLockManager.AcquireAsync(id);
+        var result = await _combatService.SetLineupAsync(id, User.UserId(),
+            new SetLineupRequest
+            {
+                DeclaredAttackId = form.DeclaredAttackId,
+                ArmyIdsInOrder = form.ArmyIdsInOrder
+            });
+        if (!result.IsSuccess)
+        {
+            TempData["LineupError"] = result.Error;
+            return RedirectToAction(nameof(Index), new { id });
+        }
+        await _hubContext.Clients.Group($"game:{id}").LineupSet(result.Value!);
+
+        var allReady = await _combatService.AreAllLineupsSetAsync(id);
+        if (allReady)
+        {
+            var advanceResult = await _turnService.ResolveAndAdvanceAsync(
+                id,
+                onRoundResolved: async (round, battleId) =>
+                    await _hubContext.Clients.Group($"game:{id}").BattleRoundResolved(round),
+                onBattleResolved: async (battleResult) =>
+                {
+                    TempData["LastBattleResult"] = JsonSerializer.Serialize(battleResult);
+                    await _hubContext.Clients.Group($"game:{id}").BattleResolved(battleResult);
+                });
+
+            if (advanceResult.IsSuccess && advanceResult.Value!.GameOver is not null)
+            {
+                TempData["GameOver"] = JsonSerializer.Serialize(advanceResult.Value.GameOver);
+                await _hubContext.Clients.Group($"game:{id}").GameOver(advanceResult.Value.GameOver);
+            }
+        }
         return RedirectToAction(nameof(Index), new { id });
     }
 
