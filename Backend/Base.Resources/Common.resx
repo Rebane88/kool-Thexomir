@@ -625,4 +625,83 @@
     <data name="GameEvents_ConfirmDelete" xml:space="preserve">
         <value>Delete this game event?</value>
     </data>
+
+    <!-- Lobby (public) -->
+    <data name="Lobby_Title" xml:space="preserve">
+        <value>Lobbies</value>
+    </data>
+    <data name="Lobby_OpenLobbies" xml:space="preserve">
+        <value>Open Lobbies</value>
+    </data>
+    <data name="Lobby_NoneOpen" xml:space="preserve">
+        <value>No lobbies open right now.</value>
+    </data>
+    <data name="Lobby_PlayersWord" xml:space="preserve">
+        <value>players</value>
+    </data>
+    <data name="Lobby_CreateTitle" xml:space="preserve">
+        <value>Create Lobby</value>
+    </data>
+    <data name="Lobby_CreateButton" xml:space="preserve">
+        <value>Create</value>
+    </data>
+    <data name="Lobby_JoinTitle" xml:space="preserve">
+        <value>Join Lobby</value>
+    </data>
+    <data name="Lobby_JoinButton" xml:space="preserve">
+        <value>Join</value>
+    </data>
+    <data name="Lobby_Detail" xml:space="preserve">
+        <value>Lobby</value>
+    </data>
+    <data name="Lobby_InviteCode" xml:space="preserve">
+        <value>Invite Code</value>
+    </data>
+    <data name="Lobby_MaxPlayers" xml:space="preserve">
+        <value>Max Players</value>
+    </data>
+    <data name="Lobby_Status" xml:space="preserve">
+        <value>Status</value>
+    </data>
+    <data name="Lobby_Players" xml:space="preserve">
+        <value>Players</value>
+    </data>
+    <data name="Lobby_NoFaction" xml:space="preserve">
+        <value>No faction</value>
+    </data>
+    <data name="Lobby_Host" xml:space="preserve">
+        <value>Host</value>
+    </data>
+    <data name="Lobby_PickFaction" xml:space="preserve">
+        <value>Pick Faction</value>
+    </data>
+    <data name="Lobby_Taken" xml:space="preserve">
+        <value>(taken)</value>
+    </data>
+    <data name="Lobby_ConfirmFaction" xml:space="preserve">
+        <value>Confirm Faction</value>
+    </data>
+    <data name="Lobby_LeaveButton" xml:space="preserve">
+        <value>Leave Lobby</value>
+    </data>
+    <data name="Lobby_StartGame" xml:space="preserve">
+        <value>Start Game</value>
+    </data>
+    <data name="Lobby_StartHint" xml:space="preserve">
+        <value>Need at least 2 players, all with factions selected.</value>
+    </data>
+
+    <!-- Register / Public pages -->
+    <data name="Form_ConfirmPassword" xml:space="preserve">
+        <value>Confirm password</value>
+    </data>
+    <data name="Page_Register" xml:space="preserve">
+        <value>Register</value>
+    </data>
+    <data name="Public_HomeStatus" xml:space="preserve">
+        <value>Public area online.</value>
+    </data>
+    <data name="Page_Public" xml:space="preserve">
+        <value>Public</value>
+    </data>
 </root>
