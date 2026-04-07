@@ -16,6 +16,7 @@ using Application.Services.GameInitialization;
 using Application.Services.SlotMachine;
 using Application.Services.Turn;
 using Application.Services.Turn.DTOs;
+using Application.Services.WinCondition.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -75,6 +76,16 @@ public class PublicGameController : Controller
             Catalog = BuildCatalog(buildingTypes, state, User.UserId()),
             ArmyTypes = (await _armyService.GetArmyTypesAsync(id, User.UserId())).ToList(),
         };
+        if (TempData["GameOver"] is string gameOverJson)
+        {
+            TempData["GameOver"] = gameOverJson;
+            TempData.Keep("GameOver");
+            return RedirectToAction(nameof(GameOver), new { id });
+        }
+        if (state.Status == "Completed")
+        {
+            return RedirectToAction(nameof(GameOver), new { id });
+        }
         if (TempData["AttackError"] is string attackError)
             vm.AttackError = attackError;
         if (TempData["SelectArmiesError"] is string selectArmiesError)
@@ -298,6 +309,51 @@ public class PublicGameController : Controller
             await _hubContext.Clients.Group($"game:{id}").GameOver(result.Value);
         }
         return RedirectToAction("Index", "Lobby", new { area = "Public" });
+    }
+
+    [HttpGet("{id:guid}/GameOver")]
+    public async Task<IActionResult> GameOver(Guid id)
+    {
+        GameOverDto? gameOver = null;
+        if (TempData["GameOver"] is string json)
+        {
+            gameOver = JsonSerializer.Deserialize<GameOverDto>(json);
+        }
+
+        if (gameOver is null)
+        {
+            // Reconstruct from current game state if TempData was already consumed
+            var snapshot = await _gameInit.BuildGameStateSnapshotAsync(id);
+            if (snapshot.Status != "Completed")
+            {
+                return RedirectToAction(nameof(Index), new { id });
+            }
+            gameOver = new GameOverDto
+            {
+                GameId = id,
+                WinnerKingdomId = snapshot.Kingdoms.FirstOrDefault(k => k.Status == "Active")?.Id,
+                WinConditionType = "Unknown",
+                FinalStandings = snapshot.Kingdoms.Select(k => new KingdomResultDto
+                {
+                    KingdomId = k.Id,
+                    KingdomName = k.Name,
+                    TilesOwned = snapshot.Tiles.Count(t => t.KingdomId == k.Id),
+                    Status = k.Status
+                }).ToList(),
+                EliminationOrder = new List<Guid>()
+            };
+        }
+
+        var myKingdomId = (await _gameInit.BuildGameStateSnapshotAsync(id))
+            .Kingdoms.FirstOrDefault(k => k.UserId == User.UserId())?.Id;
+
+        var vm = new GameOverViewModel
+        {
+            GameId = id,
+            GameOver = gameOver,
+            MyKingdomId = myKingdomId
+        };
+        return View("~/Areas/Public/Views/Game/GameOver.cshtml", vm);
     }
 
     private static List<BuildingCatalogEntryViewModel> BuildCatalog(
