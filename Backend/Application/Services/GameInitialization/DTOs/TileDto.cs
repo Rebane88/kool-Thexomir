@@ -7,6 +7,8 @@ public class TileDto
     public int CoordR { get; set; }
     public Guid TerrainTypeId { get; set; }
     public string TerrainName { get; set; } = string.Empty;
+    /// <summary>Language-neutral English identifier used by the hex map renderer for color/style switch expressions. Distinct from TerrainName, which is translated for display.</summary>
+    public string TerrainKey { get; set; } = string.Empty;
     public Guid? KingdomId { get; set; }
     public bool IsCastle { get; set; }
     public List<BuildingDto> Buildings { get; set; } = [];

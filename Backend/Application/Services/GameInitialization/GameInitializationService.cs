@@ -150,7 +150,7 @@ public class GameInitializationService(IUnitOfWork unitOfWork, ILogger<GameIniti
                 Name = kingdom.Name,
                 UserId = kingdom.AppUserId,
                 FactionTypeId = kingdom.FactionTypeId,
-                FactionName = faction?.Name.ToString(),
+                FactionName = faction?.Name.Translate(),
                 Status = kingdom.Status.ToString(),
                 Resources = resources.Select(r => new KingdomResourceDto
                 {
@@ -212,14 +212,15 @@ public class GameInitializationService(IUnitOfWork unitOfWork, ILogger<GameIniti
                 CoordQ = t.CoordQ,
                 CoordR = t.CoordR,
                 TerrainTypeId = t.TerrainTypeId,
-                TerrainName = t.TerrainType?.Name.ToString() ?? string.Empty,
+                TerrainName = t.TerrainType?.Name.Translate() ?? string.Empty,
+                TerrainKey = t.TerrainType?.Name.ContainsKey("en") == true ? t.TerrainType.Name["en"] : string.Empty,
                 KingdomId = t.KingdomId,
                 IsCastle = t.IsCastle,
                 Buildings = (t.Buildings ?? []).Select(b => new BuildingDto
                 {
                     Id = b.Id,
                     BuildingTypeId = b.BuildingTypeId,
-                    BuildingName = b.BuildingType?.Name.ToString() ?? string.Empty
+                    BuildingName = b.BuildingType?.Name.Translate() ?? string.Empty
                 }).ToList()
             }).ToList(),
             Kingdoms = kingdomDtos,
