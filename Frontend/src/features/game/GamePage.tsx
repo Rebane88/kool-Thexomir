@@ -58,7 +58,6 @@ export function GamePage() {
   // capturing it from useGameCanvas, which would be a TDZ forward reference.
   const markDirtyRef = useRef<() => void>(() => {});
 
-  const myKingdomId = useGameStore((s) => s.myKingdomId);
   const isMyTurn = useGameStore(
     (s) => s.myKingdomId !== null && s.currentTurnKingdomId === s.myKingdomId,
   );

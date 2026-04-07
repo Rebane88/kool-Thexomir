@@ -142,6 +142,9 @@
     <data name="Login_Title" xml:space="preserve">
         <value>Administraatori sisselogimine</value>
     </data>
+    <data name="Login_PublicTitle" xml:space="preserve">
+        <value>Logi sisse</value>
+    </data>
     <data name="Login_Email" xml:space="preserve">
         <value>E-post</value>
     </data>
@@ -150,6 +153,12 @@
     </data>
     <data name="Login_SignIn" xml:space="preserve">
         <value>Logi sisse</value>
+    </data>
+    <data name="Login_GoToPublic" xml:space="preserve">
+        <value>Mängija sisselogimine</value>
+    </data>
+    <data name="Login_GoToAdmin" xml:space="preserve">
+        <value>Administraatori sisselogimine</value>
     </data>
 
     <!-- Dashboard -->

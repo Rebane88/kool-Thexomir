@@ -70,6 +70,16 @@
             transition: background 0.15s;
         }
         .login-btn:hover { background: #818cf8; }
+        .login-alt {
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+        .login-alt a {
+            color: #6366f1;
+            text-decoration: none;
+        }
+        .login-alt a:hover { text-decoration: underline; }
         .login-error {
             background: #fee2e2;
             color: #991b1b;
@@ -102,6 +112,9 @@
             </div>
             <button type="submit" class="login-btn">@Localizer["Login_SignIn"]</button>
         </form>
+        <div class="login-alt">
+            <a asp-area="Public" asp-controller="Account" asp-action="Login">@Localizer["Login_GoToPublic"]</a>
+        </div>
     </div>
 </body>
 </html>

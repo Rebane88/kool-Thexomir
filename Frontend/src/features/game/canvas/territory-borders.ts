@@ -20,7 +20,7 @@ export function drawTerritoryBorders(
   tiles: Map<string, Tile>,
   kingdoms: Map<string, Kingdom>,
   layout: HexLayoutConfig,
-  myKingdomId: string | null,
+  _myKingdomId: string | null,
 ): void {
   // Pass 1: Territory borders on kingdom boundaries
   for (const [, tile] of tiles) {

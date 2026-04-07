@@ -65,8 +65,8 @@ public class PublicLobbyTests : IntegrationTestBase
 
         var formContent = new FormUrlEncodedContent(new[]
         {
-            new KeyValuePair<string, string>("MaxPlayers", "4"),
-            new KeyValuePair<string, string>("WinCondition", EWinCondition.Elimination.ToString()),
+            new KeyValuePair<string, string>("CreateForm.MaxPlayers", "4"),
+            new KeyValuePair<string, string>("CreateForm.WinCondition", EWinCondition.Elimination.ToString()),
             new KeyValuePair<string, string>("__RequestVerificationToken", token)
         });
 
@@ -91,8 +91,8 @@ public class PublicLobbyTests : IntegrationTestBase
 
         var formContent = new FormUrlEncodedContent(new[]
         {
-            new KeyValuePair<string, string>("MaxPlayers", "99"),
-            new KeyValuePair<string, string>("WinCondition", EWinCondition.Elimination.ToString()),
+            new KeyValuePair<string, string>("CreateForm.MaxPlayers", "99"),
+            new KeyValuePair<string, string>("CreateForm.WinCondition", EWinCondition.Elimination.ToString()),
             new KeyValuePair<string, string>("__RequestVerificationToken", token)
         });
 
@@ -128,7 +128,7 @@ public class PublicLobbyTests : IntegrationTestBase
 
         var formContent = new FormUrlEncodedContent(new[]
         {
-            new KeyValuePair<string, string>("InviteCode", inviteCode),
+            new KeyValuePair<string, string>("JoinForm.InviteCode", inviteCode),
             new KeyValuePair<string, string>("__RequestVerificationToken", token)
         });
 
@@ -152,7 +152,7 @@ public class PublicLobbyTests : IntegrationTestBase
 
         var formContent = new FormUrlEncodedContent(new[]
         {
-            new KeyValuePair<string, string>("InviteCode", "ZZZZZZ"),
+            new KeyValuePair<string, string>("JoinForm.InviteCode", "ZZZZZZ"),
             new KeyValuePair<string, string>("__RequestVerificationToken", token)
         });
 
@@ -185,7 +185,7 @@ public class PublicLobbyTests : IntegrationTestBase
 
         var formContent = new FormUrlEncodedContent(new[]
         {
-            new KeyValuePair<string, string>("InviteCode", inviteCode),
+            new KeyValuePair<string, string>("JoinForm.InviteCode", inviteCode),
             new KeyValuePair<string, string>("__RequestVerificationToken", token)
         });
 

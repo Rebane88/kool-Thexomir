@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { CameraState, DEFAULT_CAMERA, screenToWorld, computeZoom } from './camera';
+import type { CameraState } from './camera';
+import { DEFAULT_CAMERA, screenToWorld, computeZoom } from './camera';
 import { axialToPixel, pixelToAxial } from './hex-math';
 import type { HexLayoutConfig } from './types';
 

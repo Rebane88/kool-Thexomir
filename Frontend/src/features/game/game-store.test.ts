@@ -7,8 +7,6 @@ import type {
   ArmyTrainedEvent,
   SlotMachineSpunEvent,
   AttackDeclaredEvent,
-  ArmiesSelectedEvent,
-  LineupSetEvent,
   BattleResolvedEvent,
   PhaseChangedEvent,
   TurnStartedEvent,
@@ -28,6 +26,8 @@ function createMockSnapshot(): GameStateSnapshot {
     currentTurnKingdomId: 'k-1',
     currentPhase: 'Action',
     remainingActionPoints: 4,
+    spinCostGold: 10,
+    turnDeadline: null,
     declaredAttacks: [],
     tiles: [
       {
@@ -209,7 +209,7 @@ describe('delta events', () => {
       currentPhase: 'Action',
       actionPoints: 3,
       turnDeadline: null,
-      incomeApplied: { Gold: 20 },
+      incomeApplied: { 'k-1': { Gold: 20 } },
       battleResults: null,
       phaseChanged: false,
       gameOver: null,
@@ -230,7 +230,7 @@ describe('delta events', () => {
       currentPhase: 'Action',
       actionPoints: 3,
       turnDeadline: null,
-      incomeApplied: { Gold: 20, Food: 10 },
+      incomeApplied: { 'k-1': { Gold: 20, Food: 10 } },
       battleResults: null,
       phaseChanged: false,
       gameOver: null,
@@ -251,6 +251,7 @@ describe('delta events', () => {
       riskedTileId: 'tile-1',
       attackerKingdomId: 'k-1',
       defenderKingdomId: 'k-2',
+      actionPointsAfter: 3,
     });
     expect(useGameStore.getState().declaredAttacks.length).toBe(1);
 
@@ -303,6 +304,7 @@ describe('delta events', () => {
       resourcesAfter: { Gold: 60 },
       claimedTileIds: [],
       isUpgrade: false,
+      actionPointsAfter: 3,
     };
     useGameStore.getState().handleBuildingPlaced(event);
 
@@ -322,6 +324,7 @@ describe('delta events', () => {
       resourcesAfter: { Gold: 50, Food: 30 },
       claimedTileIds: [],
       isUpgrade: true,
+      actionPointsAfter: 3,
     };
     useGameStore.getState().handleBuildingPlaced(event);
 
@@ -342,6 +345,7 @@ describe('delta events', () => {
       resourcesAfter: { Gold: 60 },
       claimedTileIds: ['tile-3'],
       isUpgrade: false,
+      actionPointsAfter: 3,
     };
     useGameStore.getState().handleBuildingPlaced(event);
 
@@ -359,6 +363,7 @@ describe('delta events', () => {
       resourcesAfter: { Gold: 60 },
       claimedTileIds: [],
       isUpgrade: false,
+      actionPointsAfter: 3,
     };
     useGameStore.getState().handleBuildingPlaced(event);
 
@@ -376,6 +381,7 @@ describe('delta events', () => {
       currentHP: 80,
       maxHP: 80,
       resourcesAfter: { Gold: 50, Food: 30 },
+      actionPointsAfter: 3,
     };
     useGameStore.getState().handleArmyTrained(event);
 
@@ -398,6 +404,7 @@ describe('delta events', () => {
       currentHP: 80,
       maxHP: 80,
       resourcesAfter: { Gold: 50, Food: 30 },
+      actionPointsAfter: 3,
     };
     useGameStore.getState().handleArmyTrained(event);
 
@@ -437,6 +444,7 @@ describe('delta events', () => {
       riskedTileId: 'tile-1',
       attackerKingdomId: 'k-1',
       defenderKingdomId: 'k-2',
+      actionPointsAfter: 3,
     };
     useGameStore.getState().handleAttackDeclared(event);
 
@@ -456,6 +464,7 @@ describe('delta events', () => {
       riskedTileId: 'tile-1',
       attackerKingdomId: 'k-1',
       defenderKingdomId: 'k-2',
+      actionPointsAfter: 3,
     });
 
     // Attacker confirms
@@ -485,6 +494,7 @@ describe('delta events', () => {
       riskedTileId: 'tile-1',
       attackerKingdomId: 'k-1',
       defenderKingdomId: 'k-2',
+      actionPointsAfter: 3,
     });
 
     // Attacker confirms
@@ -514,6 +524,7 @@ describe('delta events', () => {
       riskedTileId: 'tile-1',
       attackerKingdomId: 'k-1',
       defenderKingdomId: 'k-2',
+      actionPointsAfter: 3,
     });
 
     const event: BattleResolvedEvent = {
@@ -605,6 +616,7 @@ describe('delta events', () => {
       riskedTileId: 'tile-1',
       attackerKingdomId: 'k-1',
       defenderKingdomId: 'k-2',
+      actionPointsAfter: 3,
     });
 
     const event: RoundStartedEvent = { roundNumber: 5 };

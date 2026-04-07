@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { axialToPixel, hexCorners, generateAxialCoords, axialRound, pixelToAxial, getHexNeighbors, AXIAL_DIRECTIONS } from './hex-math';
+import { axialToPixel, hexCorners, generateAxialCoords, axialRound, pixelToAxial, getHexNeighbors } from './hex-math';
 import type { HexLayoutConfig } from './types';
 
 describe('axialToPixel', () => {

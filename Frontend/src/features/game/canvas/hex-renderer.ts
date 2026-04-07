@@ -48,22 +48,6 @@ function drawHexPath(ctx: CanvasRenderingContext2D, corners: Point2D[]): void {
   ctx.closePath();
 }
 
-function drawFilledHex(
-  ctx: CanvasRenderingContext2D,
-  center: Point2D,
-  size: number,
-  fillColor: string,
-  borderColor: string,
-  borderWidth: number,
-): void {
-  const corners = hexCorners(center, size);
-  drawHexPath(ctx, corners);
-  ctx.fillStyle = fillColor;
-  ctx.fill();
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = borderWidth;
-  ctx.stroke();
-}
 
 // ---------------------------------------------------------------------------
 // Main draw pipeline

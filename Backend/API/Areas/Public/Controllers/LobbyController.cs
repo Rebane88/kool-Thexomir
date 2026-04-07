@@ -50,7 +50,7 @@ public class LobbyController : Controller
     // POST /Public/Lobby/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CreateLobbyViewModel model)
+    public async Task<IActionResult> Create([Bind(Prefix = "CreateForm")] CreateLobbyViewModel model)
     {
         if (!ModelState.IsValid)
         {
@@ -75,7 +75,7 @@ public class LobbyController : Controller
     // POST /Public/Lobby/Join
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Join(JoinLobbyViewModel model)
+    public async Task<IActionResult> Join([Bind(Prefix = "JoinForm")] JoinLobbyViewModel model)
     {
         if (!ModelState.IsValid)
         {
@@ -89,9 +89,6 @@ public class LobbyController : Controller
 
         if (!result.IsSuccess)
         {
-            // The view binds to LobbyIndexViewModel.JoinForm.InviteCode, so the
-            // ModelState key must include the JoinForm prefix for the field-level
-            // <span asp-validation-for="JoinForm.InviteCode"> to render the error.
             ModelState.AddModelError($"JoinForm.{nameof(model.InviteCode)}", result.Error!);
             return await ReRenderIndex(createForm: new CreateLobbyViewModel(), joinForm: model);
         }

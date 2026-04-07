@@ -34,13 +34,19 @@
             <input type="hidden" name="TileId" value="@Model.SelectedTileId" />
             <input type="hidden" name="BuildingTypeId" value="@bt.Id" />
             <span class="bt-name" data-region="bt-name">@bt.Name</span>
-            <span class="bt-tier">T@bt.Tier</span>
-            <span class="bt-cost">G@bt.CostGold F@bt.CostFood W@bt.CostWood S@bt.CostStone M@bt.CostMana</span>
+            <span class="bt-tier">T@(bt.Tier)</span>
+            <span class="bt-cost">
+                <span class="cost-pill" title="Gold">G @bt.CostGold</span>
+                <span class="cost-pill" title="Food">F @bt.CostFood</span>
+                <span class="cost-pill" title="Wood">W @bt.CostWood</span>
+                <span class="cost-pill" title="Stone">S @bt.CostStone</span>
+                <span class="cost-pill" title="Mana">M @bt.CostMana</span>
+            </span>
             @if (!entry.PrereqMet)
             {
                 <span class="bt-prereq" data-region="prereq-missing">Locked</span>
             }
-            <button type="submit" disabled="@(disabled ? "disabled" : null)">Build</button>
+            <button type="submit" class="btn btn-sm btn-primary" disabled="@(disabled ? "disabled" : null)">Build</button>
         </form>
     }
 </section>

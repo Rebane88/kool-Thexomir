@@ -19,7 +19,7 @@ describe('BUILDING_PNG_IMPORTS', () => {
   });
 
   it('maps each name to a non-empty string URL', () => {
-    for (const [name, url] of Object.entries(BUILDING_PNG_IMPORTS)) {
+    for (const [_name, url] of Object.entries(BUILDING_PNG_IMPORTS)) {
       expect(typeof url).toBe('string');
       expect(url.length).toBeGreaterThan(0);
     }

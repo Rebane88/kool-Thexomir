@@ -3,10 +3,10 @@
 @using Base.Resources
 @inject IStringLocalizer<Common> SharedLocalizer
 @{
-    ViewData["Title"] = SharedLocalizer["Login_Title"].Value;
+    ViewData["Title"] = SharedLocalizer["Login_PublicTitle"].Value;
 }
 <section data-page="public-login">
-    <h1>@SharedLocalizer["Login_Title"]</h1>
+    <h1>@SharedLocalizer["Login_PublicTitle"]</h1>
 
     <div asp-validation-summary="ModelOnly" class="text-danger" data-region="form-error-summary"></div>
 
@@ -28,4 +28,8 @@
 
         <button type="submit" class="btn btn-primary" data-action="public-login-submit">@SharedLocalizer["Login_SignIn"]</button>
     </form>
+
+    <p class="mt-3">
+        <a asp-area="Root" asp-controller="Account" asp-action="Login">@SharedLocalizer["Login_GoToAdmin"]</a>
+    </p>
 </section>
