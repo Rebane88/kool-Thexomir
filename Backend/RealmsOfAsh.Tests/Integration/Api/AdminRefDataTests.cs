@@ -29,6 +29,7 @@ public class AdminRefDataTests : IntegrationTestBase
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/root/factiontypes");
         AddCookies(request, cookies);
+        request.Headers.AcceptLanguage.ParseAdd("en"); // pin culture so localized faction names + page heading match English assertions
 
         var response = await Client.SendAsync(request);
 
@@ -155,6 +156,7 @@ public class AdminRefDataTests : IntegrationTestBase
 
         var request = new HttpRequestMessage(HttpMethod.Get, "/root/terraintypes");
         AddCookies(request, cookies);
+        request.Headers.AcceptLanguage.ParseAdd("en"); // pin culture so localized page heading matches English assertion
 
         var response = await Client.SendAsync(request);
 

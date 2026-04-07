@@ -81,19 +81,24 @@ public class PublicGameTests : IntegrationTestBase
         body.ShouldContain("data-region=\"action-panel\"");
         body.ShouldContain("data-region=\"selected-tile\"");
 
-        // Second leg: select an enemy or unclaimed tile and confirm battle placeholder appears
+        // Second leg: select a tile that is NOT host-owned and assert that the
+        // BuildingPanel/MilitaryPanel are gated off (the original contract this test exists to enforce).
+        // The exact replacement panel (declare-attack vs battle-placeholder vs nothing) depends on
+        // tile ownership/phase/AP and is covered by dedicated tests; here we only verify the gating.
         var myKingdomId = snapshot.Kingdoms.First(k => k.UserId == ctx.hostUserId).Id;
-        var enemyOrUnclaimedTile = snapshot.Tiles.First(t => t.KingdomId != myKingdomId);
+        var nonOwnedTile = snapshot.Tiles.First(t => t.KingdomId != myKingdomId);
 
-        var resp2 = await SendAuthedGetAsync(
-            ctx.client,
-            $"/Public/Game/Index/{ctx.gameId}?selectedTileId={enemyOrUnclaimedTile.Id}",
-            ctx.hostCookie);
+        var req2 = new HttpRequestMessage(HttpMethod.Get,
+            $"/Public/Game/Index/{ctx.gameId}?selectedTileId={nonOwnedTile.Id}");
+        req2.Headers.Add("Cookie", ctx.hostCookie);
+        req2.Headers.AcceptLanguage.ParseAdd("en"); // pin culture so any localized panels render deterministically
+        var resp2 = await ctx.client.SendAsync(req2);
         resp2.StatusCode.ShouldBe(HttpStatusCode.OK);
         var html2 = await resp2.Content.ReadAsStringAsync();
-        html2.ShouldContain("data-region=\"battle-placeholder\"");
-        html2.ShouldContain("Phase 37.5");
+        html2.ShouldContain("data-region=\"action-panel\"");
+        html2.ShouldContain("data-region=\"selected-tile\"");
         html2.ShouldNotContain("data-region=\"building-panel\""); // BuildingPanel must NOT render for non-own tiles
+        html2.ShouldNotContain("data-region=\"military-panel\""); // MilitaryPanel must NOT render for non-own tiles
     }
 
     // =========================================================================
@@ -107,6 +112,7 @@ public class PublicGameTests : IntegrationTestBase
 
         var request = new HttpRequestMessage(HttpMethod.Get, $"/Public/Game/Index/{gameId}");
         request.Headers.Add("Cookie", hostCookie);
+        request.Headers.AcceptLanguage.ParseAdd("en"); // pin culture so localized HUD assertions are deterministic
 
         var response = await Client.SendAsync(request);
 

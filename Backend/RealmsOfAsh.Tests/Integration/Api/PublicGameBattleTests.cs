@@ -316,6 +316,7 @@ public class PublicGameBattleTests : IntegrationTestBase
 
         var req = new HttpRequestMessage(HttpMethod.Get, $"/Public/Game/Index/{gameId}");
         req.Headers.Add("Cookie", attackerCookie);
+        req.Headers.AcceptLanguage.ParseAdd("en"); // pin culture so localized standings header is deterministic
         var resp = await Client.SendAsync(req);
 
         resp.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -357,6 +358,7 @@ public class PublicGameBattleTests : IntegrationTestBase
         var attackerCookie = await GetCookieForUserAsync(attackerUserId);
         var req = new HttpRequestMessage(HttpMethod.Get, $"/Public/Game/{gameId}/GameOver");
         req.Headers.Add("Cookie", attackerCookie);
+        req.Headers.AcceptLanguage.ParseAdd("en"); // pin culture so localized "Return to Lobby" assertion is deterministic
 
         var resp = await Client.SendAsync(req);
         resp.StatusCode.ShouldBe(HttpStatusCode.OK);
