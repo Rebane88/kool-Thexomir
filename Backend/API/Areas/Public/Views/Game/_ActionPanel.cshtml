@@ -18,7 +18,19 @@
             <p>Buildings: @tile.Buildings.Count</p>
             <partial name="~/Areas/Public/Views/Game/_BuildingPanel.cshtml" model="Model" />
             <partial name="~/Areas/Public/Views/Game/_MilitaryPanel.cshtml" model="Model" />
-            <partial name="~/Areas/Public/Views/Game/_BattlePlaceholder.cshtml" model="Model" />
+            @if (Model.MyKingdom is not null
+                 && tile.KingdomId.HasValue
+                 && tile.KingdomId != Model.MyKingdom.Id
+                 && Model.State.CurrentPhase == "Action")
+            {
+                <partial name="~/Areas/Public/Views/Game/_DeclareAttackPanel.cshtml" model="Model" />
+            }
+            else if (Model.MyKingdom is not null
+                     && tile.KingdomId.HasValue
+                     && tile.KingdomId != Model.MyKingdom.Id)
+            {
+                <partial name="~/Areas/Public/Views/Game/_BattlePlaceholder.cshtml" model="Model" />
+            }
         }
     }
 </aside>

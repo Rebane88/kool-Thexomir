@@ -1,0 +1,66 @@
+@model API.Areas.Public.ViewModels.GameIndexViewModel
+@{
+    if (Model.SelectedTileId is null || Model.MyKingdom is null) { return; }
+    var tile = Model.State.Tiles.FirstOrDefault(t => t.Id == Model.SelectedTileId);
+    if (tile is null) { return; }
+    // Only render when selected tile is an enemy tile
+    if (!tile.KingdomId.HasValue || tile.KingdomId == Model.MyKingdom.Id) { return; }
+
+    // Fallback approach: list all friendly tiles that have at least one army (no adjacency filter).
+    // The service validates adjacency via CombatRules.ValidateAttackDeclaration and returns an error if invalid.
+    var myArmies = Model.State.Armies.Where(a => a.KingdomId == Model.MyKingdom.Id).ToList();
+    var tilesWithArmies = myArmies
+        .Select(a => Model.FindTileForArmy(a))
+        .Where(t => t is not null)
+        .DistinctBy(t => t!.Id)
+        .Select(t => new
+        {
+            Tile = t!,
+            ArmyCount = myArmies.Count(a => Model.FindTileForArmy(a)?.Id == t!.Id)
+        })
+        .ToList();
+
+    var canDeclare = Model.State.CurrentPhase == "Action"
+        && (Model.State.RemainingActionPoints ?? 0) >= 1
+        && tilesWithArmies.Count > 0;
+}
+<section class="declare-attack-panel" data-region="declare-attack-panel">
+    <h3>Declare Attack</h3>
+    @if (Model.AttackError is not null)
+    {
+        <p class="error" data-region="attack-error">@Model.AttackError</p>
+    }
+    <form asp-controller="PublicGame" asp-action="DeclareAttack" asp-route-id="@Model.GameId" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="TargetTileId" value="@tile.Id" />
+        <div>
+            <label for="RiskedTileId">Select attacking tile (risked):</label>
+            <select name="RiskedTileId" id="RiskedTileId">
+                @foreach (var entry in tilesWithArmies)
+                {
+                    <option value="@entry.Tile.Id">
+                        @entry.Tile.CoordQ,@entry.Tile.CoordR (@entry.ArmyCount @(entry.ArmyCount == 1 ? "army" : "armies"))
+                    </option>
+                }
+            </select>
+        </div>
+        <button type="submit" class="btn btn-sm btn-danger" disabled="@(!canDeclare ? "disabled" : null)">
+            Declare Attack
+        </button>
+        @if (!canDeclare)
+        {
+            @if (Model.State.CurrentPhase != "Action")
+            {
+                <p class="text-muted">Attack declarations are only available during the Action phase.</p>
+            }
+            else if ((Model.State.RemainingActionPoints ?? 0) < 1)
+            {
+                <p class="text-muted">Not enough action points to declare an attack.</p>
+            }
+            else
+            {
+                <p class="text-muted">You have no armies available to risk.</p>
+            }
+        }
+    </form>
+</section>
