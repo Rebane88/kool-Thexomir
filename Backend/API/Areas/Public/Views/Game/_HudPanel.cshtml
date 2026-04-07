@@ -1,11 +1,14 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
     var me = Model.MyKingdom;
     var currentTurnKingdom = Model.State.Kingdoms.FirstOrDefault(k => k.Id == Model.State.CurrentTurnKingdomId);
-    var turnLabel = Model.IsMyTurn ? "Your Turn" : $"{currentTurnKingdom?.Name}'s Turn";
+    var turnLabel = Model.IsMyTurn
+        ? SharedLocalizer["Game_Hud_YourTurn"].Value
+        : SharedLocalizer["Game_Hud_PlayerTurn", currentTurnKingdom?.Name ?? string.Empty].Value;
     const int apMax = 4;
 }
-<header class="game-hud" data-region="hud">
+<header class="game-hud" data-region="hud" data-confirm-abandon="@SharedLocalizer["Game_ConfirmAbandon"]">
     <div class="hud-resources">
         <dl class="resources">
             @if (me is not null)
@@ -20,8 +23,8 @@
     </div>
     <div class="hud-turn" data-region="turn">
         <span class="turn-label">@turnLabel</span>
-        <span class="phase">Phase: @Model.State.CurrentPhase</span>
-        <span class="round">Round @Model.State.RoundNumber</span>
+        <span class="phase">@SharedLocalizer["Game_Hud_Phase"] @Model.State.CurrentPhase</span>
+        <span class="round">@SharedLocalizer["Game_Hud_Round"] @Model.State.RoundNumber</span>
         <span class="ap-pips" data-ap="@Model.State.RemainingActionPoints">
             @for (int i = 0; i < apMax; i++)
             {
@@ -35,20 +38,20 @@
               action="@Url.Action("Spin", "PublicGame", new { area = "Public", id = Model.GameId })"
               class="d-inline">
             @Html.AntiForgeryToken()
-            <button type="submit" data-action="spin" disabled="@(!Model.IsMyTurn ? "disabled" : null)">Gamble</button>
+            <button type="submit" data-action="spin" disabled="@(!Model.IsMyTurn ? "disabled" : null)">@SharedLocalizer["Game_Hud_Gamble"]</button>
         </form>
         <form method="post"
               action="@Url.Action("EndTurn", "PublicGame", new { area = "Public", id = Model.GameId })"
               class="d-inline">
             @Html.AntiForgeryToken()
-            <button type="submit" data-action="end-turn" disabled="@(!Model.IsMyTurn ? "disabled" : null)">End Turn</button>
+            <button type="submit" data-action="end-turn" disabled="@(!Model.IsMyTurn ? "disabled" : null)">@SharedLocalizer["Game_Hud_EndTurn"]</button>
         </form>
         <form method="post"
               action="@Url.Action("Abandon", "PublicGame", new { area = "Public", id = Model.GameId })"
               class="d-inline"
-              onsubmit="return confirm('Abandon this game?');">
+              onsubmit="return confirm(this.closest('[data-confirm-abandon]').dataset.confirmAbandon);">
             @Html.AntiForgeryToken()
-            <button type="submit" data-action="abandon" class="btn-danger">Abandon</button>
+            <button type="submit" data-action="abandon" class="btn-danger">@SharedLocalizer["Game_Hud_Abandon"]</button>
         </form>
     </div>
 </header>

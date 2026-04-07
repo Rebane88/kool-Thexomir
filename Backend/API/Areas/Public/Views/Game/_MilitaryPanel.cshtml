@@ -1,4 +1,5 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
     if (Model.SelectedTileId is null || Model.MyKingdom is null) { return; }
     var tile = Model.State.Tiles.FirstOrDefault(t => t.Id == Model.SelectedTileId);
@@ -14,14 +15,14 @@
     var trainError = TempData["TrainError"] as string;
 }
 <section class="military-panel" data-region="military-panel">
-    <h4>Military</h4>
+    <h4>@SharedLocalizer["Game_Military"]</h4>
     @if (trainError is not null)
     {
         <div class="alert alert-danger" data-region="train-error">@trainError</div>
     }
     @if (trainable.Count == 0)
     {
-        <p class="text-muted">No military buildings on this tile.</p>
+        <p class="text-muted">@SharedLocalizer["Game_NoMilitaryHere"]</p>
     }
     @foreach (var (building, at) in trainable)
     {
@@ -45,7 +46,7 @@
                 <span class="stat-pill">ATK @at.Attack</span>
                 <span class="stat-pill">INIT @at.Initiative</span>
             </span>
-            <button type="submit" class="btn btn-sm btn-primary">Train</button>
+            <button type="submit" class="btn btn-sm btn-primary">@SharedLocalizer["Game_Train"]</button>
         </form>
     }
 </section>

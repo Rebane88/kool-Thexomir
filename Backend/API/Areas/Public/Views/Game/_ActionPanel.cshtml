@@ -1,21 +1,22 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
+@inject IStringLocalizer<Common> SharedLocalizer
 <aside class="action-panel" data-region="action-panel">
     @if (Model.SelectedTileId is null)
     {
-        <p>Click a tile to select it.</p>
+        <p>@SharedLocalizer["Game_Action_NoSelection"]</p>
     }
     else
     {
         var tile = Model.State.Tiles.FirstOrDefault(t => t.Id == Model.SelectedTileId);
         if (tile is null)
         {
-            <p>Selected tile not found.</p>
+            <p>@SharedLocalizer["Game_Action_TileNotFound"]</p>
         }
         else
         {
             <h3 data-region="selected-tile">Tile @tile.CoordQ,@tile.CoordR — @tile.TerrainName</h3>
-            <p>Owner: @(Model.State.Kingdoms.FirstOrDefault(k => k.Id == tile.KingdomId)?.Name ?? "Unclaimed")</p>
-            <p>Buildings: @tile.Buildings.Count</p>
+            <p>@SharedLocalizer["Game_Action_Owner"] @(Model.State.Kingdoms.FirstOrDefault(k => k.Id == tile.KingdomId)?.Name ?? SharedLocalizer["Game_Action_Unclaimed"].Value)</p>
+            <p>@SharedLocalizer["Game_Action_Buildings"] @tile.Buildings.Count</p>
             <partial name="~/Areas/Public/Views/Game/_BuildingPanel.cshtml" model="Model" />
             <partial name="~/Areas/Public/Views/Game/_MilitaryPanel.cshtml" model="Model" />
             @if (Model.MyKingdom is not null

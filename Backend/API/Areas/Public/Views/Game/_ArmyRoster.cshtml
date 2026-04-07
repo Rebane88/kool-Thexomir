@@ -1,25 +1,28 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
 @using Application.Services.GameInitialization.DTOs
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
     var me = Model.MyKingdom;
     var myArmies = me is null
         ? new List<ArmyDto>()
         : Model.State.Armies.Where(a => a.KingdomId == me.Id).ToList();
+    var unknownLabel = SharedLocalizer["Game_Roster_Unknown"].Value;
+    var buildingLabel = SharedLocalizer["Game_Roster_Building"].Value;
 }
 <details class="army-roster" data-region="army-roster" open>
-    <summary>Army Roster (@myArmies.Count)</summary>
+    <summary>@SharedLocalizer["Game_Roster_Title"] (@myArmies.Count)</summary>
     @if (myArmies.Count == 0)
     {
-        <p class="text-muted">No armies trained yet.</p>
+        <p class="text-muted">@SharedLocalizer["Game_Roster_Empty"]</p>
     }
     else
     {
         <table class="table table-sm">
             <thead>
                 <tr>
-                    <th>Type</th>
-                    <th>HP</th>
-                    <th>Location</th>
+                    <th>@SharedLocalizer["Game_Roster_Type"]</th>
+                    <th>@SharedLocalizer["Game_Roster_HP"]</th>
+                    <th>@SharedLocalizer["Game_Roster_Location"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -30,11 +33,11 @@
                     var building = tile?.Buildings.FirstOrDefault(b => b.Id == army.BuildingId);
                     var locationLabel = tile is null
                         ? "—"
-                        : $"{building?.BuildingName ?? "Building"} at ({tile.CoordQ},{tile.CoordR})";
+                        : $"{building?.BuildingName ?? buildingLabel} at ({tile.CoordQ},{tile.CoordR})";
                     <tr data-army-id="@army.Id"
                         data-army-type="@(armyType?.Name ?? string.Empty)"
                         data-army-hp="@army.CurrentHP/@army.MaxHP">
-                        <td data-region="army-type">@(armyType?.Name ?? "Unknown")</td>
+                        <td data-region="army-type">@(armyType?.Name ?? unknownLabel)</td>
                         <td data-region="army-hp">@army.CurrentHP / @army.MaxHP</td>
                         <td data-region="army-location">@locationLabel</td>
                     </tr>

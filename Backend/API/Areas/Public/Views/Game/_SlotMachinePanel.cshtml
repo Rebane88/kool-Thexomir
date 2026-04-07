@@ -1,4 +1,5 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
     var outcome = TempData.Peek("SpinOutcome") as int?;
     var apAfter = TempData.Peek("SpinApAfter") as int?;
@@ -13,11 +14,11 @@
     TempData.Remove("SpinGoldAfter");
     TempData.Remove("SpinGoldSpent");
     <div class="slot-machine-result alert alert-info" data-region="slot-machine-result">
-        <strong>Spin result:</strong>
-        <span data-region="spin-outcome">Outcome @outcome</span>
-        <span data-region="spin-gold-spent">Spent @goldSpent gold</span>
-        <span data-region="spin-gold-after">Gold now: @goldAfter</span>
-        <span data-region="spin-ap-after">AP now: @apAfter</span>
+        <strong>@SharedLocalizer["Game_Slot_SpinResult"]</strong>
+        <span data-region="spin-outcome">@SharedLocalizer["Game_Slot_Outcome"] @outcome</span>
+        <span data-region="spin-gold-spent">@SharedLocalizer["Game_Slot_Spent"] @goldSpent @SharedLocalizer["Game_Slot_Gold"]</span>
+        <span data-region="spin-gold-after">@SharedLocalizer["Game_Slot_GoldNow"] @goldAfter</span>
+        <span data-region="spin-ap-after">@SharedLocalizer["Game_Slot_ApNow"] @apAfter</span>
     </div>
 }
 @if (spinError is not null)

@@ -1,4 +1,5 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
     if (Model.SelectedTileId is null || Model.MyKingdom is null) { return; }
     var tile = Model.State.Tiles.FirstOrDefault(t => t.Id == Model.SelectedTileId);
@@ -11,14 +12,14 @@
     var buildError = TempData["BuildError"] as string;
 }
 <section class="building-panel" data-region="building-panel">
-    <h4>Buildings</h4>
+    <h4>@SharedLocalizer["Game_Buildings"]</h4>
     @if (buildError is not null)
     {
         <div class="alert alert-danger" data-region="build-error">@buildError</div>
     }
     @if (visible.Count == 0)
     {
-        <p class="text-muted">No buildings available on this tile.</p>
+        <p class="text-muted">@SharedLocalizer["Game_NoBuildingsAvailable"]</p>
     }
     @foreach (var entry in visible)
     {
@@ -44,9 +45,9 @@
             </span>
             @if (!entry.PrereqMet)
             {
-                <span class="bt-prereq" data-region="prereq-missing">Locked</span>
+                <span class="bt-prereq" data-region="prereq-missing">@SharedLocalizer["Game_Locked"]</span>
             }
-            <button type="submit" class="btn btn-sm btn-primary" disabled="@(disabled ? "disabled" : null)">Build</button>
+            <button type="submit" class="btn btn-sm btn-primary" disabled="@(disabled ? "disabled" : null)">@SharedLocalizer["Game_Build"]</button>
         </form>
     }
 </section>

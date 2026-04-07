@@ -1,7 +1,8 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
 @using API.Areas.Public.ViewModels
+@inject IStringLocalizer<Common> SharedLocalizer
 @{
-    ViewData["Title"] = "Game";
+    ViewData["Title"] = SharedLocalizer["Page_Game"].Value;
     Layout = "_PublicLayout";
 }
 <partial name="~/Areas/Public/Views/Game/_HudPanel.cshtml" model="Model" />
@@ -11,7 +12,9 @@
 {
     <partial name="~/Areas/Public/Views/Game/_BattleWizardPanel.cshtml" model="Model" />
 }
-<main class="game-main">
+<main class="game-main"
+      data-confirm-abandon="@SharedLocalizer["Game_ConfirmAbandon"]"
+      data-timer-expired="@SharedLocalizer["Game_TimerExpired"]">
     <partial name="~/Areas/Public/Views/Game/_HexMap.cshtml" model="Model" />
     <partial name="~/Areas/Public/Views/Game/_ActionPanel.cshtml" model="Model" />
 </main>
@@ -73,7 +76,8 @@
 
                         timerEl.className = 'turn-timer';
                         if (remaining === 0) {
-                            timerEl.textContent = "Time's up!";
+                            var gameMain = document.querySelector('.game-main');
+                            timerEl.textContent = gameMain ? gameMain.dataset.timerExpired : '';
                             timerEl.classList.add('turn-timer--expired');
                             clearInterval(interval);
                         } else if (remaining <= 10) {
