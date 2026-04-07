@@ -3,7 +3,7 @@
 @using Base.Resources
 @inject IStringLocalizer<Common> SharedLocalizer
 @{
-    ViewData["Title"] = "Register";
+    ViewData["Title"] = SharedLocalizer["Page_Register"].Value;
 }
 <section data-page="public-register">
     <h1>@SharedLocalizer["Form_Create"]</h1>
@@ -26,7 +26,7 @@
         </div>
 
         <div class="mb-3">
-            <label asp-for="ConfirmPassword" class="form-label">Confirm password</label>
+            <label asp-for="ConfirmPassword" class="form-label">@SharedLocalizer["Form_ConfirmPassword"]</label>
             <input asp-for="ConfirmPassword" class="form-control" type="password" autocomplete="new-password" />
             <span asp-validation-for="ConfirmPassword" class="text-danger" data-field-error="ConfirmPassword"></span>
         </div>
