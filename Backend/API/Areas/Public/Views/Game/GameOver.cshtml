@@ -1,0 +1,50 @@
+@model API.Areas.Public.ViewModels.GameOverViewModel
+@{
+    ViewData["Title"] = "Game Over";
+    Layout = "_PublicLayout";
+}
+
+<section data-region="game-over">
+    @if (Model.IWon)
+    {
+        <h1 data-result="win">Victory</h1>
+        <p>You have won the game.</p>
+    }
+    else if (Model.GameOver.WinnerKingdomId.HasValue)
+    {
+        <h1 data-result="loss">Defeat</h1>
+        <p>The game has ended. You did not win this round.</p>
+    }
+    else
+    {
+        <h1 data-result="draw">Game Ended</h1>
+        <p>The game has concluded.</p>
+    }
+
+    <h2>Final Standings</h2>
+    <table data-table="final-standings">
+        <thead>
+            <tr>
+                <th>Kingdom</th>
+                <th>Tiles Owned</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var k in Model.GameOver.FinalStandings)
+            {
+                <tr>
+                    <td>@k.KingdomName</td>
+                    <td>@k.TilesOwned</td>
+                    <td>@k.Status</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p>Win condition: @Model.GameOver.WinConditionType</p>
+
+    <a asp-area="Public" asp-controller="Lobby" asp-action="Index" data-action="return-to-lobby">
+        Return to Lobby
+    </a>
+</section>
