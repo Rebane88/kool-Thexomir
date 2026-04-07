@@ -296,7 +296,7 @@ public class CombatService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IComb
         {
             ArmyId = a.Id,
             ArmyTypeId = a.ArmyTypeId,
-            ArmyTypeName = a.ArmyType!.Name.ToString(),
+            ArmyTypeName = a.ArmyType!.Name.Translate() ?? string.Empty,
             CurrentHP = a.CurrentHP,
             MaxHP = a.MaxHP,
             Attack = a.ArmyType.Attack,
