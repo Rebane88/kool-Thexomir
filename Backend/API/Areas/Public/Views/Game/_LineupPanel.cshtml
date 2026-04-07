@@ -1,0 +1,38 @@
+@model API.Areas.Public.ViewModels.GameIndexViewModel
+@{
+    var myAttack = Model.State.DeclaredAttacks.FirstOrDefault(da =>
+        Model.MyKingdom is not null
+        && (da.AttackerKingdomId == Model.MyKingdom.Id || da.DefenderKingdomId == Model.MyKingdom.Id));
+    // Lineup is initialized from selection order. The user confirms as-is in this phase.
+    // No JS reordering — pre-populated in army list order. Service validates submitted IDs.
+    var armies = Model.State.Armies
+        .Where(a => Model.MyKingdom is not null && a.KingdomId == Model.MyKingdom.Id)
+        .ToList();
+}
+@if (myAttack is null)
+{
+    <p>No active attack involving your kingdom.</p>
+}
+else
+{
+    @if (Model.LineupError is not null)
+    {
+        <p class="error" data-region="lineup-error">@Model.LineupError</p>
+    }
+    <form asp-controller="PublicGame" asp-action="SetLineup" asp-route-id="@Model.GameId" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="DeclaredAttackId" value="@myAttack.AttackId" />
+        <ol data-list="lineup-order">
+            @for (var i = 0; i < armies.Count; i++)
+            {
+                var army = armies[i];
+                var armyType = Model.ArmyTypes.FirstOrDefault(t => t.Id == army.ArmyTypeId);
+                <li>
+                    <input type="hidden" name="ArmyIdsInOrder" value="@army.Id" />
+                    @(armyType?.Name ?? "Unknown") (HP @army.CurrentHP / @army.MaxHP)
+                </li>
+            }
+        </ol>
+        <button type="submit">Confirm Lineup</button>
+    </form>
+}

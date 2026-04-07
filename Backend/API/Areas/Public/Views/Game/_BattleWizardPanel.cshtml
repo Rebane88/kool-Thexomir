@@ -1,0 +1,32 @@
+@model API.Areas.Public.ViewModels.GameIndexViewModel
+@using API.Areas.Public.ViewModels
+@{
+    var step = Model.GetBattleStep();
+    var myAttack = Model.State.DeclaredAttacks.FirstOrDefault(da =>
+        Model.MyKingdom is not null
+        && (da.AttackerKingdomId == Model.MyKingdom.Id || da.DefenderKingdomId == Model.MyKingdom.Id));
+}
+<section data-region="battle-wizard">
+    <h3>Battle</h3>
+    @switch (step)
+    {
+        case BattleWizardStep.SelectArmies:
+            <partial name="_SelectArmiesPanel" model="Model" />
+            break;
+        case BattleWizardStep.WaitForOpponentSelect:
+            <p data-state="waiting">Waiting for opponent to select armies...</p>
+            break;
+        case BattleWizardStep.SetLineup:
+            <partial name="_LineupPanel" model="Model" />
+            break;
+        case BattleWizardStep.WaitForOpponentLineup:
+            <p data-state="waiting">Waiting for opponent to confirm lineup...</p>
+            break;
+        case BattleWizardStep.WaitingForResolution:
+            <p data-state="waiting">Resolving battle...</p>
+            break;
+        default:
+            <p data-state="spectator">Watching battle...</p>
+            break;
+    }
+</section>

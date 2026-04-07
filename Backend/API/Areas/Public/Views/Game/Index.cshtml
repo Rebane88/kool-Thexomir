@@ -1,10 +1,16 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
+@using API.Areas.Public.ViewModels
 @{
     ViewData["Title"] = "Game";
     Layout = "_PublicLayout";
 }
 <partial name="~/Areas/Public/Views/Game/_HudPanel.cshtml" model="Model" />
 <partial name="~/Areas/Public/Views/Game/_SlotMachinePanel.cshtml" model="Model" />
+@if (Model.State.CurrentPhase == "Battle"
+     && Model.GetBattleStep() != BattleWizardStep.None)
+{
+    <partial name="_BattleWizardPanel" model="Model" />
+}
 <main class="game-main">
     <partial name="~/Areas/Public/Views/Game/_HexMap.cshtml" model="Model" />
     <partial name="~/Areas/Public/Views/Game/_ActionPanel.cshtml" model="Model" />
@@ -41,7 +47,10 @@
             connection.on('lineupSet', reload);
             connection.on('battleResolved', reload);
             connection.on('gameOver', reload);
-            connection.on('gameStateSnapshot', reload);
+            // gameStateSnapshot is intentionally NOT handled: the hub pushes a snapshot
+            // to every newly-connected client (see GameHub.OnConnectedAsync), which would
+            // cause an infinite reload loop for this server-rendered page since the GET
+            // already returns the latest state. Snapshots are only meaningful to SPA clients.
             connection.on('turnAutoSkipped', reload);
 
             connection.start().catch(function (err) { console.error('SignalR error:', err); });

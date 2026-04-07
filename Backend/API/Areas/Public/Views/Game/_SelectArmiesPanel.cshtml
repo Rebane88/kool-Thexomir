@@ -1,0 +1,37 @@
+@model API.Areas.Public.ViewModels.GameIndexViewModel
+@{
+    var myAttack = Model.State.DeclaredAttacks.FirstOrDefault(da =>
+        Model.MyKingdom is not null
+        && (da.AttackerKingdomId == Model.MyKingdom.Id || da.DefenderKingdomId == Model.MyKingdom.Id));
+    var myArmies = Model.State.Armies
+        .Where(a => Model.MyKingdom is not null && a.KingdomId == Model.MyKingdom.Id)
+        .ToList();
+}
+@if (myAttack is null)
+{
+    <p>No active attack involving your kingdom.</p>
+}
+else
+{
+    @if (Model.SelectArmiesError is not null)
+    {
+        <p class="error" data-region="select-armies-error">@Model.SelectArmiesError</p>
+    }
+    <form asp-controller="PublicGame" asp-action="SelectArmies" asp-route-id="@Model.GameId" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="DeclaredAttackId" value="@myAttack.AttackId" />
+        <ul data-list="select-armies">
+            @foreach (var army in myArmies)
+            {
+                var armyType = Model.ArmyTypes.FirstOrDefault(t => t.Id == army.ArmyTypeId);
+                <li>
+                    <label>
+                        <input type="checkbox" name="ArmyIds" value="@army.Id" />
+                        @(armyType?.Name ?? "Unknown") (HP @army.CurrentHP / @army.MaxHP)
+                    </label>
+                </li>
+            }
+        </ul>
+        <button type="submit">Confirm Armies</button>
+    </form>
+}
