@@ -9,7 +9,7 @@
 <partial name="~/Areas/Public/Views/Game/_SlotMachinePanel.cshtml" model="Model" />
 @if (Model.GetBattleStep() != BattleWizardStep.None)
 {
-    <partial name="_BattleWizardPanel" model="Model" />
+    <partial name="~/Areas/Public/Views/Game/_BattleWizardPanel.cshtml" model="Model" />
 }
 <main class="game-main">
     <partial name="~/Areas/Public/Views/Game/_HexMap.cshtml" model="Model" />

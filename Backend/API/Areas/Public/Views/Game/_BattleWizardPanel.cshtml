@@ -11,13 +11,13 @@
     @switch (step)
     {
         case BattleWizardStep.SelectArmies:
-            <partial name="_SelectArmiesPanel" model="Model" />
+            <partial name="~/Areas/Public/Views/Game/_SelectArmiesPanel.cshtml" model="Model" />
             break;
         case BattleWizardStep.WaitForOpponentSelect:
             <p data-state="waiting">Waiting for opponent to select armies...</p>
             break;
         case BattleWizardStep.SetLineup:
-            <partial name="_LineupPanel" model="Model" />
+            <partial name="~/Areas/Public/Views/Game/_LineupPanel.cshtml" model="Model" />
             break;
         case BattleWizardStep.WaitForOpponentLineup:
             <p data-state="waiting">Waiting for opponent to confirm lineup...</p>
@@ -26,7 +26,7 @@
             <p data-state="waiting">Resolving battle...</p>
             break;
         case BattleWizardStep.PostBattle:
-            <partial name="_PostBattlePanel" model="Model" />
+            <partial name="~/Areas/Public/Views/Game/_PostBattlePanel.cshtml" model="Model" />
             break;
         default:
             <p data-state="spectator">Watching battle...</p>
