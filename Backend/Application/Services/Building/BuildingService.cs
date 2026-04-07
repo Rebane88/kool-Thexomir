@@ -153,8 +153,8 @@ public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBu
             RoundNumber = game.RoundNumber,
             EventType = isUpgrade ? EEventType.BuildingUpgraded : EEventType.BuildingConstructed,
             Description = isUpgrade
-                ? $"Upgraded to {buildingType.Name["en"]}"
-                : $"Built {buildingType.Name["en"]}",
+                ? $"Upgraded to {buildingType.Name.Translate()}"
+                : $"Built {buildingType.Name.Translate()}",
             OccurredAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -192,7 +192,7 @@ public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBu
             BuildingId = buildingId,
             TileId = request.TileId,
             BuildingTypeId = buildingType.Id,
-            BuildingName = buildingType.Name["en"],
+            BuildingName = buildingType.Name.Translate() ?? string.Empty,
             KingdomId = kingdom.Id,
             ResourcesAfter = resourcesAfter,
             ClaimedTileIds = claimedTileIds,

@@ -84,7 +84,7 @@ public class ArmyService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IArmySe
             KingdomId = kingdom.Id,
             RoundNumber = game.RoundNumber,
             EventType = EEventType.ArmyTrained,
-            Description = $"Trained {armyType.Name["en"]}",
+            Description = $"Trained {armyType.Name.Translate()}",
             OccurredAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -104,7 +104,7 @@ public class ArmyService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IArmySe
             ArmyId = army.Id,
             BuildingId = building.Id,
             ArmyTypeId = armyType.Id,
-            ArmyTypeName = armyType.Name["en"],
+            ArmyTypeName = armyType.Name.Translate() ?? string.Empty,
             KingdomId = kingdom.Id,
             CurrentHP = army.CurrentHP,
             MaxHP = army.MaxHP,
