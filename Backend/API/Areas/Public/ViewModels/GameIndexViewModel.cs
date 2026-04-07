@@ -1,6 +1,8 @@
 using Application.Services.Army.DTOs;
 using Application.Services.Building.DTOs;
+using Application.Services.Combat.DTOs;
 using Application.Services.GameInitialization.DTOs;
+using Application.Services.WinCondition.DTOs;
 
 namespace API.Areas.Public.ViewModels;
 
@@ -18,6 +20,9 @@ public class GameIndexViewModel
     public HexLayoutViewModel Layout { get; set; } = null!;
     public List<BuildingCatalogEntryViewModel> Catalog { get; set; } = new();
     public List<ArmyTypeDto> ArmyTypes { get; set; } = new();
+
+    public BattleResultDto? LastBattleResult { get; set; }
+    public GameOverDto? GameOverData { get; set; }
 
     public KingdomDto? MyKingdom =>
         State.Kingdoms.FirstOrDefault(k => k.UserId == MyUserId);
@@ -52,6 +57,34 @@ public class GameIndexViewModel
                 return tile;
         return null;
     }
+
+    /// <summary>
+    /// Determines the current battle wizard step for the active player based on
+    /// DeclaredAttacks flags in GameStateDto. Returns None for non-battle phases or spectators.
+    /// </summary>
+    public BattleWizardStep GetBattleStep()
+    {
+        if (GameOverData is not null) return BattleWizardStep.None;
+        if (LastBattleResult is not null) return BattleWizardStep.PostBattle;
+        if (State.CurrentPhase != "Battle") return BattleWizardStep.None;
+        if (MyKingdom is null) return BattleWizardStep.None;
+
+        var myAttack = State.DeclaredAttacks.FirstOrDefault(
+            da => da.AttackerKingdomId == MyKingdom.Id || da.DefenderKingdomId == MyKingdom.Id);
+        if (myAttack is null) return BattleWizardStep.None;
+
+        bool amAttacker = myAttack.AttackerKingdomId == MyKingdom.Id;
+        bool iSelected = amAttacker ? myAttack.AttackerArmiesSelected : myAttack.DefenderArmiesSelected;
+        bool opponentSelected = amAttacker ? myAttack.DefenderArmiesSelected : myAttack.AttackerArmiesSelected;
+        bool iConfirmed = amAttacker ? myAttack.AttackerLineupConfirmed : myAttack.DefenderLineupConfirmed;
+        bool opponentConfirmed = amAttacker ? myAttack.DefenderLineupConfirmed : myAttack.AttackerLineupConfirmed;
+
+        if (!iSelected) return BattleWizardStep.SelectArmies;
+        if (!opponentSelected) return BattleWizardStep.WaitForOpponentSelect;
+        if (!iConfirmed) return BattleWizardStep.SetLineup;
+        if (!opponentConfirmed) return BattleWizardStep.WaitForOpponentLineup;
+        return BattleWizardStep.WaitingForResolution;
+    }
 }
 
 /// <summary>
@@ -67,6 +100,18 @@ public class HexLayoutViewModel
     public double ViewBoxHeight { get; set; }
     public Dictionary<Guid, Point> CentersByTileId { get; set; } = new();
     public Dictionary<Guid, List<Point>> CornersByTileId { get; set; } = new();
+}
+
+public enum BattleWizardStep
+{
+    None,
+    DeclareAttack,
+    SelectArmies,
+    WaitForOpponentSelect,
+    SetLineup,
+    WaitForOpponentLineup,
+    WaitingForResolution,
+    PostBattle
 }
 
 /// <summary>
