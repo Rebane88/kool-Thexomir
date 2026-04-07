@@ -35,7 +35,7 @@
             $"{c.X.ToString("F1", CultureInfo.InvariantCulture)},{c.Y.ToString("F1", CultureInfo.InvariantCulture)}"));
         var fill = tile.KingdomId.HasValue
             ? KingdomColor(tile.KingdomId.Value, Model.State.Kingdoms)
-            : TerrainColor(tile.TerrainName);
+            : TerrainColor(tile.TerrainKey);
         var isSelected = Model.SelectedTileId == tile.Id;
         var stroke = isSelected ? "#ffd700" : "#333";
         var strokeW = isSelected ? 3 : 1;
