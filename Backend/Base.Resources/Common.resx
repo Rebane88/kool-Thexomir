@@ -690,8 +690,101 @@
     <data name="Lobby_StartHint" xml:space="preserve">
         <value>Need at least 2 players, all with factions selected.</value>
     </data>
+    <data name="Lobby_WinCondition" xml:space="preserve">
+        <value>Win Condition</value>
+    </data>
+    <data name="Lobby_WinCondition_Elimination" xml:space="preserve">
+        <value>Elimination</value>
+    </data>
+    <data name="Lobby_MaxPlayersRange" xml:space="preserve">
+        <value>Max players must be between 2 and 8.</value>
+    </data>
+    <data name="Lobby_InviteCodeRequired" xml:space="preserve">
+        <value>Invite code is required.</value>
+    </data>
+    <data name="Lobby_InviteCodeLength" xml:space="preserve">
+        <value>Invite code must be exactly 6 characters.</value>
+    </data>
+    <data name="Lobby_Status_Lobby" xml:space="preserve">
+        <value>Waiting for players</value>
+    </data>
+    <data name="Lobby_Status_InProgress" xml:space="preserve">
+        <value>In progress</value>
+    </data>
+    <data name="Lobby_Status_Completed" xml:space="preserve">
+        <value>Completed</value>
+    </data>
 
     <!-- Register / Public pages -->
+    <data name="Register_PasswordMinLength" xml:space="preserve">
+        <value>Password must be at least 6 characters.</value>
+    </data>
+    <data name="Register_PasswordMismatch" xml:space="preserve">
+        <value>Passwords do not match.</value>
+    </data>
+
+    <!-- Game UI extras -->
+    <data name="Game_Action_Tile" xml:space="preserve">
+        <value>Tile</value>
+    </data>
+    <data name="Game_Building_Tier" xml:space="preserve">
+        <value>T</value>
+    </data>
+    <data name="Game_Stats_HP" xml:space="preserve">
+        <value>HP</value>
+    </data>
+    <data name="Game_Stats_ATK" xml:space="preserve">
+        <value>ATK</value>
+    </data>
+    <data name="Game_Stats_INIT" xml:space="preserve">
+        <value>INIT</value>
+    </data>
+    <data name="Game_Roster_At" xml:space="preserve">
+        <value>at</value>
+    </data>
+    <data name="Game_CostPill_Gold" xml:space="preserve">
+        <value>G</value>
+    </data>
+    <data name="Game_CostPill_Food" xml:space="preserve">
+        <value>F</value>
+    </data>
+    <data name="Game_CostPill_Wood" xml:space="preserve">
+        <value>W</value>
+    </data>
+    <data name="Game_CostPill_Stone" xml:space="preserve">
+        <value>S</value>
+    </data>
+    <data name="Game_CostPill_Mana" xml:space="preserve">
+        <value>M</value>
+    </data>
+    <data name="Phase_Action" xml:space="preserve">
+        <value>Action</value>
+    </data>
+    <data name="Phase_Battle" xml:space="preserve">
+        <value>Battle</value>
+    </data>
+    <data name="Phase_Income" xml:space="preserve">
+        <value>Income</value>
+    </data>
+    <data name="Phase_RoundEnd" xml:space="preserve">
+        <value>Round End</value>
+    </data>
+    <data name="Enum_Elimination" xml:space="preserve">
+        <value>Elimination</value>
+    </data>
+    <data name="Enum_AttackerWon" xml:space="preserve">
+        <value>Attacker won</value>
+    </data>
+    <data name="Enum_DefenderWon" xml:space="preserve">
+        <value>Defender won</value>
+    </data>
+    <data name="Enum_Active" xml:space="preserve">
+        <value>Active</value>
+    </data>
+    <data name="Enum_Defeated" xml:space="preserve">
+        <value>Defeated</value>
+    </data>
+
     <data name="Form_ConfirmPassword" xml:space="preserve">
         <value>Confirm password</value>
     </data>
@@ -817,6 +910,12 @@
     <data name="Game_Attack_SelectAttacking" xml:space="preserve">
         <value>Select attacking tile (risked):</value>
     </data>
+    <data name="Game_Attack_SelectRiskedTile" xml:space="preserve">
+        <value>Pick one of your adjacent tiles to risk in this attack.</value>
+    </data>
+    <data name="Game_Attack_NoEligibleRisked" xml:space="preserve">
+        <value>You have no owned tile adjacent to the target.</value>
+    </data>
     <data name="Game_Attack_Army" xml:space="preserve">
         <value>army</value>
     </data>
@@ -861,6 +960,21 @@
     </data>
     <data name="Game_Battle_ConfirmLineup" xml:space="preserve">
         <value>Confirm Lineup</value>
+    </data>
+    <data name="Game_Battle_SelectUpTo" xml:space="preserve">
+        <value>Select up to {0} armies to send into battle.</value>
+    </data>
+    <data name="Game_Battle_NoSelection" xml:space="preserve">
+        <value>No armies selected yet.</value>
+    </data>
+    <data name="Game_Battle_OrderHint" xml:space="preserve">
+        <value>Order your armies — the first in the list fights first.</value>
+    </data>
+    <data name="Game_Battle_MoveUp" xml:space="preserve">
+        <value>Move up</value>
+    </data>
+    <data name="Game_Battle_MoveDown" xml:space="preserve">
+        <value>Move down</value>
     </data>
     <data name="Game_PostBattle_Title" xml:space="preserve">
         <value>Battle Resolved</value>

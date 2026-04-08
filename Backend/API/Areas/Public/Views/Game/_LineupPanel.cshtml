@@ -4,11 +4,24 @@
     var myAttack = Model.State.DeclaredAttacks.FirstOrDefault(da =>
         Model.MyKingdom is not null
         && (da.AttackerKingdomId == Model.MyKingdom.Id || da.DefenderKingdomId == Model.MyKingdom.Id));
-    // Lineup is initialized from selection order. The user confirms as-is in this phase.
-    // No JS reordering — pre-populated in army list order. Service validates submitted IDs.
-    var armies = Model.State.Armies
-        .Where(a => Model.MyKingdom is not null && a.KingdomId == Model.MyKingdom.Id)
+
+    // Lineup = exactly the army IDs chosen in SelectArmies step.
+    // The backend validates selectedSet.SetEquals(lineupSet) (CombatService.SetLineupAsync),
+    // so we must submit only those armies — not the whole kingdom roster.
+    var selectedIds = new List<Guid>();
+    if (myAttack is not null && Model.MyKingdom is not null)
+    {
+        selectedIds = myAttack.AttackerKingdomId == Model.MyKingdom.Id
+            ? myAttack.AttackerSelectedArmyIds
+            : myAttack.DefenderSelectedArmyIds;
+    }
+
+    // Preserve the order from the DTO (which reflects the last saved order).
+    var lineupArmies = selectedIds
+        .Select(id => Model.State.Armies.FirstOrDefault(a => a.Id == id))
+        .Where(a => a is not null)
         .ToList();
+
     var unknownLabel = SharedLocalizer["Game_Battle_Unknown"].Value;
     var hpLabel = SharedLocalizer["Game_Battle_HP"].Value;
 }
@@ -16,26 +29,72 @@
 {
     <p>@SharedLocalizer["Game_Battle_NoActiveAttack"]</p>
 }
+else if (lineupArmies.Count == 0)
+{
+    <p>@SharedLocalizer["Game_Battle_NoSelection"]</p>
+}
 else
 {
     @if (Model.LineupError is not null)
     {
         <p class="error" data-region="lineup-error">@Model.LineupError</p>
     }
-    <form asp-controller="PublicGame" asp-action="SetLineup" asp-route-id="@Model.GameId" method="post">
+    <p class="text-muted">@SharedLocalizer["Game_Battle_OrderHint"]</p>
+    <form asp-controller="PublicGame" asp-action="SetLineup" asp-route-id="@Model.GameId" method="post"
+          data-region="lineup-form">
         @Html.AntiForgeryToken()
         <input type="hidden" name="DeclaredAttackId" value="@myAttack.AttackId" />
         <ol data-list="lineup-order">
-            @for (var i = 0; i < armies.Count; i++)
+            @for (var i = 0; i < lineupArmies.Count; i++)
             {
-                var army = armies[i];
+                var army = lineupArmies[i]!;
                 var armyType = Model.ArmyTypes.FirstOrDefault(t => t.Id == army.ArmyTypeId);
-                <li>
+                <li data-region="lineup-item" data-army-id="@army.Id">
                     <input type="hidden" name="ArmyIdsInOrder" value="@army.Id" />
-                    @(armyType?.Name ?? unknownLabel) (@hpLabel @army.CurrentHP / @army.MaxHP)
+                    <span class="lineup-index" data-region="lineup-index">#@(i + 1)</span>
+                    <span class="lineup-label">
+                        @(armyType?.Name ?? unknownLabel) (@hpLabel @army.CurrentHP / @army.MaxHP)
+                    </span>
+                    <button type="button" class="btn btn-xs" data-action="move-up"
+                            aria-label="@SharedLocalizer["Game_Battle_MoveUp"]"
+                            @(i == 0 ? "disabled" : "")>&#x25B2;</button>
+                    <button type="button" class="btn btn-xs" data-action="move-down"
+                            aria-label="@SharedLocalizer["Game_Battle_MoveDown"]"
+                            @(i == lineupArmies.Count - 1 ? "disabled" : "")>&#x25BC;</button>
                 </li>
             }
         </ol>
         <button type="submit">@SharedLocalizer["Game_Battle_ConfirmLineup"]</button>
     </form>
+    @* Minimal vanilla-JS reorder — mirrors React's moveLineupArmy up/down buttons. *@
+    <script>
+        (function () {
+            var list = document.querySelector('ol[data-list="lineup-order"]');
+            if (!list) return;
+            function refreshIndexAndButtons() {
+                var items = list.querySelectorAll('li[data-region="lineup-item"]');
+                items.forEach(function (li, idx) {
+                    var idxSpan = li.querySelector('[data-region="lineup-index"]');
+                    if (idxSpan) idxSpan.textContent = '#' + (idx + 1);
+                    var up = li.querySelector('[data-action="move-up"]');
+                    var down = li.querySelector('[data-action="move-down"]');
+                    if (up) up.disabled = (idx === 0);
+                    if (down) down.disabled = (idx === items.length - 1);
+                });
+            }
+            list.addEventListener('click', function (ev) {
+                var btn = ev.target.closest('[data-action]');
+                if (!btn) return;
+                ev.preventDefault();
+                var li = btn.closest('li[data-region="lineup-item"]');
+                if (!li) return;
+                if (btn.getAttribute('data-action') === 'move-up' && li.previousElementSibling) {
+                    list.insertBefore(li, li.previousElementSibling);
+                } else if (btn.getAttribute('data-action') === 'move-down' && li.nextElementSibling) {
+                    list.insertBefore(li.nextElementSibling, li);
+                }
+                refreshIndexAndButtons();
+            });
+        })();
+    </script>
 }

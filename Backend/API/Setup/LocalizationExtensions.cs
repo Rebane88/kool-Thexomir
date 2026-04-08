@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Base;
+using Base.Resources;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
@@ -19,7 +20,15 @@ public static class LocalizationExtensions
         services.AddLocalization();
 
         services.AddControllersWithViews()
-            .AddViewLocalization(LanguageViewLocationExpanderFormat.SubFolder);
+            .AddViewLocalization(LanguageViewLocationExpanderFormat.SubFolder)
+            .AddDataAnnotationsLocalization(options =>
+            {
+                // Route all DataAnnotations localization through the shared Common resource
+                // so [Display], [Required], [Range], etc. on ViewModels use the same resx files
+                // as the views (instead of looking up per-ViewModel .resx files).
+                options.DataAnnotationLocalizerProvider = (type, factory) =>
+                    factory.Create(typeof(Common));
+            });
 
         var supportedCultures = configuration
             .GetSection("SupportedCultures")

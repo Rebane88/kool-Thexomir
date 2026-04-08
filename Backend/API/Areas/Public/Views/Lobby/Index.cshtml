@@ -1,8 +1,18 @@
 @model API.Areas.Public.ViewModels.LobbyIndexViewModel
 @using Domain.Game
+@using Microsoft.AspNetCore.Mvc.Rendering
 @inject IStringLocalizer<Common> SharedLocalizer
 @{
     ViewData["Title"] = SharedLocalizer["Lobby_Title"].Value;
+
+    var winConditionItems = Enum.GetValues<EWinCondition>()
+        .Select(v => new SelectListItem
+        {
+            Value = v.ToString(),
+            Text = SharedLocalizer[$"Lobby_WinCondition_{v}"].Value,
+            Selected = v == Model.CreateForm.WinCondition
+        })
+        .ToList();
 }
 
 <h1>@SharedLocalizer["Lobby_Title"]</h1>
@@ -36,16 +46,14 @@
         <div asp-validation-summary="ModelOnly" class="text-danger" data-region="form-error-summary"></div>
 
         <div class="mb-3">
-            <label asp-for="CreateForm.MaxPlayers" class="form-label"></label>
+            <label asp-for="CreateForm.MaxPlayers" class="form-label">@SharedLocalizer["Lobby_MaxPlayers"]</label>
             <input asp-for="CreateForm.MaxPlayers" type="number" min="2" max="8" class="form-control" />
             <span asp-validation-for="CreateForm.MaxPlayers" class="text-danger" data-field-error="MaxPlayers"></span>
         </div>
 
         <div class="mb-3">
-            <label asp-for="CreateForm.WinCondition" class="form-label"></label>
-            <select asp-for="CreateForm.WinCondition" class="form-control"
-                    asp-items="Html.GetEnumSelectList<EWinCondition>()">
-            </select>
+            <label asp-for="CreateForm.WinCondition" class="form-label">@SharedLocalizer["Lobby_WinCondition"]</label>
+            <select asp-for="CreateForm.WinCondition" class="form-control" asp-items="winConditionItems"></select>
             <span asp-validation-for="CreateForm.WinCondition" class="text-danger" data-field-error="WinCondition"></span>
         </div>
 
@@ -60,7 +68,7 @@
         <div asp-validation-summary="ModelOnly" class="text-danger" data-region="join-error-summary"></div>
 
         <div class="mb-3">
-            <label asp-for="JoinForm.InviteCode" class="form-label"></label>
+            <label asp-for="JoinForm.InviteCode" class="form-label">@SharedLocalizer["Lobby_InviteCode"]</label>
             <input asp-for="JoinForm.InviteCode" maxlength="6" class="form-control" />
             <span asp-validation-for="JoinForm.InviteCode" class="text-danger" data-field-error="InviteCode"></span>
         </div>

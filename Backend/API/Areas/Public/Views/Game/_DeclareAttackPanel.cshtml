@@ -2,68 +2,92 @@
 @inject IStringLocalizer<Common> SharedLocalizer
 @{
     if (Model.SelectedTileId is null || Model.MyKingdom is null) { return; }
-    var tile = Model.State.Tiles.FirstOrDefault(t => t.Id == Model.SelectedTileId);
-    if (tile is null) { return; }
+    var target = Model.State.Tiles.FirstOrDefault(t => t.Id == Model.SelectedTileId);
+    if (target is null) { return; }
     // Only render when selected tile is an enemy tile
-    if (!tile.KingdomId.HasValue || tile.KingdomId == Model.MyKingdom.Id) { return; }
+    if (!target.KingdomId.HasValue || target.KingdomId == Model.MyKingdom.Id) { return; }
 
-    // Fallback approach: list all friendly tiles that have at least one army (no adjacency filter).
-    // The service validates adjacency via CombatRules.ValidateAttackDeclaration and returns an error if invalid.
+    // Eligible risked tiles: owned by attacker AND adjacent to target.
+    // Matches React (GamePage.tsx:367-383) — not filtered by army presence, because
+    // the backend (CombatRules.ValidateAttackDeclaration) only requires ownership + adjacency.
+    // Hex axial neighbor offsets (duplicated from Domain.Map.HexGridHelper to keep
+    // views independent of the Domain project).
+    var tq = target.CoordQ;
+    var tr = target.CoordR;
+    var neighborCoords = new HashSet<(int q, int r)>
+    {
+        (tq + 1, tr), (tq - 1, tr),
+        (tq, tr + 1), (tq, tr - 1),
+        (tq + 1, tr - 1), (tq - 1, tr + 1)
+    };
     var myArmies = Model.State.Armies.Where(a => a.KingdomId == Model.MyKingdom.Id).ToList();
-    var tilesWithArmies = myArmies
-        .Select(a => Model.FindTileForArmy(a))
-        .Where(t => t is not null)
-        .DistinctBy(t => t!.Id)
+    var eligibleRisked = Model.State.Tiles
+        .Where(t => t.KingdomId == Model.MyKingdom.Id
+                    && neighborCoords.Contains((t.CoordQ, t.CoordR)))
         .Select(t => new
         {
-            Tile = t!,
-            ArmyCount = myArmies.Count(a => Model.FindTileForArmy(a)?.Id == t!.Id)
+            Tile = t,
+            ArmyCount = myArmies.Count(a => Model.FindTileForArmy(a)?.Id == t.Id)
         })
+        .OrderByDescending(e => e.ArmyCount)
+        .ThenBy(e => e.Tile.CoordQ)
+        .ThenBy(e => e.Tile.CoordR)
         .ToList();
 
-    var canDeclare = Model.State.CurrentPhase == "Action"
-        && (Model.State.RemainingActionPoints ?? 0) >= 1
-        && tilesWithArmies.Count > 0;
+    var isActionPhase = Model.State.CurrentPhase == "Action";
+    var hasAp = (Model.State.RemainingActionPoints ?? 0) >= 1;
+    var hasAnyArmy = myArmies.Count > 0;
+    var canDeclare = isActionPhase && hasAp && hasAnyArmy && eligibleRisked.Count > 0;
+    var defenderName = Model.State.Kingdoms.FirstOrDefault(k => k.Id == target.KingdomId)?.Name
+                       ?? SharedLocalizer["Game_Action_Unclaimed"].Value;
     var armyWord = SharedLocalizer["Game_Attack_Army"].Value;
     var armiesWord = SharedLocalizer["Game_Attack_Armies"].Value;
 }
 <section class="declare-attack-panel" data-region="declare-attack-panel">
-    <h3>@SharedLocalizer["Game_Attack_Declare"]</h3>
+    <h3>@SharedLocalizer["Game_Attack_Declare"] @defenderName</h3>
+    <p class="text-muted">@SharedLocalizer["Game_Attack_SelectRiskedTile"]</p>
     @if (Model.AttackError is not null)
     {
         <p class="error" data-region="attack-error">@Model.AttackError</p>
     }
-    <form asp-controller="PublicGame" asp-action="DeclareAttack" asp-route-id="@Model.GameId" method="post">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="TargetTileId" value="@tile.Id" />
-        <div>
-            <label for="RiskedTileId">@SharedLocalizer["Game_Attack_SelectAttacking"]</label>
-            <select name="RiskedTileId" id="RiskedTileId">
-                @foreach (var entry in tilesWithArmies)
-                {
-                    <option value="@entry.Tile.Id">
-                        @entry.Tile.CoordQ,@entry.Tile.CoordR (@entry.ArmyCount @(entry.ArmyCount == 1 ? armyWord : armiesWord))
-                    </option>
-                }
-            </select>
-        </div>
-        <button type="submit" class="btn btn-sm btn-danger" disabled="@(!canDeclare ? "disabled" : null)">
-            @SharedLocalizer["Game_Attack_Declare"]
-        </button>
-        @if (!canDeclare)
+    @if (!canDeclare)
+    {
+        if (!isActionPhase)
         {
-            @if (Model.State.CurrentPhase != "Action")
-            {
-                <p class="text-muted">@SharedLocalizer["Game_Attack_OnlyAction"]</p>
-            }
-            else if ((Model.State.RemainingActionPoints ?? 0) < 1)
-            {
-                <p class="text-muted">@SharedLocalizer["Game_Attack_NotEnoughAp"]</p>
-            }
-            else
-            {
-                <p class="text-muted">@SharedLocalizer["Game_Attack_NoArmies"]</p>
-            }
+            <p class="text-muted">@SharedLocalizer["Game_Attack_OnlyAction"]</p>
         }
-    </form>
+        else if (!hasAp)
+        {
+            <p class="text-muted">@SharedLocalizer["Game_Attack_NotEnoughAp"]</p>
+        }
+        else if (!hasAnyArmy)
+        {
+            <p class="text-muted">@SharedLocalizer["Game_Attack_NoArmies"]</p>
+        }
+        else
+        {
+            <p class="text-muted">@SharedLocalizer["Game_Attack_NoEligibleRisked"]</p>
+        }
+    }
+    else
+    {
+        <ul class="risked-tile-list" data-list="risked-tile-candidates">
+            @foreach (var entry in eligibleRisked)
+            {
+                <li>
+                    <form asp-controller="PublicGame" asp-action="DeclareAttack" asp-route-id="@Model.GameId" method="post" class="risked-tile-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="TargetTileId" value="@target.Id" />
+                        <input type="hidden" name="RiskedTileId" value="@entry.Tile.Id" />
+                        <button type="submit"
+                                class="btn btn-sm btn-danger"
+                                data-region="risked-tile-option"
+                                data-tile-id="@entry.Tile.Id">
+                            (@entry.Tile.CoordQ,@entry.Tile.CoordR) — @entry.ArmyCount @(entry.ArmyCount == 1 ? armyWord : armiesWord)
+                        </button>
+                    </form>
+                </li>
+            }
+        </ul>
+    }
 </section>

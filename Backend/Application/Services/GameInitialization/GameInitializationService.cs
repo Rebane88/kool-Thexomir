@@ -188,7 +188,9 @@ public class GameInitializationService(IUnitOfWork unitOfWork, ILogger<GameIniti
             AttackerArmiesSelected = !string.IsNullOrEmpty(da.AttackerSelectedArmyIds),
             DefenderArmiesSelected = !string.IsNullOrEmpty(da.DefenderSelectedArmyIds),
             AttackerLineupConfirmed = da.AttackerLineupConfirmed,
-            DefenderLineupConfirmed = da.DefenderLineupConfirmed
+            DefenderLineupConfirmed = da.DefenderLineupConfirmed,
+            AttackerSelectedArmyIds = ParseArmyIdCsv(da.AttackerSelectedArmyIds),
+            DefenderSelectedArmyIds = ParseArmyIdCsv(da.DefenderSelectedArmyIds)
         }).ToList();
 
         return new GameStateDto
@@ -251,4 +253,9 @@ public class GameInitializationService(IUnitOfWork unitOfWork, ILogger<GameIniti
 
         await unitOfWork.CommitAsync();
     }
+
+    private static List<Guid> ParseArmyIdCsv(string? csv) =>
+        string.IsNullOrEmpty(csv)
+            ? []
+            : csv.Split(',').Select(Guid.Parse).ToList();
 }

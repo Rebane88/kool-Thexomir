@@ -15,7 +15,7 @@
             {
                 foreach (var r in me.Resources)
                 {
-                    <dt>@r.ResourceType</dt>
+                    <dt>@SharedLocalizer[$"Enum_{r.ResourceType}"]</dt>
                     <dd data-resource="@r.ResourceType">@r.Amount</dd>
                 }
             }
@@ -23,7 +23,7 @@
     </div>
     <div class="hud-turn" data-region="turn">
         <span class="turn-label">@turnLabel</span>
-        <span class="phase">@SharedLocalizer["Game_Hud_Phase"] @Model.State.CurrentPhase</span>
+        <span class="phase">@SharedLocalizer["Game_Hud_Phase"] @SharedLocalizer[$"Phase_{Model.State.CurrentPhase}"]</span>
         <span class="round">@SharedLocalizer["Game_Hud_Round"] @Model.State.RoundNumber</span>
         <span class="ap-pips" data-ap="@Model.State.RemainingActionPoints">
             @for (int i = 0; i < apMax; i++)

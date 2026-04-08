@@ -170,7 +170,7 @@ public class PublicGameBattleTests : IntegrationTestBase
     // MVCGAME-10 / MVCGAME-17: Set lineup + battle resolution
     // =========================================================================
 
-    [Fact(Timeout = 180_000)]
+    [Fact]
     public async Task SetLineup_WhenAllLineupsConfirmed_TriggersResolveAndAdvance()
     {
         var (gameId, attackerUserId, defenderUserId, attackId, _, _, attackerArmyId, defenderArmyId) =
@@ -186,15 +186,15 @@ public class PublicGameBattleTests : IntegrationTestBase
         await SetLineupServiceAsync(gameId, attackerUserId, attackId, [attackerArmyId]);
 
         // Defender sets lineup via HTTP POST — second submission triggers ResolveAndAdvance.
-        // Resolution includes Task.Delay(9000) per round, so use an extended-timeout client.
-        var longTimeoutClient = Factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        // PublicGameController passes zero delays so resolution completes in ~100ms; the
+        // default HttpClient timeout is plenty.
+        var client = Factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
         });
-        longTimeoutClient.Timeout = TimeSpan.FromMinutes(3);
 
         var defenderCookie = await GetCookieForUserAsync(defenderUserId);
-        var (token, afCookies) = await GetAntiforgeryAsync(longTimeoutClient, $"/Public/Game/Index/{gameId}", defenderCookie);
+        var (token, afCookies) = await GetAntiforgeryAsync(client, $"/Public/Game/Index/{gameId}", defenderCookie);
 
         var formPairs = new List<KeyValuePair<string, string>>
         {
@@ -208,13 +208,13 @@ public class PublicGameBattleTests : IntegrationTestBase
         };
         AddCookies(req, defenderCookie, afCookies);
 
-        var resp = await longTimeoutClient.SendAsync(req);
+        var resp = await client.SendAsync(req);
         resp.StatusCode.ShouldBe(HttpStatusCode.Redirect);
 
         // Follow redirect — game should have advanced past Battle phase
         var followReq = new HttpRequestMessage(HttpMethod.Get, resp.Headers.Location);
         followReq.Headers.Add("Cookie", defenderCookie);
-        var followResp = await longTimeoutClient.SendAsync(followReq);
+        var followResp = await client.SendAsync(followReq);
 
         // Either redirected to GameOver, or landed on Index with no "Confirm Lineup" wizard
         if (followResp.StatusCode == HttpStatusCode.Redirect)
@@ -231,7 +231,7 @@ public class PublicGameBattleTests : IntegrationTestBase
         }
     }
 
-    [Fact(Timeout = 300_000)]
+    [Fact]
     public async Task BattleResolution_PostBattlePanel_RendersRoundsFromTempData()
     {
         var (gameId, attackerUserId, defenderUserId, attackId, _, _, attackerArmyId, defenderArmyId) =
@@ -245,15 +245,14 @@ public class PublicGameBattleTests : IntegrationTestBase
         await SetLineupServiceAsync(gameId, attackerUserId, attackId, [attackerArmyId]);
 
         // Defender sets lineup via HTTP — triggers resolution and stores LastBattleResult in TempData.
-        // Resolution includes Task.Delay(9000) per round, so use an extended-timeout client.
-        var longTimeoutClient = Factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        // PublicGameController passes zero delays so resolution is instant.
+        var client = Factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
         });
-        longTimeoutClient.Timeout = TimeSpan.FromMinutes(5);
 
         var defenderCookie = await GetCookieForUserAsync(defenderUserId);
-        var (token, afCookies) = await GetAntiforgeryAsync(longTimeoutClient, $"/Public/Game/Index/{gameId}", defenderCookie);
+        var (token, afCookies) = await GetAntiforgeryAsync(client, $"/Public/Game/Index/{gameId}", defenderCookie);
 
         var formPairs = new List<KeyValuePair<string, string>>
         {
@@ -267,7 +266,7 @@ public class PublicGameBattleTests : IntegrationTestBase
         };
         AddCookies(req, defenderCookie, afCookies);
 
-        var resp = await longTimeoutClient.SendAsync(req);
+        var resp = await client.SendAsync(req);
         resp.StatusCode.ShouldBe(HttpStatusCode.Redirect);
 
         // Follow the redirect — the same client session has the TempData cookie so LastBattleResult is present
@@ -284,7 +283,7 @@ public class PublicGameBattleTests : IntegrationTestBase
             foreach (var c in afCookies)
                 followReq.Headers.Add("Cookie", c.Split(';')[0].Trim());
         }
-        var followResp = await longTimeoutClient.SendAsync(followReq);
+        var followResp = await client.SendAsync(followReq);
 
         // May redirect to GameOver if the game ended
         if (followResp.StatusCode == HttpStatusCode.Redirect)
@@ -292,7 +291,7 @@ public class PublicGameBattleTests : IntegrationTestBase
             // The game ended — GET the GameOver page and verify it
             var goReq = new HttpRequestMessage(HttpMethod.Get, followResp.Headers.Location);
             goReq.Headers.Add("Cookie", defenderCookie);
-            var goResp = await longTimeoutClient.SendAsync(goReq);
+            var goResp = await client.SendAsync(goReq);
             var goHtml = await goResp.Content.ReadAsStringAsync();
             goHtml.ShouldContain("game-over");
         }

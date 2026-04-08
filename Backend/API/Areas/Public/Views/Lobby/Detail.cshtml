@@ -12,7 +12,7 @@
 <section data-region="lobby-settings">
     <p><strong>@SharedLocalizer["Lobby_InviteCode"]:</strong> <code data-field="invite-code">@Model.Lobby.LobbyCode</code></p>
     <p><strong>@SharedLocalizer["Lobby_MaxPlayers"]:</strong> @Model.Lobby.MaxPlayers</p>
-    <p><strong>@SharedLocalizer["Lobby_Status"]:</strong> @Model.Lobby.Status</p>
+    <p><strong>@SharedLocalizer["Lobby_Status"]:</strong> @SharedLocalizer[$"Lobby_Status_{Model.Lobby.Status}"]</p>
 </section>
 
 <section data-region="player-list">

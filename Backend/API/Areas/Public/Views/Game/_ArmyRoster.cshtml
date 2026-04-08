@@ -8,6 +8,7 @@
         : Model.State.Armies.Where(a => a.KingdomId == me.Id).ToList();
     var unknownLabel = SharedLocalizer["Game_Roster_Unknown"].Value;
     var buildingLabel = SharedLocalizer["Game_Roster_Building"].Value;
+    var atLabel = SharedLocalizer["Game_Roster_At"].Value;
 }
 <details class="army-roster" data-region="army-roster" open>
     <summary>@SharedLocalizer["Game_Roster_Title"] (@myArmies.Count)</summary>
@@ -33,7 +34,7 @@
                     var building = tile?.Buildings.FirstOrDefault(b => b.Id == army.BuildingId);
                     var locationLabel = tile is null
                         ? "—"
-                        : $"{building?.BuildingName ?? buildingLabel} at ({tile.CoordQ},{tile.CoordR})";
+                        : $"{building?.BuildingName ?? buildingLabel} {atLabel} ({tile.CoordQ},{tile.CoordR})";
                     <tr data-army-id="@army.Id"
                         data-army-type="@(armyType?.Name ?? string.Empty)"
                         data-army-hp="@army.CurrentHP/@army.MaxHP">

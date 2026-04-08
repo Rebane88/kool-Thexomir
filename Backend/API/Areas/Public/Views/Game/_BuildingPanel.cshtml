@@ -35,13 +35,13 @@
             <input type="hidden" name="TileId" value="@Model.SelectedTileId" />
             <input type="hidden" name="BuildingTypeId" value="@bt.Id" />
             <span class="bt-name" data-region="bt-name">@bt.Name</span>
-            <span class="bt-tier">T@(bt.Tier)</span>
+            <span class="bt-tier">@SharedLocalizer["Game_Building_Tier"]@(bt.Tier)</span>
             <span class="bt-cost">
-                <span class="cost-pill" title="Gold">G @bt.CostGold</span>
-                <span class="cost-pill" title="Food">F @bt.CostFood</span>
-                <span class="cost-pill" title="Wood">W @bt.CostWood</span>
-                <span class="cost-pill" title="Stone">S @bt.CostStone</span>
-                <span class="cost-pill" title="Mana">M @bt.CostMana</span>
+                <span class="cost-pill" title="@SharedLocalizer["Enum_Gold"]">@SharedLocalizer["Game_CostPill_Gold"] @bt.CostGold</span>
+                <span class="cost-pill" title="@SharedLocalizer["Enum_Food"]">@SharedLocalizer["Game_CostPill_Food"] @bt.CostFood</span>
+                <span class="cost-pill" title="@SharedLocalizer["Enum_Wood"]">@SharedLocalizer["Game_CostPill_Wood"] @bt.CostWood</span>
+                <span class="cost-pill" title="@SharedLocalizer["Enum_Stone"]">@SharedLocalizer["Game_CostPill_Stone"] @bt.CostStone</span>
+                <span class="cost-pill" title="@SharedLocalizer["Enum_Mana"]">@SharedLocalizer["Game_CostPill_Mana"] @bt.CostMana</span>
             </span>
             @if (!entry.PrereqMet)
             {

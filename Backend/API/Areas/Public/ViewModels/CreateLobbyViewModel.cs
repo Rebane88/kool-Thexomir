@@ -6,11 +6,11 @@ namespace API.Areas.Public.ViewModels;
 public class CreateLobbyViewModel
 {
     [Required]
-    [Range(2, 8, ErrorMessage = "MaxPlayers must be between 2 and 8.")]
-    [Display(Name = "Max Players")]
+    [Range(2, 8, ErrorMessage = "Lobby_MaxPlayersRange")]
+    [Display(Name = "Lobby_MaxPlayers")]
     public int MaxPlayers { get; set; } = 4;
 
     [Required]
-    [Display(Name = "Win Condition")]
+    [Display(Name = "Lobby_WinCondition")]
     public EWinCondition WinCondition { get; set; } = EWinCondition.Elimination;
 }

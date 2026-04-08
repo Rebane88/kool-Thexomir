@@ -7,7 +7,7 @@
 {
     <section data-region="post-battle">
         <h3>@SharedLocalizer["Game_PostBattle_Title"]</h3>
-        <p data-outcome="@battle.Outcome">@SharedLocalizer["Game_PostBattle_Outcome"] @battle.Outcome</p>
+        <p data-outcome="@battle.Outcome">@SharedLocalizer["Game_PostBattle_Outcome"] @SharedLocalizer[$"Enum_{battle.Outcome}"]</p>
         @if (battle.TileCapturedId != Guid.Empty)
         {
             <p>@SharedLocalizer["Game_PostBattle_TileCaptured"]</p>

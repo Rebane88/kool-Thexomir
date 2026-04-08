@@ -48,8 +48,20 @@
             connection.on('attackDeclared', reload);
             connection.on('armiesSelected', reload);
             connection.on('lineupSet', reload);
-            connection.on('battleResolved', reload);
             connection.on('gameOver', reload);
+
+            // Battle summary for the non-submitting player (Player A).
+            // The submitter (Player B) gets _PostBattlePanel rendered server-side from
+            // TempData["LastBattleResult"] after their POST returns. Player A only sees
+            // the BattleResolved hub event, so we stash the payload in sessionStorage
+            // and reload — the page-load handler below will then render the summary
+            // client-side from the stashed JSON.
+            connection.on('battleResolved', function (battleResult) {
+                try {
+                    sessionStorage.setItem('mvc.lastBattleResult', JSON.stringify(battleResult));
+                } catch (e) { /* sessionStorage unavailable — reload-only fallback */ }
+                reload();
+            });
             // gameStateSnapshot is intentionally NOT handled: the hub pushes a snapshot
             // to every newly-connected client (see GameHub.OnConnectedAsync), which would
             // cause an infinite reload loop for this server-rendered page since the GET
@@ -57,6 +69,93 @@
             connection.on('turnAutoSkipped', reload);
 
             connection.start().catch(function (err) { console.error('SignalR error:', err); });
+
+            // Render the post-battle summary on page load if the server didn't already
+            // (i.e. the submitter gets _PostBattlePanel from TempData; the other player
+            // gets the payload via sessionStorage stashed by the battleResolved handler).
+            var i18n = {
+                title: '@SharedLocalizer["Game_PostBattle_Title"].Value',
+                outcome: '@SharedLocalizer["Game_PostBattle_Outcome"].Value',
+                tileCaptured: '@SharedLocalizer["Game_PostBattle_TileCaptured"].Value',
+                round: '@SharedLocalizer["Game_PostBattle_Round"].Value',
+                initiative: '@SharedLocalizer["Game_PostBattle_Initiative"].Value',
+                damage: '@SharedLocalizer["Game_PostBattle_Damage"].Value',
+                attackerHp: '@SharedLocalizer["Game_PostBattle_AttackerHP"].Value',
+                defenderHp: '@SharedLocalizer["Game_PostBattle_DefenderHP"].Value',
+                destroyed: '@SharedLocalizer["Game_PostBattle_Destroyed"].Value',
+                outcomeAttackerWon: '@SharedLocalizer["Enum_AttackerWon"].Value',
+                outcomeDefenderWon: '@SharedLocalizer["Enum_DefenderWon"].Value'
+            };
+            (function renderStashedBattle() {
+                // Skip if server already rendered _PostBattlePanel.
+                if (document.querySelector('[data-region="post-battle"]')) {
+                    sessionStorage.removeItem('mvc.lastBattleResult');
+                    return;
+                }
+                var json = sessionStorage.getItem('mvc.lastBattleResult');
+                if (!json) return;
+                var battle;
+                try { battle = JSON.parse(json); } catch (e) { sessionStorage.removeItem('mvc.lastBattleResult'); return; }
+                sessionStorage.removeItem('mvc.lastBattleResult');
+
+                var section = document.createElement('section');
+                section.setAttribute('data-region', 'post-battle');
+
+                var h3 = document.createElement('h3');
+                h3.textContent = i18n.title;
+                section.appendChild(h3);
+
+                var outcomeLabel = battle.outcome === 'AttackerWon'
+                    ? i18n.outcomeAttackerWon
+                    : (battle.outcome === 'DefenderWon' ? i18n.outcomeDefenderWon : battle.outcome);
+                var pOutcome = document.createElement('p');
+                pOutcome.setAttribute('data-outcome', battle.outcome || '');
+                pOutcome.textContent = i18n.outcome + ' ' + outcomeLabel;
+                section.appendChild(pOutcome);
+
+                if (battle.tileCapturedId && battle.tileCapturedId !== '00000000-0000-0000-0000-000000000000') {
+                    var pCaptured = document.createElement('p');
+                    pCaptured.textContent = i18n.tileCaptured;
+                    section.appendChild(pCaptured);
+                }
+
+                var table = document.createElement('table');
+                table.setAttribute('data-table', 'battle-rounds');
+                var thead = document.createElement('thead');
+                var headRow = document.createElement('tr');
+                [i18n.round, i18n.initiative, i18n.damage, i18n.attackerHp, i18n.defenderHp, i18n.destroyed]
+                    .forEach(function (label) {
+                        var th = document.createElement('th');
+                        th.textContent = label;
+                        headRow.appendChild(th);
+                    });
+                thead.appendChild(headRow);
+                table.appendChild(thead);
+
+                var tbody = document.createElement('tbody');
+                (battle.rounds || []).forEach(function (round) {
+                    var tr = document.createElement('tr');
+                    [
+                        round.roundNumber,
+                        round.initiativeWinner,
+                        round.damageDealt,
+                        round.attackerArmyHPAfter,
+                        round.defenderArmyHPAfter,
+                        round.armyDestroyedId || '—'
+                    ].forEach(function (cell) {
+                        var td = document.createElement('td');
+                        td.textContent = cell;
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+                table.appendChild(tbody);
+                section.appendChild(table);
+
+                // Insert at the top of <main> so it's visible alongside the map.
+                var target = document.querySelector('.game-main') || document.body;
+                target.parentNode.insertBefore(section, target);
+            })();
         })();
     </script>
         @if (Model.State.TurnDeadline.HasValue)

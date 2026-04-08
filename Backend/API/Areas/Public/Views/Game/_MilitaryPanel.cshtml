@@ -36,15 +36,15 @@
             <input type="hidden" name="ArmyTypeId" value="@at.Id" />
             <span class="at-name" data-region="at-name">@at.Name</span>
             <span class="at-cost">
-                <span class="cost-pill" title="Gold">G @at.TrainingCostGold</span>
-                <span class="cost-pill" title="Food">F @at.TrainingCostFood</span>
-                <span class="cost-pill" title="Stone">S @at.TrainingCostStone</span>
-                <span class="cost-pill" title="Mana">M @at.TrainingCostMana</span>
+                <span class="cost-pill" title="@SharedLocalizer["Enum_Gold"]">@SharedLocalizer["Game_CostPill_Gold"] @at.TrainingCostGold</span>
+                <span class="cost-pill" title="@SharedLocalizer["Enum_Food"]">@SharedLocalizer["Game_CostPill_Food"] @at.TrainingCostFood</span>
+                <span class="cost-pill" title="@SharedLocalizer["Enum_Stone"]">@SharedLocalizer["Game_CostPill_Stone"] @at.TrainingCostStone</span>
+                <span class="cost-pill" title="@SharedLocalizer["Enum_Mana"]">@SharedLocalizer["Game_CostPill_Mana"] @at.TrainingCostMana</span>
             </span>
             <span class="at-stats">
-                <span class="stat-pill">HP @at.HP</span>
-                <span class="stat-pill">ATK @at.Attack</span>
-                <span class="stat-pill">INIT @at.Initiative</span>
+                <span class="stat-pill">@SharedLocalizer["Game_Stats_HP"] @at.HP</span>
+                <span class="stat-pill">@SharedLocalizer["Game_Stats_ATK"] @at.Attack</span>
+                <span class="stat-pill">@SharedLocalizer["Game_Stats_INIT"] @at.Initiative</span>
             </span>
             <button type="submit" class="btn btn-sm btn-primary">@SharedLocalizer["Game_Train"]</button>
         </form>

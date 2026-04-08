@@ -235,6 +235,9 @@ public class PublicGameController : Controller
         var allReady = await _combatService.AreAllLineupsSetAsync(id);
         if (allReady)
         {
+            // MVC clients don't animate combat — they render the final state after a redirect.
+            // Pass zero delays so the POST returns in ~100ms instead of 9s/round + 5s/battle.
+            // React (CombatController) keeps the defaults for its slot-reel animation.
             var advanceResult = await _turnService.ResolveAndAdvanceAsync(
                 id,
                 onRoundResolved: async (round, battleId) =>
@@ -243,7 +246,9 @@ public class PublicGameController : Controller
                 {
                     TempData["LastBattleResult"] = JsonSerializer.Serialize(battleResult);
                     await _hubContext.Clients.Group($"game:{id}").BattleResolved(battleResult);
-                });
+                },
+                roundDelay: TimeSpan.Zero,
+                battleDelay: TimeSpan.Zero);
 
             if (advanceResult.IsSuccess && advanceResult.Value!.GameOver is not null)
             {

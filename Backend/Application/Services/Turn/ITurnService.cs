@@ -16,10 +16,20 @@ public interface ITurnService
     /// Called after all lineups are set during Battle phase.
     /// Resolves battles (broadcasting rounds for animation), then advances through Income → RoundEnd → Action.
     /// </summary>
+    /// <param name="roundDelay">
+    /// Delay between <see cref="BattleRoundResultDto"/> broadcasts. Null = default 9s (paces the React
+    /// slot-reel + HP-bar animation). Pass <see cref="TimeSpan.Zero"/> for instant resolution (MVC clients
+    /// that don't animate and just want the final state as fast as possible).
+    /// </param>
+    /// <param name="battleDelay">
+    /// Dwell time after each <see cref="BattleResultDto"/> broadcast. Null = default 5s. Zero for instant.
+    /// </param>
     Task<Result<TurnAdvancedDto>> ResolveAndAdvanceAsync(
         Guid gameId,
         Func<BattleRoundResultDto, string, Task> onRoundResolved,
-        Func<BattleResultDto, Task> onBattleResolved);
+        Func<BattleResultDto, Task> onBattleResolved,
+        TimeSpan? roundDelay = null,
+        TimeSpan? battleDelay = null);
 
     /// <summary>
     /// Auto-skips the current turn due to timeout. Increments ConsecutiveMissedTurns.

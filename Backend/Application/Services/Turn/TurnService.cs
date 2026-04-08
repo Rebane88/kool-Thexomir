@@ -109,8 +109,12 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
             }
             else
             {
-                // No attacks — skip Battle, go straight through Income → RoundEnd → Action
-                result = await AdvanceFromBattleAsync(game, kingdoms, onRoundResolved, onBattleResolved);
+                // No attacks — skip Battle, go straight through Income → RoundEnd → Action.
+                // Delays don't matter on this path (no battles to drip-feed), but the method
+                // signature requires values.
+                result = await AdvanceFromBattleAsync(
+                    game, kingdoms, onRoundResolved, onBattleResolved,
+                    DefaultRoundDelay, DefaultBattleDelay);
             }
         }
 
@@ -149,10 +153,17 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
         };
     }
 
+    // Default drip-feed pacing — matches the React slot-reel animation timing.
+    // Comment at the original call site: "9s per round — 3 reels (~1.7s each) + pauses + HP bar + destruction animations"
+    private static readonly TimeSpan DefaultRoundDelay = TimeSpan.FromSeconds(9);
+    private static readonly TimeSpan DefaultBattleDelay = TimeSpan.FromSeconds(5);
+
     public async Task<Result<TurnAdvancedDto>> ResolveAndAdvanceAsync(
         Guid gameId,
         Func<BattleRoundResultDto, string, Task> onRoundResolved,
-        Func<BattleResultDto, Task> onBattleResolved)
+        Func<BattleResultDto, Task> onBattleResolved,
+        TimeSpan? roundDelay = null,
+        TimeSpan? battleDelay = null)
     {
         logger.LogInformation("[ResolveAndAdvance] Game={GameId}", gameId);
 
@@ -164,7 +175,10 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
 
         var kingdoms = await unitOfWork.Kingdoms.GetKingdomsForGameAsync(gameId);
 
-        var result = await AdvanceFromBattleAsync(game, kingdoms, onRoundResolved, onBattleResolved);
+        var result = await AdvanceFromBattleAsync(
+            game, kingdoms, onRoundResolved, onBattleResolved,
+            roundDelay ?? DefaultRoundDelay,
+            battleDelay ?? DefaultBattleDelay);
 
         await unitOfWork.CommitAsync();
 
@@ -182,7 +196,9 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
         Game game,
         List<Kingdom> kingdoms,
         Func<BattleRoundResultDto, string, Task> onRoundResolved,
-        Func<BattleResultDto, Task> onBattleResolved)
+        Func<BattleResultDto, Task> onBattleResolved,
+        TimeSpan roundDelay,
+        TimeSpan battleDelay)
     {
         Dictionary<Guid, Dictionary<string, int>>? incomeApplied = null;
 
@@ -208,10 +224,12 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
             foreach (var round in battleResult.Rounds)
             {
                 await onRoundResolved(round, battleIdStr);
-                await Task.Delay(9000); // 9s per round — 3 reels (~1.7s each) + pauses + HP bar + destruction animations
+                if (roundDelay > TimeSpan.Zero)
+                    await Task.Delay(roundDelay);
             }
             await onBattleResolved(battleResult);
-            await Task.Delay(5000); // 5s pause between battles for summary screen
+            if (battleDelay > TimeSpan.Zero)
+                await Task.Delay(battleDelay);
         }
 
         // Check if any kingdom was eliminated -- refresh kingdom statuses
@@ -628,7 +646,10 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
             }
             else
             {
-                result = await AdvanceFromBattleAsync(game, kingdoms, onRoundResolved, onBattleResolved);
+                // No-battles auto-skip path — delays are inert here (no battles to drip-feed).
+                result = await AdvanceFromBattleAsync(
+                    game, kingdoms, onRoundResolved, onBattleResolved,
+                    DefaultRoundDelay, DefaultBattleDelay);
             }
         }
 

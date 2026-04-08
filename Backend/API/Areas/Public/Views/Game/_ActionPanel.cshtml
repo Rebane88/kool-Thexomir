@@ -14,7 +14,7 @@
         }
         else
         {
-            <h3 data-region="selected-tile">Tile @tile.CoordQ,@tile.CoordR — @tile.TerrainName</h3>
+            <h3 data-region="selected-tile">@SharedLocalizer["Game_Action_Tile"] @tile.CoordQ,@tile.CoordR — @tile.TerrainName</h3>
             <p>@SharedLocalizer["Game_Action_Owner"] @(Model.State.Kingdoms.FirstOrDefault(k => k.Id == tile.KingdomId)?.Name ?? SharedLocalizer["Game_Action_Unclaimed"].Value)</p>
             <p>@SharedLocalizer["Game_Action_Buildings"] @tile.Buildings.Count</p>
             <partial name="~/Areas/Public/Views/Game/_BuildingPanel.cshtml" model="Model" />

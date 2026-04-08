@@ -37,13 +37,13 @@
                 <tr>
                     <td>@k.KingdomName</td>
                     <td>@k.TilesOwned</td>
-                    <td>@k.Status</td>
+                    <td>@SharedLocalizer[$"Enum_{k.Status}"]</td>
                 </tr>
             }
         </tbody>
     </table>
 
-    <p>@SharedLocalizer["Game_Over_WinCondition"] @Model.GameOver.WinConditionType</p>
+    <p>@SharedLocalizer["Game_Over_WinCondition"] @SharedLocalizer[$"Enum_{Model.GameOver.WinConditionType}"]</p>
 
     <a asp-area="Public" asp-controller="Lobby" asp-action="Index" data-action="return-to-lobby">
         @SharedLocalizer["Game_Over_ReturnToLobby"]

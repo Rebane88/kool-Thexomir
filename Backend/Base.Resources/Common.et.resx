@@ -683,8 +683,102 @@
     <data name="Lobby_StartHint" xml:space="preserve">
         <value>Vaja vähemalt 2 mängijat, kõik valitud fraktsioonidega.</value>
     </data>
+    <data name="Lobby_WinCondition" xml:space="preserve">
+        <value>Võidutingimus</value>
+    </data>
+    <data name="Lobby_WinCondition_Elimination" xml:space="preserve">
+        <value>Kõrvaldamine</value>
+    </data>
+    <data name="Lobby_MaxPlayersRange" xml:space="preserve">
+        <value>Maksimaalne mängijate arv peab olema vahemikus 2 kuni 8.</value>
+    </data>
+    <data name="Lobby_InviteCodeRequired" xml:space="preserve">
+        <value>Kutse kood on nõutud.</value>
+    </data>
+    <data name="Lobby_InviteCodeLength" xml:space="preserve">
+        <value>Kutse kood peab olema täpselt 6 tähemärki pikk.</value>
+    </data>
+    <data name="Lobby_Status_Lobby" xml:space="preserve">
+        <value>Ootab mängijaid</value>
+    </data>
+    <data name="Lobby_Status_InProgress" xml:space="preserve">
+        <value>Käimas</value>
+    </data>
+    <data name="Lobby_Status_Completed" xml:space="preserve">
+        <value>Lõppenud</value>
+    </data>
 
     <!-- Register / Public pages -->
+    <data name="Register_PasswordMinLength" xml:space="preserve">
+        <value>Parool peab olema vähemalt 6 tähemärki pikk.</value>
+    </data>
+    <data name="Register_PasswordMismatch" xml:space="preserve">
+        <value>Paroolid ei kattu.</value>
+    </data>
+
+    <!-- Game UI extras -->
+    <data name="Game_Action_Tile" xml:space="preserve">
+        <value>Väli</value>
+    </data>
+    <data name="Game_Building_Tier" xml:space="preserve">
+        <value>T</value>
+    </data>
+    <data name="Game_Stats_HP" xml:space="preserve">
+        <value>HP</value>
+    </data>
+    <data name="Game_Stats_ATK" xml:space="preserve">
+        <value>RÜN</value>
+    </data>
+    <data name="Game_Stats_INIT" xml:space="preserve">
+        <value>INIT</value>
+    </data>
+    <data name="Game_Roster_At" xml:space="preserve">
+        <value>asukohas</value>
+    </data>
+    <data name="Game_CostPill_Gold" xml:space="preserve">
+        <value>K</value>
+    </data>
+    <data name="Game_CostPill_Food" xml:space="preserve">
+        <value>T</value>
+    </data>
+    <data name="Game_CostPill_Wood" xml:space="preserve">
+        <value>P</value>
+    </data>
+    <data name="Game_CostPill_Stone" xml:space="preserve">
+        <value>K</value>
+    </data>
+    <data name="Game_CostPill_Mana" xml:space="preserve">
+        <value>M</value>
+    </data>
+    <data name="Phase_Action" xml:space="preserve">
+        <value>Tegevus</value>
+    </data>
+    <data name="Phase_Battle" xml:space="preserve">
+        <value>Lahing</value>
+    </data>
+    <data name="Phase_Income" xml:space="preserve">
+        <value>Sissetulek</value>
+    </data>
+    <data name="Phase_RoundEnd" xml:space="preserve">
+        <value>Ringi lõpp</value>
+    </data>
+    <data name="Enum_Elimination" xml:space="preserve">
+        <value>Kõrvaldamine</value>
+    </data>
+    <data name="Enum_AttackerWon" xml:space="preserve">
+        <value>Ründaja võitis</value>
+    </data>
+    <data name="Enum_DefenderWon" xml:space="preserve">
+        <value>Kaitsja võitis</value>
+    </data>
+    <data name="Enum_Active" xml:space="preserve">
+        <value>Aktiivne</value>
+    </data>
+    <data name="Enum_Defeated" xml:space="preserve">
+        <value>Alistatud</value>
+    </data>
+
+    <!-- Register / Public pages (extra) -->
     <data name="Form_ConfirmPassword" xml:space="preserve">
         <value>Kinnita parool</value>
     </data>
@@ -810,6 +904,12 @@
     <data name="Game_Attack_SelectAttacking" xml:space="preserve">
         <value>Vali ründav maatükk (riskid):</value>
     </data>
+    <data name="Game_Attack_SelectRiskedTile" xml:space="preserve">
+        <value>Vali üks oma naabermaatükkidest, mida selle rünnakuga riskida.</value>
+    </data>
+    <data name="Game_Attack_NoEligibleRisked" xml:space="preserve">
+        <value>Sul pole sihtmärgi kõrval ühtki omatud maatükki.</value>
+    </data>
     <data name="Game_Attack_Army" xml:space="preserve">
         <value>sõjavägi</value>
     </data>
@@ -854,6 +954,21 @@
     </data>
     <data name="Game_Battle_ConfirmLineup" xml:space="preserve">
         <value>Kinnita lineup</value>
+    </data>
+    <data name="Game_Battle_SelectUpTo" xml:space="preserve">
+        <value>Vali kuni {0} sõjaväge lahingusse saatmiseks.</value>
+    </data>
+    <data name="Game_Battle_NoSelection" xml:space="preserve">
+        <value>Sõjavägesid pole veel valitud.</value>
+    </data>
+    <data name="Game_Battle_OrderHint" xml:space="preserve">
+        <value>Järjesta oma sõjaväed — nimekirjas esimene astub lahingusse esimesena.</value>
+    </data>
+    <data name="Game_Battle_MoveUp" xml:space="preserve">
+        <value>Liiguta üles</value>
+    </data>
+    <data name="Game_Battle_MoveDown" xml:space="preserve">
+        <value>Liiguta alla</value>
     </data>
     <data name="Game_PostBattle_Title" xml:space="preserve">
         <value>Lahing lahendatud</value>

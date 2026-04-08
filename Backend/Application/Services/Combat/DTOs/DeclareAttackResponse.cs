@@ -14,4 +14,8 @@ public class DeclareAttackResponse
     public bool DefenderArmiesSelected { get; set; }
     public bool AttackerLineupConfirmed { get; set; }
     public bool DefenderLineupConfirmed { get; set; }
+
+    // Selected army IDs per side (empty until SelectArmies runs; order reflects current lineup)
+    public List<Guid> AttackerSelectedArmyIds { get; set; } = [];
+    public List<Guid> DefenderSelectedArmyIds { get; set; } = [];
 }
