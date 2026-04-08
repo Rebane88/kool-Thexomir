@@ -3,6 +3,7 @@ using System.Net;
 using System.Text.Json;
 using Asp.Versioning;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NuGet.Packaging;
@@ -47,14 +48,17 @@ public static class WebApiExtensions
         return services;
     }
 
-    public static IServiceCollection AddAppCors(this IServiceCollection services)
+    public static IServiceCollection AddAppCors(this IServiceCollection services, IConfiguration configuration)
     {
+        var origins = configuration.GetSection("Cors:Origins").Get<string[]>()
+                      ?? new[] { "http://localhost:5173" };
+
         services.AddCors(options =>
         {
             options.AddPolicy("CorsAllowAll", policy =>
             {
                 policy
-                    .WithOrigins("http://localhost:5173")
+                    .WithOrigins(origins)
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials()

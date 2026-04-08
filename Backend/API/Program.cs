@@ -15,7 +15,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<AppNameService>();
 builder.Services.AddAppControllers();
 builder.Services.AddForwardedHeaders();
-builder.Services.AddAppCors();
+builder.Services.AddAppCors(builder.Configuration);
 builder.Services.AddAppSignalR();
 builder.Services.AddAppApiVersioning();
 builder.Services.AddAppSwagger();

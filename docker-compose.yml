@@ -1,0 +1,35 @@
+services:
+  frontend:
+    container_name: robreb-game-front
+    build:
+      context: ./Frontend
+      args:
+        VITE_API_BASE_URL: https://robreb-game-back.proxy.itcollege.ee/api/v1
+        VITE_HUB_BASE_URL: https://robreb-game-back.proxy.itcollege.ee
+    ports:
+      - "88:80"
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  api:
+    container_name: robreb-game-back
+    build:
+      context: ./Backend
+    ports:
+      - "87:8080"
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=robreb_game;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - JWT__Key=${JWT_KEY}
+      - JWT__Issuer=RealmsOfAsh
+      - JWT__Audience=RealmsOfAsh
+      - Cors__Origins__0=https://robreb-game-front.proxy.itcollege.ee
+    networks:
+      - default
+      - shared-db
+
+networks:
+  shared-db:
+    external: true
