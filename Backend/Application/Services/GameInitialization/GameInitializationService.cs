@@ -215,13 +215,14 @@ public class GameInitializationService(IUnitOfWork unitOfWork, ILogger<GameIniti
                 CoordR = t.CoordR,
                 TerrainTypeId = t.TerrainTypeId,
                 TerrainName = t.TerrainType?.Name.Translate() ?? string.Empty,
-                TerrainKey = t.TerrainType?.Name.ContainsKey("en") == true ? t.TerrainType.Name["en"] : string.Empty,
+                TerrainCode = t.TerrainType?.Code ?? string.Empty,
                 KingdomId = t.KingdomId,
                 IsCastle = t.IsCastle,
                 Buildings = (t.Buildings ?? []).Select(b => new BuildingDto
                 {
                     Id = b.Id,
                     BuildingTypeId = b.BuildingTypeId,
+                    BuildingCode = b.BuildingType?.Code ?? string.Empty,
                     BuildingName = b.BuildingType?.Name.Translate() ?? string.Empty
                 }).ToList()
             }).ToList(),

@@ -7,6 +7,13 @@ public class BuildingType : BaseEntity, IHasName
 {
     public static readonly Guid CastleId = new("BBBBBBBB-0001-0000-0000-000000000100");
 
+    /// <summary>
+    /// Stable, culture-independent slug used as the asset-lookup identity
+    /// (e.g. "castle", "farm", "wizard-tower"). Never translated, never renamed.
+    /// Frontend asset maps key on this, not on Name.
+    /// </summary>
+    public string Code { get; set; } = string.Empty;
+
     [Column(TypeName = "jsonb")]
     public LangStr Name { get; set; } = new();
 

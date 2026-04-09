@@ -51,19 +51,19 @@ class TextureCache {
   }
 
   /**
-   * Get a repeating CanvasPattern for the given terrain type.
-   * Returns null if cache is not initialized or terrain name is unknown.
+   * Get a repeating CanvasPattern for the given terrain Code slug (e.g. "plains").
+   * Returns null if cache is not initialized or the code is unknown.
    */
-  getTerrainPattern(name: string): CanvasPattern | null {
-    return this.terrainPatterns.get(name) ?? null;
+  getTerrainPattern(code: string): CanvasPattern | null {
+    return this.terrainPatterns.get(code) ?? null;
   }
 
   /**
-   * Get a pre-rasterized building icon canvas for the given building name.
-   * Returns null if cache is not initialized or building name is unknown.
+   * Get a pre-rasterized building icon canvas for the given building Code slug (e.g. "farm").
+   * Returns null if cache is not initialized or the code is unknown.
    */
-  getBuildingIcon(name: string): HTMLCanvasElement | null {
-    return this.buildingIcons.get(name) ?? null;
+  getBuildingIcon(code: string): HTMLCanvasElement | null {
+    return this.buildingIcons.get(code) ?? null;
   }
 
   // -------------------------------------------------------------------------
@@ -72,11 +72,11 @@ class TextureCache {
 
   private buildTerrainPatterns(ctx: CanvasRenderingContext2D): void {
     this.terrainPatterns.clear();
-    for (const terrainName of Object.keys(TERRAIN_BASE_COLORS)) {
-      const patternCanvas = createTerrainPatternCanvas(terrainName, TERRAIN_TILE_SIZE);
+    for (const terrainCode of Object.keys(TERRAIN_BASE_COLORS)) {
+      const patternCanvas = createTerrainPatternCanvas(terrainCode, TERRAIN_TILE_SIZE);
       const pattern = ctx.createPattern(patternCanvas, 'repeat');
       if (pattern) {
-        this.terrainPatterns.set(terrainName, pattern);
+        this.terrainPatterns.set(terrainCode, pattern);
       }
     }
   }

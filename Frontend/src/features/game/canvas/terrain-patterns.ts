@@ -6,13 +6,16 @@
  * Colors are aligned with backend TerrainType.MapColor values.
  */
 
-/** Backend-aligned terrain base colors — muted so tiles stay in the background */
+/**
+ * Terrain base colors keyed by TerrainType.Code (culture-independent slug).
+ * NEVER key this by Name — Name is localized and will break for non-English cultures.
+ */
 export const TERRAIN_BASE_COLORS: Record<string, string> = {
-  Plains: '#5a7a4a',
-  Forest: '#2a5a2a',
-  Mountain: '#4a4a50',
-  Desert: '#7a6e50',
-  'Magic Grove': '#5a3a6a',
+  'plains': '#5a7a4a',
+  'forest': '#2a5a2a',
+  'mountain': '#4a4a50',
+  'desert': '#7a6e50',
+  'magic-grove': '#5a3a6a',
 };
 
 const FALLBACK_COLOR = '#333333';
@@ -125,12 +128,13 @@ function drawMagicGroveOverlay(ctx: CanvasRenderingContext2D, size: number): voi
   }
 }
 
+// Keyed by TerrainType.Code (see TERRAIN_BASE_COLORS).
 const OVERLAY_PAINTERS: Record<string, (ctx: CanvasRenderingContext2D, size: number) => void> = {
-  Plains: drawPlainsOverlay,
-  Forest: drawForestOverlay,
-  Mountain: drawMountainOverlay,
-  Desert: drawDesertOverlay,
-  'Magic Grove': drawMagicGroveOverlay,
+  'plains': drawPlainsOverlay,
+  'forest': drawForestOverlay,
+  'mountain': drawMountainOverlay,
+  'desert': drawDesertOverlay,
+  'magic-grove': drawMagicGroveOverlay,
 };
 
 // ---------------------------------------------------------------------------
@@ -144,11 +148,11 @@ const OVERLAY_PAINTERS: Record<string, (ctx: CanvasRenderingContext2D, size: num
  * pattern is drawn on top to visually distinguish terrain types without
  * overwhelming building icons or other map elements.
  *
- * @param terrainName - Backend terrain name (e.g. 'Plains', 'Forest')
+ * @param terrainCode - TerrainType.Code slug (e.g. 'plains', 'forest')
  * @param tileSize - Square dimension of the pattern tile in pixels
  * @returns An HTMLCanvasElement ready to be used with ctx.createPattern()
  */
-export function createTerrainPatternCanvas(terrainName: string, tileSize: number): HTMLCanvasElement {
+export function createTerrainPatternCanvas(terrainCode: string, tileSize: number): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   canvas.width = tileSize;
   canvas.height = tileSize;
@@ -156,12 +160,12 @@ export function createTerrainPatternCanvas(terrainName: string, tileSize: number
   if (!ctx) return canvas;
 
   // Base fill
-  const baseColor = TERRAIN_BASE_COLORS[terrainName] ?? FALLBACK_COLOR;
+  const baseColor = TERRAIN_BASE_COLORS[terrainCode] ?? FALLBACK_COLOR;
   ctx.fillStyle = baseColor;
   ctx.fillRect(0, 0, tileSize, tileSize);
 
   // Terrain-specific overlay
-  const painter = OVERLAY_PAINTERS[terrainName];
+  const painter = OVERLAY_PAINTERS[terrainCode];
   if (painter) {
     painter(ctx, tileSize);
   }

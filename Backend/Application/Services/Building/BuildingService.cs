@@ -26,6 +26,7 @@ public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBu
         return types.Select(bt => new BuildingTypeDto
         {
             Id = bt.Id,
+            Code = bt.Code,
             Name = bt.Name.Translate() ?? string.Empty,
             Tier = bt.Tier,
             Chain = bt.Chain,
@@ -192,6 +193,7 @@ public class BuildingService(IUnitOfWork unitOfWork, IGameGuard gameGuard) : IBu
             BuildingId = buildingId,
             TileId = request.TileId,
             BuildingTypeId = buildingType.Id,
+            BuildingCode = buildingType.Code,
             BuildingName = buildingType.Name.Translate() ?? string.Empty,
             KingdomId = kingdom.Id,
             ResourcesAfter = resourcesAfter,

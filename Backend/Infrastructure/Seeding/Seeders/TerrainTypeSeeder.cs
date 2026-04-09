@@ -32,6 +32,7 @@ public class TerrainTypeSeeder : ISeeder
             new TerrainType
             {
                 Id = PlainsId,
+                Code = "plains",
                 Name = L("Plains", "Tasandik"),
                 ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Food,
@@ -41,6 +42,7 @@ public class TerrainTypeSeeder : ISeeder
             new TerrainType
             {
                 Id = ForestId,
+                Code = "forest",
                 Name = L("Forest", "Mets"),
                 ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Wood,
@@ -50,6 +52,7 @@ public class TerrainTypeSeeder : ISeeder
             new TerrainType
             {
                 Id = MountainId,
+                Code = "mountain",
                 Name = L("Mountain", "Mägi"),
                 ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Stone,
@@ -59,6 +62,7 @@ public class TerrainTypeSeeder : ISeeder
             new TerrainType
             {
                 Id = DesertId,
+                Code = "desert",
                 Name = L("Desert", "Kõrb"),
                 ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Gold,
@@ -68,6 +72,7 @@ public class TerrainTypeSeeder : ISeeder
             new TerrainType
             {
                 Id = MagicGroveId,
+                Code = "magic-grove",
                 Name = L("Magic Grove", "Võlusalubaar"),
                 ResourceMultiplier = 1.10m,
                 ResourceBonusType = ETerrainResourceBonus.Mana,

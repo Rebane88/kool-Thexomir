@@ -7,6 +7,13 @@ public class TerrainType : BaseEntity, IHasName
 {
     public static readonly Guid PlainsId = new("AAAAAAAA-0001-0000-0000-000000000001");
 
+    /// <summary>
+    /// Stable, culture-independent slug used as the asset-lookup identity
+    /// (e.g. "plains", "forest", "magic-grove"). Never translated, never renamed.
+    /// Frontend asset maps key on this, not on Name.
+    /// </summary>
+    public string Code { get; set; } = string.Empty;
+
     [Column(TypeName = "jsonb")]
     public LangStr Name { get; set; } = new();
 

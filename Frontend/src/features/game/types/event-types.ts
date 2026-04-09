@@ -37,6 +37,9 @@ export interface SnapshotTile {
   coordQ: number;
   coordR: number;
   terrainTypeId: string;
+  /** Culture-independent slug used for asset/color/pattern lookup. */
+  terrainCode: string;
+  /** Localized display name — for tooltips/labels, never for lookup. */
   terrainName: string;
   kingdomId: string | null;
   isCastle: boolean;
@@ -98,6 +101,9 @@ export interface BuildingPlacedEvent {
   buildingId: string;
   tileId: string;
   buildingTypeId: string;
+  /** Culture-independent slug used for icon lookup. */
+  buildingCode: string;
+  /** Localized display name — broadcast with the placing player's culture. Do not use for identity. */
   buildingName: string;
   kingdomId: string;
   resourcesAfter: Record<string, number>;

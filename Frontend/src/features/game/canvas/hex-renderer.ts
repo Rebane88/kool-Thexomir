@@ -98,7 +98,7 @@ export function drawGameMap(
   // Layer 1: Terrain fills (pattern fills from TextureCache)
   for (const [key, tile] of state.tiles) {
     const data = tileRenderData.get(key)!;
-    const pattern = textureCache.getTerrainPattern(tile.terrainName);
+    const pattern = textureCache.getTerrainPattern(tile.terrainCode);
 
     drawHexPath(ctx, data.corners);
     if (pattern) {
@@ -114,7 +114,7 @@ export function drawGameMap(
       ctx.restore();
     } else {
       // Fallback to flat color from TERRAIN_BASE_COLORS
-      ctx.fillStyle = TERRAIN_BASE_COLORS[tile.terrainName] ?? '#333333';
+      ctx.fillStyle = TERRAIN_BASE_COLORS[tile.terrainCode] ?? '#333333';
       ctx.fill();
     }
 
@@ -221,14 +221,15 @@ export function drawGameMap(
     const { center } = data;
 
     // Building icon (or Castle icon for castle tiles)
-    const buildingName = tile.isCastle
-      ? 'Castle'
+    // Use Code (culture-independent slug) for the lookup, never Name (localized).
+    const buildingCode = tile.isCastle
+      ? 'castle'
       : tile.buildings.length > 0
-        ? tile.buildings[0].buildingName
+        ? tile.buildings[0].buildingCode
         : null;
 
-    if (buildingName) {
-      const icon = textureCache.getBuildingIcon(buildingName);
+    if (buildingCode) {
+      const icon = textureCache.getBuildingIcon(buildingCode);
       if (icon) {
         const iconLogicalSize = 32;
         const drawX = center.x - iconLogicalSize / 2;

@@ -16,6 +16,8 @@ public class TerrainTypesController : ReferenceDataBaseController<TerrainType>
 
     protected override void PopulateEntity(TerrainType entity, IFormCollection form)
     {
+        if (form["Code"].ToString() is { Length: > 0 } code)
+            entity.Code = code.Trim();
         entity.ResourceMultiplier = decimal.TryParse(form["ResourceMultiplier"].ToString(), out var rm) ? rm : 1.10m;
         entity.ResourceBonusType = Enum.TryParse<ETerrainResourceBonus>(
             form["ResourceBonusType"].ToString(), out var rbt) ? rbt : ETerrainResourceBonus.None;
@@ -26,6 +28,7 @@ public class TerrainTypesController : ReferenceDataBaseController<TerrainType>
     protected override object ToViewModel(TerrainType entity) => new
     {
         entity.Id,
+        entity.Code,
         NameEn = entity.Name.GetValueOrDefault("en", string.Empty),
         NameEt = entity.Name.GetValueOrDefault("et", string.Empty),
         ResourceMultiplier = entity.ResourceMultiplier.ToString(CultureInfo.InvariantCulture),

@@ -11,6 +11,7 @@ function makeTile(overrides: Partial<Tile> = {}): Tile {
     coordQ: 0,
     coordR: 0,
     terrainTypeId: 'plains',
+    terrainCode: 'plains',
     terrainName: 'Plains',
     kingdomId: null,
     isCastle: false,
@@ -98,8 +99,8 @@ describe('HexTooltip', () => {
   it('renders building names when tile has buildings', () => {
     const tile = makeTile({
       buildings: [
-        { id: 'b-1', buildingTypeId: 'bt-1', buildingName: 'Barracks' },
-        { id: 'b-2', buildingTypeId: 'bt-2', buildingName: 'Farm' },
+        { id: 'b-1', buildingTypeId: 'bt-1', buildingCode: 'barracks', buildingName: 'Barracks' },
+        { id: 'b-2', buildingTypeId: 'bt-2', buildingCode: 'farm', buildingName: 'Farm' },
       ],
     });
     render(

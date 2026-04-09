@@ -27,29 +27,30 @@ import stablesPng from '@/assets/images/building-stables.png';
 import warAcademyPng from '@/assets/images/building-war-academy.png';
 
 /**
- * Map of backend building names to their Vite-resolved PNG URLs.
- * Keys must exactly match BuildingType.Name values from the backend seeder.
+ * Map of BuildingType.Code slugs to their Vite-resolved PNG URLs.
+ * Keys must exactly match BuildingType.Code values from the backend seeder.
+ * NEVER key this by Name — Name is localized and will break for non-English cultures.
  */
 export const BUILDING_PNG_IMPORTS: Record<string, string> = {
-  'Castle': castlePng,
-  'Farm': farmPng,
-  'Windmill': windmillPng,
-  'Granary': granaryPng,
-  'Lumber Camp': lumberCampPng,
-  'Sawmill': sawmillPng,
-  'Timber Hall': timberHallPng,
-  'Quarry': quarryPng,
-  'Mason': masonPng,
-  'Stoneworks': stoneworksPng,
-  'Market': marketPng,
-  'Trading Post': tradingPostPng,
-  'Bank': bankPng,
-  'Shrine': shrinePng,
-  'Wizard Tower': wizardTowerPng,
-  'Arcane Sanctum': arcaneSanctumPng,
-  'Barracks': barracksPng,
-  'Stables': stablesPng,
-  'War Academy': warAcademyPng,
+  'castle': castlePng,
+  'farm': farmPng,
+  'windmill': windmillPng,
+  'granary': granaryPng,
+  'lumber-camp': lumberCampPng,
+  'sawmill': sawmillPng,
+  'timber-hall': timberHallPng,
+  'quarry': quarryPng,
+  'mason': masonPng,
+  'stoneworks': stoneworksPng,
+  'market': marketPng,
+  'trading-post': tradingPostPng,
+  'bank': bankPng,
+  'shrine': shrinePng,
+  'wizard-tower': wizardTowerPng,
+  'arcane-sanctum': arcaneSanctumPng,
+  'barracks': barracksPng,
+  'stables': stablesPng,
+  'war-academy': warAcademyPng,
 };
 
 /** Icon rasterization size in logical pixels (higher = sharper on tiles) */

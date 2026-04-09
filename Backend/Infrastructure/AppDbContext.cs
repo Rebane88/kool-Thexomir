@@ -94,6 +94,24 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .Property(t => t.ResourceBonusType)
             .HasConversion<string>();
 
+        // Stable slug identity for asset lookups (see Domain/Map/TerrainType.cs)
+        builder.Entity<TerrainType>()
+            .Property(t => t.Code)
+            .IsRequired()
+            .HasMaxLength(64);
+        builder.Entity<TerrainType>()
+            .HasIndex(t => t.Code)
+            .IsUnique();
+
+        // Stable slug identity for asset lookups (see Domain/Buildings/BuildingType.cs)
+        builder.Entity<BuildingType>()
+            .Property(bt => bt.Code)
+            .IsRequired()
+            .HasMaxLength(64);
+        builder.Entity<BuildingType>()
+            .HasIndex(bt => bt.Code)
+            .IsUnique();
+
         // Uniqueness constraints (INFRA-08)
         builder.Entity<KingdomResource>()
             .HasIndex(kr => new { kr.KingdomId, kr.ResourceType })

@@ -228,6 +228,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         coordQ: t.coordQ,
         coordR: t.coordR,
         terrainTypeId: t.terrainTypeId,
+        terrainCode: t.terrainCode,
         terrainName: t.terrainName,
         kingdomId: t.kingdomId,
         isCastle: t.isCastle,
@@ -534,7 +535,12 @@ export const useGameStore = create<GameState>((set, get) => ({
         newTiles.set(coord, {
           ...tile,
           buildings: [
-            { id: data.buildingId, buildingTypeId: data.buildingTypeId, buildingName: data.buildingName },
+            {
+              id: data.buildingId,
+              buildingTypeId: data.buildingTypeId,
+              buildingCode: data.buildingCode,
+              buildingName: data.buildingName,
+            },
           ],
         });
       } else {
@@ -542,7 +548,12 @@ export const useGameStore = create<GameState>((set, get) => ({
           ...tile,
           buildings: [
             ...tile.buildings,
-            { id: data.buildingId, buildingTypeId: data.buildingTypeId, buildingName: data.buildingName },
+            {
+              id: data.buildingId,
+              buildingTypeId: data.buildingTypeId,
+              buildingCode: data.buildingCode,
+              buildingName: data.buildingName,
+            },
           ],
         });
       }

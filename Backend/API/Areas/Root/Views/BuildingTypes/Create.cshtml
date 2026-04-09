@@ -14,6 +14,13 @@
 
             <div class="col-12"><div class="form-section-label">@Localizer["Field_Name"]</div></div>
 
+            <div class="col-12">
+                <label class="form-label">Code</label>
+                <input type="text" name="Code" class="form-control" required pattern="[a-z0-9\-]+"
+                       placeholder="e.g. farm, wizard-tower — stable asset lookup slug (lowercase, hyphens)" />
+                <small class="form-text text-muted">Used by the game client to look up the building icon. Must be unique, lowercase, kebab-case. Do not change after release.</small>
+            </div>
+
             <div class="col-md-6">
                 <label class="form-label">@Localizer["Field_Name"] (EN)</label>
                 <input type="text" name="NameEn" class="form-control" required />

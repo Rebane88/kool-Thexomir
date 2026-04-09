@@ -15,6 +15,8 @@ public class BuildingTypesController : ReferenceDataBaseController<BuildingType>
 
     protected override void PopulateEntity(BuildingType entity, IFormCollection form)
     {
+        if (form["Code"].ToString() is { Length: > 0 } code)
+            entity.Code = code.Trim();
         entity.Tier = int.TryParse(form["Tier"].ToString(), out var tier) ? tier : 1;
         entity.Chain = form["Chain"].ToString();
         entity.CostGold = int.TryParse(form["CostGold"].ToString(), out var cg) ? cg : 0;
@@ -41,6 +43,7 @@ public class BuildingTypesController : ReferenceDataBaseController<BuildingType>
     protected override object ToViewModel(BuildingType entity) => new
     {
         entity.Id,
+        entity.Code,
         NameEn = entity.Name.GetValueOrDefault("en", string.Empty),
         NameEt = entity.Name.GetValueOrDefault("et", string.Empty),
         entity.Tier,

@@ -14,7 +14,7 @@ function makeTile(q: number, r: number, kingdomId: string | null = null): Tile {
   return {
     id: `tile-${q}-${r}`,
     coordQ: q, coordR: r,
-    terrainTypeId: 't1', terrainName: 'Plains',
+    terrainTypeId: 't1', terrainCode: 'plains', terrainName: 'Plains',
     kingdomId, isCastle: false, buildings: [],
   };
 }

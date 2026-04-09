@@ -89,6 +89,7 @@ function makeTile(overrides: Partial<Tile> & { coordQ: number; coordR: number })
   return {
     id: `tile-${overrides.coordQ}-${overrides.coordR}`,
     terrainTypeId: 't1',
+    terrainCode: 'plains',
     terrainName: 'Plains',
     kingdomId: null,
     isCastle: false,
@@ -148,13 +149,13 @@ describe('drawGameMap', () => {
   it('fills terrain with fallback color when textureCache returns null pattern', () => {
     const state = buildState({ tiles: [makeTile({ coordQ: 0, coordR: 0 })] });
     drawGameMap(ctx, 800, 600, state, noRender);
-    expect(ctx._tracker.fillStyleHistory).toContain(TERRAIN_BASE_COLORS['Plains']);
+    expect(ctx._tracker.fillStyleHistory).toContain(TERRAIN_BASE_COLORS['plains']);
   });
 
   it('calls textureCache.getTerrainPattern for each tile', () => {
     const state = buildState({ tiles: [makeTile({ coordQ: 0, coordR: 0 })] });
     drawGameMap(ctx, 800, 600, state, noRender);
-    expect(textureCache.getTerrainPattern).toHaveBeenCalledWith('Plains');
+    expect(textureCache.getTerrainPattern).toHaveBeenCalledWith('plains');
   });
 
   it('calls textureCache.getBuildingIcon for castle tile', () => {
@@ -162,7 +163,7 @@ describe('drawGameMap', () => {
     const kingdom: Kingdom = { id: 'k1', name: 'K1', userId: null, factionTypeId: null, factionName: null, status: 'Active', resources: {} };
     const state = buildState({ tiles: [tile], kingdoms: [kingdom] });
     drawGameMap(ctx, 800, 600, state, noRender);
-    expect(textureCache.getBuildingIcon).toHaveBeenCalledWith('Castle');
+    expect(textureCache.getBuildingIcon).toHaveBeenCalledWith('castle');
   });
 
   it('calls textureCache.getBuildingIcon for tile with buildings', () => {
@@ -170,12 +171,12 @@ describe('drawGameMap', () => {
       coordQ: 0,
       coordR: 0,
       buildings: [
-        { id: 'b1', buildingTypeId: 'bt1', buildingName: 'Farm' },
+        { id: 'b1', buildingTypeId: 'bt1', buildingCode: 'farm', buildingName: 'Farm' },
       ],
     });
     const state = buildState({ tiles: [tile] });
     drawGameMap(ctx, 800, 600, state, noRender);
-    expect(textureCache.getBuildingIcon).toHaveBeenCalledWith('Farm');
+    expect(textureCache.getBuildingIcon).toHaveBeenCalledWith('farm');
   });
 
   it('draws thick gold 3px border for selected tile', () => {

@@ -1,5 +1,7 @@
 export interface BuildingTypeRef {
   id: string;
+  /** Culture-independent slug used for icon lookup. */
+  code: string;
   name: string;
   tier: number;
   chain: string;

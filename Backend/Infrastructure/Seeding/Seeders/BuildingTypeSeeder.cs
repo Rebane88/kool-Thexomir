@@ -60,6 +60,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = CastleId,
+                Code = "castle",
                 Name = L("Castle", "Loss"),
                 Tier = 0, Chain = "Castle",
                 CostGold = 0, CostFood = 0, CostWood = 0, CostStone = 0, CostMana = 0,
@@ -73,6 +74,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = FarmId,
+                Code = "farm",
                 Name = L("Farm", "Talu"),
                 Tier = 1, Chain = "Food",
                 CostGold = 0, CostFood = 0, CostWood = 30, CostStone = 0, CostMana = 0,
@@ -84,6 +86,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = WindmillId,
+                Code = "windmill",
                 Name = L("Windmill", "Tuuleveski"),
                 Tier = 2, Chain = "Food",
                 CostGold = 60, CostFood = 0, CostWood = 30, CostStone = 0, CostMana = 0,
@@ -95,6 +98,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = GranaryId,
+                Code = "granary",
                 Name = L("Granary", "Viljaait"),
                 Tier = 3, Chain = "Food",
                 CostGold = 100, CostFood = 0, CostWood = 0, CostStone = 50, CostMana = 0,
@@ -108,6 +112,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = LumberCampId,
+                Code = "lumber-camp",
                 Name = L("Lumber Camp", "Metsalaager"),
                 Tier = 1, Chain = "Wood",
                 CostGold = 30, CostFood = 0, CostWood = 0, CostStone = 0, CostMana = 0,
@@ -119,6 +124,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = SawmillId,
+                Code = "sawmill",
                 Name = L("Sawmill", "Saeveski"),
                 Tier = 2, Chain = "Wood",
                 CostGold = 50, CostFood = 0, CostWood = 0, CostStone = 20, CostMana = 0,
@@ -130,6 +136,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = TimberHallId,
+                Code = "timber-hall",
                 Name = L("Timber Hall", "Puidukoda"),
                 Tier = 3, Chain = "Wood",
                 CostGold = 80, CostFood = 0, CostWood = 0, CostStone = 50, CostMana = 0,
@@ -143,6 +150,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = QuarryId,
+                Code = "quarry",
                 Name = L("Quarry", "Karjäär"),
                 Tier = 1, Chain = "Stone",
                 CostGold = 40, CostFood = 0, CostWood = 10, CostStone = 0, CostMana = 0,
@@ -154,6 +162,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = MasonId,
+                Code = "mason",
                 Name = L("Mason", "Müürsepp"),
                 Tier = 2, Chain = "Stone",
                 CostGold = 60, CostFood = 0, CostWood = 30, CostStone = 0, CostMana = 0,
@@ -165,6 +174,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = StoneworksId,
+                Code = "stoneworks",
                 Name = L("Stoneworks", "Kivitöökoda"),
                 Tier = 3, Chain = "Stone",
                 CostGold = 100, CostFood = 0, CostWood = 60, CostStone = 0, CostMana = 0,
@@ -178,6 +188,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = MarketId,
+                Code = "market",
                 Name = L("Market", "Turg"),
                 Tier = 1, Chain = "Gold",
                 CostGold = 0, CostFood = 0, CostWood = 40, CostStone = 0, CostMana = 0,
@@ -189,6 +200,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = TradingPostId,
+                Code = "trading-post",
                 Name = L("Trading Post", "Kaubanduspost"),
                 Tier = 2, Chain = "Gold",
                 CostGold = 0, CostFood = 0, CostWood = 80, CostStone = 30, CostMana = 0,
@@ -200,6 +212,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = BankId,
+                Code = "bank",
                 Name = L("Bank", "Pank"),
                 Tier = 3, Chain = "Gold",
                 CostGold = 0, CostFood = 0, CostWood = 120, CostStone = 60, CostMana = 0,
@@ -213,6 +226,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = ShrineId,
+                Code = "shrine",
                 Name = L("Shrine", "Pühamu"),
                 Tier = 1, Chain = "Mana",
                 CostGold = 50, CostFood = 0, CostWood = 20, CostStone = 0, CostMana = 0,
@@ -224,6 +238,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = WizardTowerId,
+                Code = "wizard-tower",
                 Name = L("Wizard Tower", "Võluri torn"),
                 Tier = 2, Chain = "Mana",
                 CostGold = 80, CostFood = 0, CostWood = 0, CostStone = 40, CostMana = 0,
@@ -235,6 +250,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = ArcaneSanctumId,
+                Code = "arcane-sanctum",
                 Name = L("Arcane Sanctum", "Müstiline pühamu"),
                 Tier = 3, Chain = "Mana",
                 CostGold = 150, CostFood = 0, CostWood = 0, CostStone = 80, CostMana = 0,
@@ -248,6 +264,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = BarracksId,
+                Code = "barracks",
                 Name = L("Barracks", "Kasarmud"),
                 Tier = 1, Chain = "Military",
                 CostGold = 50, CostFood = 0, CostWood = 30, CostStone = 0, CostMana = 0,
@@ -259,6 +276,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = StablesId,
+                Code = "stables",
                 Name = L("Stables", "Tallid"),
                 Tier = 2, Chain = "Military",
                 CostGold = 100, CostFood = 0, CostWood = 50, CostStone = 20, CostMana = 0,
@@ -270,6 +288,7 @@ public class BuildingTypeSeeder : ISeeder
             new BuildingType
             {
                 Id = WarAcademyId,
+                Code = "war-academy",
                 Name = L("War Academy", "Sõjaakadeemia"),
                 Tier = 3, Chain = "Military",
                 CostGold = 200, CostFood = 0, CostWood = 80, CostStone = 50, CostMana = 0,

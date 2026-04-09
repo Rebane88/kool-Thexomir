@@ -43,10 +43,11 @@ function makeTile(overrides: Partial<Tile> = {}): Tile {
     coordQ: 0,
     coordR: 0,
     terrainTypeId: 'plains',
+    terrainCode: 'plains',
     terrainName: 'Plains',
     kingdomId: 'k-1',
     isCastle: false,
-    buildings: [{ id: 'building-instance-1', buildingTypeId: 'barracks-type', buildingName: 'Barracks' }],
+    buildings: [{ id: 'building-instance-1', buildingTypeId: 'barracks-type', buildingCode: 'barracks', buildingName: 'Barracks' }],
     ...overrides,
   };
 }

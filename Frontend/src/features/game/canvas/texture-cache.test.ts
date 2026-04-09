@@ -16,10 +16,10 @@ describe('TextureCache', () => {
   });
 
   it('getTerrainPattern returns null before init', () => {
-    expect(textureCache.getTerrainPattern('Plains')).toBeNull();
+    expect(textureCache.getTerrainPattern('plains')).toBeNull();
   });
 
   it('getBuildingIcon returns null before init', () => {
-    expect(textureCache.getBuildingIcon('Castle')).toBeNull();
+    expect(textureCache.getBuildingIcon('castle')).toBeNull();
   });
 });

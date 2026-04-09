@@ -3,12 +3,13 @@
 @using System.Web
 @using Application.Services.GameInitialization.DTOs
 @functions {
-    static string TerrainColor(string terrain) => terrain switch {
-        "Forest" => "#2d5016",
-        "Plains" => "#7c8c3a",
-        "Mountain" => "#6e6357",
-        "Desert" => "#c2a878",
-        "Water" => "#3a6e8c",
+    // Matches TerrainType.Code slugs (see BuildingTypeSeeder / TerrainTypeSeeder).
+    static string TerrainColor(string terrainCode) => terrainCode switch {
+        "forest" => "#2d5016",
+        "plains" => "#7c8c3a",
+        "mountain" => "#6e6357",
+        "desert" => "#c2a878",
+        "magic-grove" => "#6b21a8",
         _ => "#555"
     };
 
@@ -35,7 +36,7 @@
             $"{c.X.ToString("F1", CultureInfo.InvariantCulture)},{c.Y.ToString("F1", CultureInfo.InvariantCulture)}"));
         var fill = tile.KingdomId.HasValue
             ? KingdomColor(tile.KingdomId.Value, Model.State.Kingdoms)
-            : TerrainColor(tile.TerrainKey);
+            : TerrainColor(tile.TerrainCode);
         var isSelected = Model.SelectedTileId == tile.Id;
         var stroke = isSelected ? "#ffd700" : "#333";
         var strokeW = isSelected ? 3 : 1;

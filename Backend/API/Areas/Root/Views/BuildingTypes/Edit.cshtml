@@ -16,6 +16,12 @@
 
             <div class="col-12"><div class="form-section-label">@Localizer["Field_Name"]</div></div>
 
+            <div class="col-12">
+                <label class="form-label">Code</label>
+                <input type="text" name="Code" class="form-control" value="@Model.Code" required pattern="[a-z0-9\-]+" />
+                <small class="form-text text-muted">Stable asset-lookup slug used by the game client. Changing it will break building icons until the frontend is updated.</small>
+            </div>
+
             <div class="col-md-6">
                 <label class="form-label">@Localizer["Field_Name"] (EN)</label>
                 <input type="text" name="NameEn" class="form-control" value="@Model.NameEn" required />

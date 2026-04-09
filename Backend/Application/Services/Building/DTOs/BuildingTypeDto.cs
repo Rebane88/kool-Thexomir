@@ -8,6 +8,8 @@ namespace Application.Services.Building.DTOs;
 public class BuildingTypeDto
 {
     public Guid Id { get; set; }
+    /// <summary>Culture-independent slug used by the frontend for asset lookup (e.g. "farm").</summary>
+    public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public int Tier { get; set; }
     public string Chain { get; set; } = string.Empty;

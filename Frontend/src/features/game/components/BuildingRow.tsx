@@ -23,26 +23,27 @@ import barracksPng from '@/assets/images/building-barracks.png';
 import stablesPng from '@/assets/images/building-stables.png';
 import warAcademyPng from '@/assets/images/building-war-academy.png';
 
+// Keyed by BuildingType.Code slug (culture-independent). NEVER key by Name.
 const BUILDING_CARD_IMAGES: Record<string, string> = {
-  'Castle': castlePng,
-  'Farm': farmPng,
-  'Windmill': windmillPng,
-  'Granary': granaryPng,
-  'Lumber Camp': lumberCampPng,
-  'Sawmill': sawmillPng,
-  'Timber Hall': timberHallPng,
-  'Quarry': quarryPng,
-  'Mason': masonPng,
-  'Stoneworks': stoneworksPng,
-  'Market': marketPng,
-  'Trading Post': tradingPostPng,
-  'Bank': bankPng,
-  'Shrine': shrinePng,
-  'Wizard Tower': wizardTowerPng,
-  'Arcane Sanctum': arcaneSanctumPng,
-  'Barracks': barracksPng,
-  'Stables': stablesPng,
-  'War Academy': warAcademyPng,
+  'castle': castlePng,
+  'farm': farmPng,
+  'windmill': windmillPng,
+  'granary': granaryPng,
+  'lumber-camp': lumberCampPng,
+  'sawmill': sawmillPng,
+  'timber-hall': timberHallPng,
+  'quarry': quarryPng,
+  'mason': masonPng,
+  'stoneworks': stoneworksPng,
+  'market': marketPng,
+  'trading-post': tradingPostPng,
+  'bank': bankPng,
+  'shrine': shrinePng,
+  'wizard-tower': wizardTowerPng,
+  'arcane-sanctum': arcaneSanctumPng,
+  'barracks': barracksPng,
+  'stables': stablesPng,
+  'war-academy': warAcademyPng,
 };
 
 interface IconProps extends SVGProps<SVGSVGElement> {
@@ -105,10 +106,10 @@ export function BuildingRow({
   return (
     <div className={rowClasses} onClick={() => onSelect(buildingType.id)}>
       <div className="flex items-start gap-2">
-        {/* Building art icon */}
-        {BUILDING_CARD_IMAGES[buildingType.name] && (
+        {/* Building art icon — lookup by culture-independent Code slug */}
+        {BUILDING_CARD_IMAGES[buildingType.code] && (
           <img
-            src={BUILDING_CARD_IMAGES[buildingType.name]}
+            src={BUILDING_CARD_IMAGES[buildingType.code]}
             alt={buildingType.name}
             className="w-10 h-10 object-contain flex-shrink-0 rounded"
           />
