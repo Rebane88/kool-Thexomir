@@ -1,0 +1,19 @@
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  tags:
+    - shared
+  only:
+    - main
+  script:
+    - echo "POSTGRES_USER=${POSTGRES_USER}" > .env
+    - echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> .env
+    - echo "JWT_KEY=${JWT_KEY}" >> .env
+    - docker builder prune -af
+    - docker compose build --no-cache
+    - docker compose up -d
+    - sleep 5
+    - docker compose ps
+    - docker compose logs api
