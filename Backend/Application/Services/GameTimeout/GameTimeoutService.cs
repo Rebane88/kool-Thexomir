@@ -18,8 +18,8 @@ public class GameTimeoutService(
         Func<Guid, TurnAdvancedDto, Task> onTurnAdvanced,
         Func<Guid, PhaseChangedDto, Task> onPhaseChanged,
         Func<Guid, GameOverDto, Task> onGameOver,
-        Func<BattleRoundResultDto, string, Task> onRoundResolved,
-        Func<BattleResultDto, Task> onBattleResolved,
+        Func<Guid, BattleRoundResultDto, string, Task> onRoundResolved,
+        Func<Guid, BattleResultDto, Task> onBattleResolved,
         CancellationToken ct)
     {
         var expiredGames = await unitOfWork.Games.GetInProgressGamesWithExpiredTurnsAsync();
@@ -38,8 +38,8 @@ public class GameTimeoutService(
 
                 var result = await turnService.AutoSkipTurnAsync(
                     game.Id,
-                    onRoundResolved,
-                    onBattleResolved);
+                    (round, battleId) => onRoundResolved(game.Id, round, battleId),
+                    result => onBattleResolved(game.Id, result));
 
                 if (!result.IsSuccess)
                 {

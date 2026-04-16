@@ -11,8 +11,8 @@ public interface IGameTimeoutService
         Func<Guid, TurnAdvancedDto, Task> onTurnAdvanced,
         Func<Guid, PhaseChangedDto, Task> onPhaseChanged,
         Func<Guid, GameOverDto, Task> onGameOver,
-        Func<BattleRoundResultDto, string, Task> onRoundResolved,
-        Func<BattleResultDto, Task> onBattleResolved,
+        Func<Guid, BattleRoundResultDto, string, Task> onRoundResolved,
+        Func<Guid, BattleResultDto, Task> onBattleResolved,
         CancellationToken ct);
 
     Task CleanupStaleLobbiesAsync(CancellationToken ct);

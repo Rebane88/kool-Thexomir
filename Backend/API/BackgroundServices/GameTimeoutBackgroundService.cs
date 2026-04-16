@@ -30,10 +30,10 @@ public class GameTimeoutBackgroundService(
                         hubContext.Clients.Group($"game:{gameId}").PhaseChanged(dto),
                     onGameOver: (gameId, dto) =>
                         hubContext.Clients.Group($"game:{gameId}").GameOver(dto),
-                    onRoundResolved: (round, battleId) =>
-                        hubContext.Clients.All.BattleRoundResolved(round),
-                    onBattleResolved: result =>
-                        hubContext.Clients.All.BattleResolved(result),
+                    onRoundResolved: (gameId, round, battleId) =>
+                        hubContext.Clients.Group($"game:{gameId}").BattleRoundResolved(round),
+                    onBattleResolved: (gameId, result) =>
+                        hubContext.Clients.Group($"game:{gameId}").BattleResolved(result),
                     stoppingToken);
 
                 await timeoutService.CleanupStaleLobbiesAsync(stoppingToken);
