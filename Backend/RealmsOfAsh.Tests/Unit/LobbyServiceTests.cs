@@ -1,6 +1,6 @@
 using Application.Contracts;
 using Application.Services.Lobby;
-using Application.Services.Lobby.DTOs;
+using Application.Services.Lobby.DTOs.V1;
 using Base;
 using Base.Contracts;
 using Domain.Factions;

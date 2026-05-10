@@ -1,6 +1,6 @@
 using Application.Contracts;
 using Application.Services.Combat;
-using Application.Services.Combat.DTOs;
+using Application.Services.Combat.DTOs.V1;
 using Base;
 using Base.Contracts;
 using Domain.Game;

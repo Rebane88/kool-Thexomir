@@ -1,6 +1,6 @@
 using API.Areas.Public.Helpers;
 using API.Areas.Public.ViewModels;
-using Application.Services.GameInitialization.DTOs;
+using Application.Services.GameInitialization.DTOs.V1;
 using Shouldly;
 
 namespace RealmsOfAsh.Tests.Unit.Areas.Public;

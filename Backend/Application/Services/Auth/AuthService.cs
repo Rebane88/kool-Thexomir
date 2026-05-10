@@ -1,5 +1,5 @@
 using Application.Contracts;
-using Application.Services.Auth.DTOs;
+using Application.Services.Auth.DTOs.V1;
 using Base.Contracts;
 
 namespace Application.Services.Auth;

@@ -1,4 +1,4 @@
-using Application.Services.WinCondition.DTOs;
+using Application.Services.WinCondition.DTOs.V1;
 
 namespace API.Areas.Public.ViewModels;
 

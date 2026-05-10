@@ -2,7 +2,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using Application.Contracts;
 using Application.Services.Lobby;
-using Application.Services.Lobby.DTOs;
+using Application.Services.Lobby.DTOs.V1;
 using Domain.Game;
 using Microsoft.Extensions.DependencyInjection;
 using RealmsOfAsh.Tests.Fixtures;

@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Application.Contracts;
-using Application.Services.SlotMachine.DTOs;
+using Application.Services.SlotMachine.DTOs.V1;
 using Base.Contracts;
 using Domain.Game;
 using Domain.Resources;

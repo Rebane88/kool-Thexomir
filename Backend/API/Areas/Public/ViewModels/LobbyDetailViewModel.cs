@@ -1,4 +1,4 @@
-using Application.Services.Lobby.DTOs;
+using Application.Services.Lobby.DTOs.V1;
 
 namespace API.Areas.Public.ViewModels;
 

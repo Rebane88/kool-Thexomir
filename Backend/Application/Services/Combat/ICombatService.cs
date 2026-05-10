@@ -1,4 +1,4 @@
-using Application.Services.Combat.DTOs;
+using Application.Services.Combat.DTOs.V1;
 using Base.Contracts;
 
 namespace Application.Services.Combat;

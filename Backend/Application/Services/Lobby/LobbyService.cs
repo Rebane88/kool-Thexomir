@@ -1,5 +1,5 @@
 using Application.Contracts;
-using Application.Services.Lobby.DTOs;
+using Application.Services.Lobby.DTOs.V1;
 using Base.Contracts;
 using Domain.Game;
 using Microsoft.Extensions.Logging;

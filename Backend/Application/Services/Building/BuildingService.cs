@@ -1,5 +1,5 @@
 using Application.Contracts;
-using Application.Services.Building.DTOs;
+using Application.Services.Building.DTOs.V1;
 using Base.Contracts;
 using Domain.Buildings;
 using Domain.Game;

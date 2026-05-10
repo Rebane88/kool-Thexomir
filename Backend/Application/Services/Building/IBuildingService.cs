@@ -1,4 +1,4 @@
-using Application.Services.Building.DTOs;
+using Application.Services.Building.DTOs.V1;
 using Base.Contracts;
 
 namespace Application.Services.Building;

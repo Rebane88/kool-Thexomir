@@ -1,4 +1,4 @@
-using Application.Services.SlotMachine.DTOs;
+using Application.Services.SlotMachine.DTOs.V1;
 using Base.Contracts;
 
 namespace Application.Services.SlotMachine;

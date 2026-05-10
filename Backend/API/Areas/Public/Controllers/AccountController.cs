@@ -1,6 +1,6 @@
 using API.Areas.Public.ViewModels;
 using Application.Services.Auth;
-using Application.Services.Auth.DTOs;
+using Application.Services.Auth.DTOs.V1;
 using Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;

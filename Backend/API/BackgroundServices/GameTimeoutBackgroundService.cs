@@ -30,7 +30,7 @@ public class GameTimeoutBackgroundService(
                         hubContext.Clients.Group($"game:{gameId}").PhaseChanged(dto),
                     onGameOver: (gameId, dto) =>
                         hubContext.Clients.Group($"game:{gameId}").GameOver(dto),
-                    onRoundResolved: (gameId, round, battleId) =>
+                    onRoundResolved: (gameId, round, _) =>
                         hubContext.Clients.Group($"game:{gameId}").BattleRoundResolved(round),
                     onBattleResolved: (gameId, result) =>
                         hubContext.Clients.Group($"game:{gameId}").BattleResolved(result),

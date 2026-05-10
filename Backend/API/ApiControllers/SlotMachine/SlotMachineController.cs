@@ -2,7 +2,7 @@ using API.Extensions;
 using API.Hubs;
 using Application.Contracts;
 using Application.Services.SlotMachine;
-using Application.Services.SlotMachine.DTOs;
+using Application.Services.SlotMachine.DTOs.V1;
 using Application.Services.GameHub;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;

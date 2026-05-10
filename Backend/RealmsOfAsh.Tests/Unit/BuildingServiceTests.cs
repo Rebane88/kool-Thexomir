@@ -1,6 +1,6 @@
 using Application.Contracts;
 using Application.Services.Building;
-using Application.Services.Building.DTOs;
+using Application.Services.Building.DTOs.V1;
 using Base;
 using Base.Contracts;
 using Domain.Buildings;

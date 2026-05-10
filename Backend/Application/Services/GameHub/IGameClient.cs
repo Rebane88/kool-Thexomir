@@ -1,11 +1,11 @@
-using Application.Services.Army.DTOs;
-using Application.Services.Building.DTOs;
-using Application.Services.Combat.DTOs;
-using Application.Services.GameInitialization.DTOs;
-using Application.Services.Lobby.DTOs;
-using Application.Services.SlotMachine.DTOs;
-using Application.Services.Turn.DTOs;
-using Application.Services.WinCondition.DTOs;
+using Application.Services.Army.DTOs.V1;
+using Application.Services.Building.DTOs.V1;
+using Application.Services.Combat.DTOs.V1;
+using Application.Services.GameInitialization.DTOs.V1;
+using Application.Services.Lobby.DTOs.V1;
+using Application.Services.SlotMachine.DTOs.V1;
+using Application.Services.Turn.DTOs.V1;
+using Application.Services.WinCondition.DTOs.V1;
 
 
 namespace Application.Services.GameHub;

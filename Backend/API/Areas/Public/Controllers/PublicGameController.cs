@@ -6,17 +6,17 @@ using API.Hubs;
 using Application.Contracts;
 using Application.Services.Abandon;
 using Application.Services.Army;
-using Application.Services.Army.DTOs;
+using Application.Services.Army.DTOs.V1;
 using Application.Services.Building;
-using Application.Services.Building.DTOs;
+using Application.Services.Building.DTOs.V1;
 using Application.Services.Combat;
-using Application.Services.Combat.DTOs;
+using Application.Services.Combat.DTOs.V1;
 using Application.Services.GameHub;
 using Application.Services.GameInitialization;
 using Application.Services.SlotMachine;
 using Application.Services.Turn;
-using Application.Services.Turn.DTOs;
-using Application.Services.WinCondition.DTOs;
+using Application.Services.Turn.DTOs.V1;
+using Application.Services.WinCondition.DTOs.V1;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -362,7 +362,7 @@ public class PublicGameController : Controller
     }
 
     private static List<BuildingCatalogEntryViewModel> BuildCatalog(
-        List<BuildingTypeDto> buildingTypes, Application.Services.GameInitialization.DTOs.GameStateDto state, Guid userId)
+        List<BuildingTypeDto> buildingTypes, Application.Services.GameInitialization.DTOs.V1.GameStateDto state, Guid userId)
     {
         var myKingdom = state.Kingdoms.FirstOrDefault(k => k.UserId == userId);
         if (myKingdom is null) return [];

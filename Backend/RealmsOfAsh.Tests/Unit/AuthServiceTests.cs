@@ -1,7 +1,7 @@
 using Application.Contracts;
 using Application.Contracts.Identity;
 using Application.Services.Auth;
-using Application.Services.Auth.DTOs;
+using Application.Services.Auth.DTOs.V1;
 using Base.Contracts;
 using Moq;
 using Shouldly;

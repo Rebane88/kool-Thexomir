@@ -1,5 +1,5 @@
 using System.Net.Http.Json;
-using Application.Services.Auth.DTOs;
+using Application.Services.Auth.DTOs.V1;
 using Base;
 using RealmsOfAsh.Tests.Fixtures;
 using Shouldly;

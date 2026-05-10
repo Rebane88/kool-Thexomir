@@ -3,11 +3,11 @@ using System.Text.RegularExpressions;
 using Application.Contracts;
 using Application.Services.Army;
 using Application.Services.Building;
-using Application.Services.Building.DTOs;
+using Application.Services.Building.DTOs.V1;
 using Application.Services.GameInitialization;
-using Application.Services.GameInitialization.DTOs;
+using Application.Services.GameInitialization.DTOs.V1;
 using Application.Services.Lobby;
-using Application.Services.Lobby.DTOs;
+using Application.Services.Lobby.DTOs.V1;
 using Domain.Game;
 using Microsoft.Extensions.DependencyInjection;
 using RealmsOfAsh.Tests.Fixtures;
@@ -728,7 +728,7 @@ public class PublicGameTests : IntegrationTestBase
         var armyType = armyTypes.First(at => at.RequiredBuildingTypeId == militaryBuildingType.Id);
 
         // Train one army
-        var trainResult = await armyService.TrainArmyAsync(gameId, userId, new Application.Services.Army.DTOs.TrainArmyRequest
+        var trainResult = await armyService.TrainArmyAsync(gameId, userId, new Application.Services.Army.DTOs.V1.TrainArmyRequest
         {
             BuildingId = buildingId,
             ArmyTypeId = armyType.Id

@@ -1,5 +1,5 @@
 using Application.Contracts;
-using Application.Services.WinCondition.DTOs;
+using Application.Services.WinCondition.DTOs.V1;
 using Domain.Game;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;

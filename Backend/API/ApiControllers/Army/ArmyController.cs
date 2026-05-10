@@ -2,7 +2,7 @@ using API.Extensions;
 using API.Hubs;
 using Application.Contracts;
 using Application.Services.Army;
-using Application.Services.Army.DTOs;
+using Application.Services.Army.DTOs.V1;
 using Application.Services.GameHub;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;

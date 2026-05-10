@@ -1,0 +1,23 @@
+using Application.Services.Combat.DTOs.V1;
+
+namespace Application.Services.GameInitialization.DTOs.V1;
+
+public class GameStateDto
+{
+    public Guid GameId { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public int RoundNumber { get; set; }
+    public string WinCondition { get; set; } = string.Empty;
+    public int MapWidth { get; set; }
+    public int MapHeight { get; set; }
+    public int MapRadius { get; set; }
+    public Guid? CurrentTurnKingdomId { get; set; }
+    public string? CurrentPhase { get; set; }
+    public int? RemainingActionPoints { get; set; }
+    public int SpinCostGold { get; set; }
+    public DateTime? TurnDeadline { get; set; }
+    public List<DeclareAttackResponse> DeclaredAttacks { get; set; } = [];
+    public List<TileDto> Tiles { get; set; } = [];
+    public List<KingdomDto> Kingdoms { get; set; } = [];
+    public List<ArmyDto> Armies { get; set; } = [];
+}

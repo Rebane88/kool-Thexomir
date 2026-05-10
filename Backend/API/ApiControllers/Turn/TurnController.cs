@@ -21,7 +21,7 @@ public class TurnController(
     IGameLockManager gameLockManager) : ControllerBase
 {
     [HttpPost("end-turn")]
-    [ProducesResponseType(typeof(Application.Services.Turn.DTOs.TurnAdvancedDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Application.Services.Turn.DTOs.V1.TurnAdvancedDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> EndTurn(Guid gameId)
     {
@@ -43,7 +43,7 @@ public class TurnController(
         if (result.Value!.PhaseChanged)
         {
             await hubContext.Clients.Group($"game:{gameId}")
-                .PhaseChanged(new Application.Services.Turn.DTOs.PhaseChangedDto
+                .PhaseChanged(new Application.Services.Turn.DTOs.V1.PhaseChangedDto
                 {
                     Phase = result.Value!.CurrentPhase,
                     PreviousPhase = "Action",

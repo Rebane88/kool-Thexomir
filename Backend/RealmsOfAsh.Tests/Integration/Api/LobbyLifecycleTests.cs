@@ -1,8 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Application.Services.Auth.DTOs;
-using Application.Services.Lobby.DTOs;
+using Application.Services.Auth.DTOs.V1;
+using Application.Services.Lobby.DTOs.V1;
 using Domain.Game;
 using Infrastructure.Seeding.Seeders;
 using Microsoft.AspNetCore.Mvc;

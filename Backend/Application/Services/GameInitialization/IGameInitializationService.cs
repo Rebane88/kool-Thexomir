@@ -1,4 +1,4 @@
-using Application.Services.GameInitialization.DTOs;
+using Application.Services.GameInitialization.DTOs.V1;
 
 namespace Application.Services.GameInitialization;
 

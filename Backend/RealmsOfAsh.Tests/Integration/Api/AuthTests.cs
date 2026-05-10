@@ -2,7 +2,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Application.Services.Auth.DTOs;
+using Application.Services.Auth.DTOs.V1;
 using Microsoft.AspNetCore.Mvc;
 using RealmsOfAsh.Tests.Fixtures;
 using Shouldly;

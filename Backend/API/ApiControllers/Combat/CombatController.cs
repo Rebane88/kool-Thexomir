@@ -2,7 +2,7 @@ using API.Extensions;
 using API.Hubs;
 using Application.Contracts;
 using Application.Services.Combat;
-using Application.Services.Combat.DTOs;
+using Application.Services.Combat.DTOs.V1;
 using Application.Services.GameHub;
 using Application.Services.Turn;
 using Asp.Versioning;
@@ -104,7 +104,7 @@ public class CombatController(
                 if (advanceResult.Value!.PhaseChanged)
                 {
                     await hubContext.Clients.Group($"game:{gameId}")
-                        .PhaseChanged(new Application.Services.Turn.DTOs.PhaseChangedDto
+                        .PhaseChanged(new Application.Services.Turn.DTOs.V1.PhaseChangedDto
                         {
                             Phase = advanceResult.Value!.CurrentPhase,
                             PreviousPhase = "Battle",

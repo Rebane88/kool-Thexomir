@@ -1,7 +1,7 @@
 @model API.Areas.Public.ViewModels.GameIndexViewModel
 @using System.Globalization
 @using System.Web
-@using Application.Services.GameInitialization.DTOs
+@using Application.Services.GameInitialization.DTOs.V1
 @functions {
     // Matches TerrainType.Code slugs (see BuildingTypeSeeder / TerrainTypeSeeder).
     static string TerrainColor(string terrainCode) => terrainCode switch {

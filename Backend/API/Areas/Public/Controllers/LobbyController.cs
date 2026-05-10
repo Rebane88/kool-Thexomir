@@ -5,7 +5,7 @@ using Application.Contracts;
 using Application.Services.GameHub;
 using Application.Services.GameInitialization;
 using Application.Services.Lobby;
-using Application.Services.Lobby.DTOs;
+using Application.Services.Lobby.DTOs.V1;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;

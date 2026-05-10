@@ -1,5 +1,5 @@
 using Application.Services.Auth;
-using Application.Services.Auth.DTOs;
+using Application.Services.Auth.DTOs.V1;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

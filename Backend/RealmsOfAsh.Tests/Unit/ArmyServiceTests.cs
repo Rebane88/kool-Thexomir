@@ -1,6 +1,6 @@
 using Application.Contracts;
 using Application.Services.Army;
-using Application.Services.Army.DTOs;
+using Application.Services.Army.DTOs.V1;
 using Base;
 using Base.Contracts;
 using Domain.Buildings;

@@ -3,10 +3,10 @@ using System.Text.RegularExpressions;
 using Application.Contracts;
 using Application.Services.Army;
 using Application.Services.Building;
-using Application.Services.Building.DTOs;
+using Application.Services.Building.DTOs.V1;
 using Application.Services.GameInitialization;
 using Application.Services.Lobby;
-using Application.Services.Lobby.DTOs;
+using Application.Services.Lobby.DTOs.V1;
 using Domain.Game;
 using Domain.Map;
 using Infrastructure;
@@ -292,7 +292,7 @@ public class PublicGameStateLocalizationTests : IntegrationTestBase
         return new GameSeed(lobbyId, hostCookie, hostUserId, player2UserId);
     }
 
-    private async Task<Application.Services.GameInitialization.DTOs.GameStateDto> GetGameStateAsync(Guid gameId)
+    private async Task<Application.Services.GameInitialization.DTOs.V1.GameStateDto> GetGameStateAsync(Guid gameId)
     {
         using var scope = Factory.Services.CreateScope();
         var gameInit = scope.ServiceProvider.GetRequiredService<IGameInitializationService>();
@@ -339,7 +339,7 @@ public class PublicGameStateLocalizationTests : IntegrationTestBase
         var armyTypes = (await armyService.GetArmyTypesAsync(gameId, userId)).ToList();
         var armyType = armyTypes.First(at => at.RequiredBuildingTypeId == militaryBuildingType.Id);
 
-        var trainResult = await armyService.TrainArmyAsync(gameId, userId, new Application.Services.Army.DTOs.TrainArmyRequest
+        var trainResult = await armyService.TrainArmyAsync(gameId, userId, new Application.Services.Army.DTOs.V1.TrainArmyRequest
         {
             BuildingId = buildingId,
             ArmyTypeId = armyType.Id

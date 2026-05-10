@@ -1,8 +1,8 @@
 using Application.Contracts;
 using Application.Services.Combat;
-using Application.Services.Combat.DTOs;
-using Application.Services.Turn.DTOs;
-using Application.Services.WinCondition.DTOs;
+using Application.Services.Combat.DTOs.V1;
+using Application.Services.Turn.DTOs.V1;
+using Application.Services.WinCondition.DTOs.V1;
 using Base.Contracts;
 using Domain.Buildings;
 using Domain.Game;
@@ -251,7 +251,7 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
                     CurrentPhase = game.CurrentPhase.ToString(),
                     PhaseChanged = true,
                     BattleResults = null,
-                    GameOver = new WinCondition.DTOs.GameOverDto
+                    GameOver = new WinCondition.DTOs.V1.GameOverDto
                     {
                         GameId = game.Id,
                         WinnerKingdomId = winner?.Id,
@@ -280,12 +280,12 @@ public class TurnService(IUnitOfWork unitOfWork, IGameGuard gameGuard, ICombatSe
         game.RoundNumber++;
 
         // Check MaxRounds for draw
-        WinCondition.DTOs.GameOverDto? gameOver = null;
+        WinCondition.DTOs.V1.GameOverDto? gameOver = null;
         if (game.RoundNumber > game.MaxRounds)
         {
             game.Status = EGameStatus.Completed;
             game.FinishedAt = DateTime.UtcNow;
-            gameOver = new WinCondition.DTOs.GameOverDto
+            gameOver = new WinCondition.DTOs.V1.GameOverDto
             {
                 GameId = game.Id,
                 WinnerKingdomId = null,

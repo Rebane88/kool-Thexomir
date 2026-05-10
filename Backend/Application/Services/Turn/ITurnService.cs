@@ -1,5 +1,5 @@
-using Application.Services.Combat.DTOs;
-using Application.Services.Turn.DTOs;
+using Application.Services.Combat.DTOs.V1;
+using Application.Services.Turn.DTOs.V1;
 using Base.Contracts;
 
 namespace Application.Services.Turn;

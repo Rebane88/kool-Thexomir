@@ -1,6 +1,6 @@
 using Application.Contracts;
 using Application.Services.GameInitialization;
-using Application.Services.GameInitialization.DTOs;
+using Application.Services.GameInitialization.DTOs.V1;
 using Base;
 using Domain.Buildings;
 using Domain.Factions;
