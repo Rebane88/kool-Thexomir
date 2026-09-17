@@ -4,8 +4,8 @@ services:
     build:
       context: ./Frontend
       args:
-        VITE_API_BASE_URL: https://robreb-game-back.proxy.itcollege.ee/api/v1
-        VITE_HUB_BASE_URL: https://robreb-game-back.proxy.itcollege.ee
+        VITE_API_BASE_URL: https://example.com/api/v1
+        VITE_HUB_BASE_URL: https://example.com
     ports:
       - "88:80"
     restart: unless-stopped
@@ -25,7 +25,7 @@ services:
       - JWT__Key=${JWT_KEY}
       - JWT__Issuer=RealmsOfAsh
       - JWT__Audience=RealmsOfAsh
-      - Cors__Origins__0=https://robreb-game-front.proxy.itcollege.ee
+      - Cors__Origins__0=https://example.com
     networks:
       - default
       - shared-db

@@ -6,11 +6,6 @@ Sessions are designed to last roughly **one hour** and are played with friends i
 
 > For the full design, see [`DOCS/game-design.md`](DOCS/game-design.md) and the per-system documents in [`DOCS/Game/`](DOCS/Game/).
 
-## Live Deployment
-
-- Frontend: https://robreb-game-front.proxy.itcollege.ee
-- API: https://robreb-game-back.proxy.itcollege.ee
-
 ---
 
 ## Tech Stack
